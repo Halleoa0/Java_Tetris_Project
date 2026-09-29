@@ -8,7 +8,7 @@ final class TutorialController implements GameListener {
     private final GamePanel panel;
     private final List<TutorialStep> steps = List.of(
             TutorialStep.move(), TutorialStep.rotate(), TutorialStep.clearLine());
-    private final TutorialOverlayRenderer overlay = new TutorialOverlayRenderer();
+    private final TutorialOverlayRenderer overlay;
     private Runnable completionCallback = () -> { };
     private int currentStep;
     private boolean started, complete;
@@ -16,6 +16,7 @@ final class TutorialController implements GameListener {
     TutorialController(Game game, GamePanel panel) {
         this.game = game;
         this.panel = panel;
+        overlay = new TutorialOverlayRenderer(panel.sansKRBlack);
         panel.setOverlayRenderer(overlay);
     }
 

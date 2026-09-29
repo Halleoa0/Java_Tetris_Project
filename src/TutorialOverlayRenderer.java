@@ -8,10 +8,15 @@ import java.util.function.Consumer;
 final class TutorialOverlayRenderer implements Consumer<Graphics2D> {
     private static final Color BUBBLE = new Color(30, 36, 51, 238);
     private static final Color BORDER = new Color(95, 190, 220);
+    private final Font sansKRBlack;
     private int stepNumber;
     private int stepCount;
     private String message = "";
     private boolean complete;
+
+    TutorialOverlayRenderer(Font sansKRBlack) {
+        this.sansKRBlack = sansKRBlack;
+    }
 
     void showStep(int stepNumber, int stepCount, String message) {
         this.stepNumber = stepNumber;
@@ -36,11 +41,11 @@ final class TutorialOverlayRenderer implements Consumer<Graphics2D> {
         g.fillPolygon(new int[]{x, x - 14, x + 10}, new int[]{y + 44, y + 56, y + 66}, 3);
 
         g.setColor(new Color(145, 205, 225));
-        g.setFont(new Font("SansSerif", Font.BOLD, 14));
+        g.setFont(sansKRBlack.deriveFont(14f));
         g.drawString(complete ? "TUTORIAL COMPLETE" : "TUTORIAL  " + stepNumber + " / " + stepCount,
                 x + 24, y + 31);
         g.setColor(Color.WHITE);
-        g.setFont(new Font("SansSerif", Font.PLAIN, 18));
+        g.setFont(sansKRBlack.deriveFont(18f));
         drawWrappedMessage(g, message, x + 24, y + 72, width - 48);
     }
 

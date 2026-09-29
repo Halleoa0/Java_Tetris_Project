@@ -49,9 +49,9 @@ final class GamePanel extends JPanel {
     private final Image guideImage;
     private final Image gameNamePanelImage;
     private final BufferedImage[] minoTiles;
-    private final Font interBlack;
-    private final Font interMedium;
-    private final Font sansKRBlack;
+    public final Font interBlack;
+    public final Font interMedium;
+    public final Font sansKRBlack;
     private final Set<String> heldKeys = new HashSet<>();
     private final Set<String> repeatingKeys = new HashSet<>();
     private final Map<String, Integer> heldKeyElapsed = new HashMap<>();
