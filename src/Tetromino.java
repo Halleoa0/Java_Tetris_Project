@@ -1,7 +1,7 @@
 import java.awt.Color;
 import java.util.Arrays;
 
-/** 각 테트로미노의 색상과 네 가지 회전 상태의 칸 좌표를 보관한다. */
+// 미노(블록)들의 구조체. 색상, 회전 모양을 하나로 정의
 enum Tetromino {
     // 0도, 90도, 180도, 270도 순서.
 

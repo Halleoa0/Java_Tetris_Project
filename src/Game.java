@@ -34,6 +34,7 @@ final class Game {
         spawnNext();
     }
 
+    /// 테트리스의 7-beg 시스템을 위한 함수로, 7개의 미노가 균등하게 나오게 하기 위함이다.
     private Tetromino drawPiece() {
         if (bag.isEmpty()) {
             // 한 묶음에 각 블록을 하나씩 넣고 섞어, 블록 종류를 고르게 공급한다.
@@ -46,8 +47,10 @@ final class Game {
     /** 화면에 보여줄 다음 블록 목록을 반환한다. */
     List<Tetromino> preview() { return new ArrayList<>(queue).subList(0, Math.min(PREVIEW_COUNT, queue.size())); }
 
+    /// Next 미노를 생성
     private void spawnNext() {
         // 새 블록은 보드 위쪽 숨김 영역에서 시작한다.
+        // Next를 최신화한다. (최근 미노 제거, 마지막미노 생성)
         active = queue.removeFirst(); queue.addLast(drawPiece());
         x = 3; y = -1; rotation = 0; holdUsed = false;
         lastMoveWasRotation = false; lockElapsed = 0; lockResets = 0; gravityElapsed = 0;
@@ -77,7 +80,8 @@ final class Game {
         return false;
     }
 
-    /** 바닥에 닿은 상태에서 조작했을 때 락 지연 타이머를 갱신한다. */
+
+    /// 테트리스의 락 딜레이 시스템을 위한 변수. 락 딜레이는 블록이 바닥에 닿자마자 놓아지는 것이 아니라 약간의 유예시간을 주는 시스템
     private void afterPlayerMove() {
         if (board.canPlace(active, x, y + 1, rotation)) lockElapsed = 0;
         else if (lockResets < MAX_LOCK_RESETS) { lockElapsed = 0; lockResets++; }
@@ -160,6 +164,8 @@ final class Game {
         return front < 2;
     }
 
+
+    // 미노가 벽에 딱 붙어서 회전을 할 때, 기존에는 회전이 안 되지만 회전을 위한 함수
     private static int[][] kickTests(Tetromino type, int from, int to) {
         // 킥 표의 y 좌표는 화면 좌표계(아래쪽이 양수)에 맞춰 저장되어 있다.
         if (type == Tetromino.Imino) return switch (from + "-" + to) {
@@ -183,6 +189,8 @@ final class Game {
             default -> kicks(0,0, 1,0, 1,-1, 0,2, 1,2);
         };
     }
+
+    // 실제로 벽에서 회전을 위한 부분
     private static int[][] kicks(int... values) {
         int[][] result = new int[values.length / 2][2];
         for (int i = 0; i < result.length; i++) { result[i][0] = values[i * 2]; result[i][1] = values[i * 2 + 1]; }

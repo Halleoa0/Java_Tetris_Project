@@ -49,6 +49,8 @@ final class GamePanel extends JPanel {
         }).start();
     }
 
+
+    // 게임 윈도우 창을 만듦
     void showWindow() {
         JFrame frame = new JFrame("Modern Tetris");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -78,6 +80,12 @@ final class GamePanel extends JPanel {
         g.dispose();
     }
 
+
+    /// 이 아래의 코드는 디자인 변화 시 수정될 수 있는 코드입니다.
+    /// 보드 및 미노(블록)을 png 파일로 대체하여 아래보다 코드가 간단해질 수 있습니다.
+
+
+    // 보드와 쌓은 블록, 현재블록과 고스트를 그림
     private void drawBoard(Graphics2D g) {
         int boardW = Board.WIDTH * CELL, boardH = (Board.HEIGHT - Board.HIDDEN_ROWS) * CELL;
         g.setColor(PANEL);
@@ -100,6 +108,8 @@ final class GamePanel extends JPanel {
         }
     }
 
+
+    // 미노 만들기
     private void drawPiece(Graphics2D g, Tetromino type, int x, int y, int rotation, boolean ghost) {
         for (int[] cell : type.cells(rotation)) {
             int bx = x + cell[0], by = y + cell[1];
@@ -109,6 +119,8 @@ final class GamePanel extends JPanel {
         }
     }
 
+
+    // 보드 뒤에 격자 만들기
     private void drawCell(Graphics2D g, int x, int y, Color color, boolean ghost) {
         if (ghost) {
             g.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 55));
