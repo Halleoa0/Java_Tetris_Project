@@ -8,25 +8,40 @@ import java.util.Random;
 final class Game {
 
     /** 화면에 미리 표시할 다음 블록 수. */
-    static final int PREVIEW_COUNT = 5;
+    static final int PREVIEW_COUNT = 4;
     private static final int LOCK_DELAY_MS = 500, MAX_LOCK_RESETS = 15;
     final Board board = new Board();
     private final Random random = new Random();
     // bag은 7종 블록을 섞어 담고, queue는 다음 블록의 순서를 보관한다.
     private final Deque<Tetromino> bag = new ArrayDeque<>(), queue = new ArrayDeque<>();
+
     // 현재 블록과 Hold 블록의 상태. x, y는 블록의 기준 격자 원점이다.
     Tetromino active, held;
     int x, y, rotation;
+    int score, lines, level = 1;
+
+    int dropCount = 0; // 쌓은 블록 수
+    float pps, timer = 0.0f; // Pieces Per Second - 초당 쌓은 블록
+    boolean startCal = false;
+
+
     final ScoreManager scoring = new ScoreManager();
     boolean gameOver, holdUsed, lastMoveWasRotation;
+
     private int lastKickIndex;
     private long lockElapsed;
     private int lockResets;
 
     Game() { restart(); }
 
+    float calPPS() {
+        pps = dropCount / timer;
+        return pps;
+    }
+
     /** 보드와 점수, 블록 대기열을 초기 상태로 되돌린다. */
     void restart() {
+        dropCount = 0; startCal = false; timer = 0.0f;
         board.clear(); bag.clear(); queue.clear(); held = null;
         scoring.reset(); gameOver = false; holdUsed = false;
         lockElapsed = 0; lockResets = 0; gravityElapsed = 0;
@@ -44,6 +59,7 @@ final class Game {
         }
         return bag.removeFirst();
     }
+
     /** 화면에 보여줄 다음 블록 목록을 반환한다. */
     List<Tetromino> preview() { return new ArrayList<>(queue).subList(0, Math.min(PREVIEW_COUNT, queue.size())); }
 
@@ -116,6 +132,12 @@ final class Game {
     /** 타이머가 전달한 경과 시간만큼 중력 낙하와 락 지연을 진행한다. */
     void tick(int elapsedMs) {
         if (gameOver) return;
+
+        if (startCal) {
+            timer += elapsedMs / 1000.0f;
+        }
+
+        int gravity = Math.max(70, 800 - (level - 1) * 60);
         int gravity = Math.max(70, 800 - (scoring.level - 1) * 60);
         gravityElapsed += elapsedMs;
         while (gravityElapsed >= gravity) {
@@ -134,8 +156,26 @@ final class Game {
         // 마지막 조작이 회전이고 T 블록의 세 모서리가 막힌 경우 T-spin 점수를 적용한다.
         boolean spin = active == Tetromino.Tmino && lastMoveWasRotation && isTSpin();
         boolean mini = spin && isMiniTSpin();
+        boolean entirelyInHiddenRows = true;
+        for (int[] cell : active.cells(rotation)) {
+            int cellY = y + cell[1];
+            if (cellY < 0 || cellY >= Board.HIDDEN_ROWS) {
+                entirelyInHiddenRows = false;
+                break;
+            }
+        }
+
         board.lock(active, x, y, rotation);
         int cleared = board.clearLines();
+        int[] normal = {0, 100, 300, 500, 800};
+        int[] fullSpin = {400, 800, 1200, 1600};
+        int[] miniSpin = {100, 200, 400};
+        if (spin) score += (mini ? miniSpin[Math.min(cleared, miniSpin.length - 1)] : fullSpin[Math.min(cleared, fullSpin.length - 1)]) * level;
+        else score += normal[Math.min(cleared, 4)] * level;
+        if (cleared > 0) { lines += cleared; level = lines / 10 + 1; }
+        if (entirelyInHiddenRows) { gameOver = true; return; }
+        startCal = true; // pps 계산 시작
+        dropCount++; // 드랍 수 + 1
         ScoreManager.Spin spinType = !spin ? ScoreManager.Spin.NONE
                 : (mini ? ScoreManager.Spin.MINI : ScoreManager.Spin.FULL);
         scoring.onLock(cleared, spinType, cleared > 0 && board.isEmpty());
