@@ -29,8 +29,33 @@ final class Game {
     private int lastKickIndex;
     private long lockElapsed;
     private int lockResets;
+    private final List<GameListener> listeners = new ArrayList<>();
+    private PieceGenerator pieceGenerator;
+    private boolean gravityEnabled = true;
+    private boolean spawnVisible;
 
-    Game() { restart(); }
+    Game() { this(null); }
+
+    /** generator가 null이면 기존 7-bag 랜덤 생성을 사용한다. */
+    Game(PieceGenerator generator) {
+        pieceGenerator = generator;
+        restart();
+    }
+
+    /** 생성기는 다음 restart()부터 적용된다. null은 기본 7-bag 생성기를 뜻한다. */
+    void setPieceGenerator(PieceGenerator generator) { pieceGenerator = generator; }
+
+    void addListener(GameListener listener) { if (listener != null) listeners.add(listener); }
+    void removeListener(GameListener listener) { listeners.remove(listener); }
+
+    void setGravityEnabled(boolean enabled) {
+        gravityEnabled = enabled;
+        gravityElapsed = 0;
+        lockElapsed = 0;
+    }
+
+    /** 다음 블록을 화면에 보이는 행에서 시작할지 설정한다. 다음 스폰/재시작부터 적용된다. */
+    void setSpawnVisible(boolean visible) { spawnVisible = visible; }
 
     float calPPS() {
         pps = dropCount / timer;
@@ -43,7 +68,7 @@ final class Game {
         board.clear(); bag.clear(); queue.clear(); held = null;
         scoring.reset(); gameOver = false; holdUsed = false;
         lockElapsed = 0; lockResets = 0; gravityElapsed = 0;
-        for (int i = 0; i < PREVIEW_COUNT + 1; i++) queue.addLast(drawPiece());
+        for (int i = 0; i < PREVIEW_COUNT + 1; i++) queue.addLast(nextPiece());
         spawnNext();
     }
 
@@ -58,6 +83,8 @@ final class Game {
         return bag.removeFirst();
     }
 
+    private Tetromino nextPiece() { return pieceGenerator == null ? drawPiece() : pieceGenerator.next(); }
+
     /** 화면에 보여줄 다음 블록 목록을 반환한다. */
     List<Tetromino> preview() { return new ArrayList<>(queue).subList(0, Math.min(PREVIEW_COUNT, queue.size())); }
 
@@ -65,22 +92,27 @@ final class Game {
     private void spawnNext() {
         // 새 블록은 보드 위쪽 숨김 영역에서 시작한다.
         // Next를 최신화한다. (최근 미노 제거, 마지막미노 생성)
-        active = queue.removeFirst(); queue.addLast(drawPiece());
-        x = 3; y = -1; rotation = 0; holdUsed = false;
+        active = queue.removeFirst(); queue.addLast(nextPiece());
+        x = 3; y = spawnVisible ? Board.HIDDEN_ROWS : -1; rotation = 0; holdUsed = false;
         lastMoveWasRotation = false; lockElapsed = 0; lockResets = 0; gravityElapsed = 0;
-        if (!board.canPlace(active, x, y, rotation)) gameOver = true;
+        if (!board.canPlace(active, x, y, rotation)) setGameOver();
     }
 
     /** dx/dy만큼 이동한다. 충돌하면 false, 이동하면 true를 반환한다. */
     boolean move(int dx, int dy) {
         if (gameOver || !board.canPlace(active, x + dx, y + dy, rotation)) return false;
         x += dx; y += dy; lastMoveWasRotation = false;
+        for (GameListener listener : List.copyOf(listeners)) listener.onMove(dx, dy);
         afterPlayerMove(); return true;
     }
 
     /** direction이 양수면 시계 방향, 음수면 반시계 방향으로 SRS 회전을 시도한다. */
     boolean rotate(int direction) {
-        if (gameOver || active == Tetromino.Omino) return false;
+        int rotationDirection = direction > 0 ? 1 : -1;
+        if (gameOver || active == Tetromino.Omino) {
+            notifyRotate(rotationDirection);
+            return false;
+        }
         int from = rotation, to = (rotation + (direction > 0 ? 1 : 3)) & 3;
         // 회전 후 겹치면 SRS 킥 후보를 순서대로 적용해 옆이나 위로 이동을 시도한다.
         int[][] tests = kickTests(active, from, to);
@@ -88,10 +120,17 @@ final class Game {
             int nx = x + tests[i][0], ny = y + tests[i][1];
             if (board.canPlace(active, nx, ny, to)) {
                 x = nx; y = ny; rotation = to; lastMoveWasRotation = true; lastKickIndex = i;
-                afterPlayerMove(); return true;
+                afterPlayerMove();
+                notifyRotate(rotationDirection);
+                return true;
             }
         }
+        notifyRotate(rotationDirection);
         return false;
+    }
+
+    private void notifyRotate(int direction) {
+        for (GameListener listener : List.copyOf(listeners)) listener.onRotate(direction);
     }
 
 
@@ -120,21 +159,20 @@ final class Game {
         Tetromino current = active;
         if (held == null) { held = current; spawnNext(); }
         else {
-            active = held; held = current; x = 3; y = -1; rotation = 0;
+            active = held; held = current; x = 3; y = spawnVisible ? Board.HIDDEN_ROWS : -1; rotation = 0;
             lastMoveWasRotation = false; lockElapsed = 0; lockResets = 0;
-            if (!board.canPlace(active, x, y, rotation)) gameOver = true;
+            if (!board.canPlace(active, x, y, rotation)) setGameOver();
         }
         holdUsed = true;
     }
 
     /** 타이머가 전달한 경과 시간만큼 중력 낙하와 락 지연을 진행한다. */
     void tick(int elapsedMs) {
-        if (gameOver) return;
+        if (gameOver || !gravityEnabled) return;
 
         if (startCal) {
             timer += elapsedMs / 1000.0f;
         }
-
         int gravity = Math.max(70, 800 - (scoring.level - 1) * 60);
         gravityElapsed += elapsedMs;
         while (gravityElapsed >= gravity) {
@@ -153,6 +191,7 @@ final class Game {
         // 마지막 조작이 회전이고 T 블록의 세 모서리가 막힌 경우 T-spin 점수를 적용한다.
         boolean spin = active == Tetromino.Tmino && lastMoveWasRotation && isTSpin();
         boolean mini = spin && isMiniTSpin();
+        Tetromino lockedType = active;
         boolean entirelyInHiddenRows = true;
         for (int[] cell : active.cells(rotation)) {
             int cellY = y + cell[1];
@@ -163,7 +202,10 @@ final class Game {
         }
 
         board.lock(active, x, y, rotation);
+        for (GameListener listener : List.copyOf(listeners)) listener.onLock(lockedType);
         int cleared = board.clearLines();
+        if (cleared > 0)
+            for (GameListener listener : List.copyOf(listeners)) listener.onLinesCleared(cleared);
         if (entirelyInHiddenRows) { gameOver = true; return; }
         startCal = true; // pps 계산 시작
         dropCount++; // 드랍 수 + 1
@@ -171,6 +213,12 @@ final class Game {
                 : (mini ? ScoreManager.Spin.MINI : ScoreManager.Spin.FULL);
         scoring.onLock(cleared, spinType, cleared > 0 && board.isEmpty());
         spawnNext();
+    }
+
+    private void setGameOver() {
+        if (gameOver) return;
+        gameOver = true;
+        for (GameListener listener : List.copyOf(listeners)) listener.onGameOver();
     }
 
     private boolean isTSpin() {

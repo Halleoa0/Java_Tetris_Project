@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -32,13 +33,17 @@ import java.util.Set;
  * Space 하드드롭, C Hold, R 재시작.
  */
 final class GamePanel extends JPanel {
+    @FunctionalInterface
+    interface InputFilter { boolean allow(String action); }
 
     // 조각의 크기는 25 (25x25), 보드의 위치는 x 517, x 111
     private static final int CELL = 25, BOARD_X = 517, BOARD_Y = 111;
     private static final int MATRIX_X = 378, MATRIX_Y = 111, MATRIX_W = 528, MATRIX_H = 505;
     private static final Color BACKGROUND = new Color(41, 41, 41);
     private static final Color PANEL = new Color(30, 36, 51);
-    private final Game game = new Game();
+    private final Game game;
+    private InputFilter inputFilter;
+    private Consumer<Graphics2D> overlayRenderer;
     private long lastTick = System.nanoTime();
     private final Image matrixImage;
     private final Image guideImage;
@@ -56,7 +61,10 @@ final class GamePanel extends JPanel {
     private String gameName = "테스트 플레이";
 
     // 키를 게임 동작에 연결하고 16ms 간격으로 게임 상태를 갱신한다.
-    GamePanel() {
+    GamePanel() { this(new Game()); }
+
+    GamePanel(Game game) {
+        this.game = game;
         setPreferredSize(new Dimension(1280, 720));
         setBackground(BACKGROUND);
         setFocusable(true);
@@ -72,7 +80,7 @@ final class GamePanel extends JPanel {
         bindHeld("DOWN", game::softDrop);
         // bind("UP", "rotateCW", () -> game.rotate(1));
         bind("UP", "rotateCW", () -> game.rotate(1));
-        bind("X", "rotateCWX", () -> game.rotate(1));
+        bind("X", "rotateCW", () -> game.rotate(1));
         bind("Z", "rotateCCW", () -> game.rotate(-1));
         bind("SPACE", "hardDrop", game::hardDrop);
         bind("C", "hold", game::hold);
@@ -92,6 +100,10 @@ final class GamePanel extends JPanel {
         }).start();
     }
 
+    void setInputFilter(InputFilter inputFilter) { this.inputFilter = inputFilter; }
+
+    void setOverlayRenderer(Consumer<Graphics2D> overlayRenderer) { this.overlayRenderer = overlayRenderer; }
+
 
     // 게임 윈도우 창을 만듦
     void showWindow() {
@@ -110,7 +122,10 @@ final class GamePanel extends JPanel {
         // Swing의 Key Binding으로 키 입력을 게임 동작에 연결한다.
         getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed " + key), name);
         getActionMap().put(name, new AbstractAction() {
-            @Override public void actionPerformed(ActionEvent e) { action.run(); repaint(); }
+            @Override public void actionPerformed(ActionEvent e) {
+                if (inputFilter == null || inputFilter.allow(name)) action.run();
+                repaint();
+            }
         });
     }
 
@@ -177,6 +192,7 @@ final class GamePanel extends JPanel {
         drawScoreLable(g);
         drawTimeLable(g);
         if (game.gameOver) drawGameOver(g);
+        if (overlayRenderer != null) overlayRenderer.accept(g);
         g.dispose();
     }
 
