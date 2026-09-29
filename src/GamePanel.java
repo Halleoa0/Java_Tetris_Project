@@ -33,7 +33,7 @@ final class GamePanel extends JPanel {
         setFocusable(true);
         bind("LEFT", "left", () -> game.move(-1, 0));
         bind("RIGHT", "right", () -> game.move(1, 0));
-        bind("DOWN", "softDrop", () -> { if (game.move(0, 1)) game.score += 1; });
+        bind("DOWN", "softDrop", game::softDrop);
         bind("UP", "rotateCW", () -> game.rotate(1));
         bind("X", "rotateCWX", () -> game.rotate(1));
         bind("Z", "rotateCCW", () -> game.rotate(-1));
@@ -45,6 +45,7 @@ final class GamePanel extends JPanel {
             int elapsed = (int) Math.min(100, (now - lastTick) / 1_000_000L);
             lastTick = now;
             game.tick(elapsed);
+            game.scoring.tick(elapsed);
             repaint();
         }).start();
     }
@@ -139,15 +140,29 @@ final class GamePanel extends JPanel {
         int x = 340;
         g.setColor(Color.WHITE); g.setFont(new Font("SansSerif", Font.BOLD, 23));
         g.drawString("TETRIS", x, 45);
-        drawInfoBox(g, x, 64, 156, 74, "SCORE", String.valueOf(game.score));
-        drawInfoBox(g, x, 148, 74, 66, "LEVEL", String.valueOf(game.level));
-        drawInfoBox(g, x + 82, 148, 74, 66, "LINES", String.valueOf(game.lines));
+        drawInfoBox(g, x, 64, 156, 74, "SCORE", String.valueOf(game.scoring.score));
+        drawInfoBox(g, x, 148, 74, 66, "LEVEL", String.valueOf(game.scoring.level));
+        drawInfoBox(g, x + 82, 148, 74, 66, "LINES", String.valueOf(game.scoring.lines));
         drawPreview(g, x, 226, "NEXT", game.preview(), false);
         drawPreview(g, x, 442, "HOLD", game.held == null ? List.of() : List.of(game.held), true);
         g.setColor(new Color(188, 196, 213)); g.setFont(new Font("SansSerif", Font.PLAIN, 12));
         g.drawString("← → Move    ↓ Soft drop", x, 594);
         g.drawString("↑ / X Rotate    Z Reverse", x, 612);
         g.drawString("Space Drop    C Hold    R Restart", x, 630);
+        drawScoreLabel(g, x, 680);
+    }
+
+    /** 마지막 점수 문구와 획득 점수를 서서히 사라지게 그린다 */
+    private void drawScoreLabel(Graphics2D g, int x, int y) {
+        float a = game.scoring.labelAlpha();
+        if (a <= 0f) return;
+        int alpha = (int) (255 * a);
+        g.setFont(new Font("SansSerif", Font.BOLD, 15));
+        g.setColor(new Color(255, 215, 90, alpha));
+        g.drawString(game.scoring.lastLabel, x, y);
+        g.setFont(new Font("SansSerif", Font.BOLD, 20));
+        g.setColor(new Color(255, 255, 255, alpha));
+        g.drawString("+" + game.scoring.lastGain, x, y + 26);
     }
 
     private void drawInfoBox(Graphics2D g, int x, int y, int w, int h, String label, String value) {

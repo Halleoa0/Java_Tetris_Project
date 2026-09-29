@@ -55,6 +55,12 @@ final class Board {
         return false;
     }
 
+    // 보드가 완전히 비었는지 (퍼펙트 클리어 판정용)
+    boolean isEmpty() {
+        for (Tetromino[] row : cells ) for (Tetromino c : row) if (c != null) return false;
+        return true;
+    }
+
     // 보드에 있는 미노 다 지우기
     void clear() { for (Tetromino[] row : cells) Arrays.fill(row, null); }
 }

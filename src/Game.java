@@ -17,7 +17,7 @@ final class Game {
     // 현재 블록과 Hold 블록의 상태. x, y는 블록의 기준 격자 원점이다.
     Tetromino active, held;
     int x, y, rotation;
-    int score, lines, level = 1;
+    final ScoreManager scoring = new ScoreManager();
     boolean gameOver, holdUsed, lastMoveWasRotation;
     private int lastKickIndex;
     private long lockElapsed;
@@ -28,7 +28,7 @@ final class Game {
     /** 보드와 점수, 블록 대기열을 초기 상태로 되돌린다. */
     void restart() {
         board.clear(); bag.clear(); queue.clear(); held = null;
-        score = lines = 0; level = 1; gameOver = false; holdUsed = false;
+        scoring.reset(); gameOver = false; holdUsed = false;
         lockElapsed = 0; lockResets = 0; gravityElapsed = 0;
         for (int i = 0; i < PREVIEW_COUNT + 1; i++) queue.addLast(drawPiece());
         spawnNext();
@@ -92,8 +92,12 @@ final class Game {
         if (gameOver) return;
         int distance = 0;
         while (board.canPlace(active, x, y + 1, rotation)) { y++; distance++; }
-        score += distance * 2;
+        scoring.onHardDrop(distance);
         lockPiece();
+    }
+
+    void softDrop() {
+        if (move(0, 1)) scoring.onSoftDrop(1);
     }
 
     /** 현재 블록을 Hold 칸과 바꾸며, 블록 하나당 한 번만 허용한다. */
@@ -112,7 +116,7 @@ final class Game {
     /** 타이머가 전달한 경과 시간만큼 중력 낙하와 락 지연을 진행한다. */
     void tick(int elapsedMs) {
         if (gameOver) return;
-        int gravity = Math.max(70, 800 - (level - 1) * 60);
+        int gravity = Math.max(70, 800 - (scoring.level - 1) * 60);
         gravityElapsed += elapsedMs;
         while (gravityElapsed >= gravity) {
             gravityElapsed -= gravity;
@@ -132,12 +136,9 @@ final class Game {
         boolean mini = spin && isMiniTSpin();
         board.lock(active, x, y, rotation);
         int cleared = board.clearLines();
-        int[] normal = {0, 100, 300, 500, 800};
-        int[] fullSpin = {400, 800, 1200, 1600};
-        int[] miniSpin = {100, 200, 400};
-        if (spin) score += (mini ? miniSpin[Math.min(cleared, miniSpin.length - 1)] : fullSpin[Math.min(cleared, fullSpin.length - 1)]) * level;
-        else score += normal[Math.min(cleared, 4)] * level;
-        if (cleared > 0) { lines += cleared; level = lines / 10 + 1; }
+        ScoreManager.Spin spinType = !spin ? ScoreManager.Spin.NONE
+                : (mini ? ScoreManager.Spin.MINI : ScoreManager.Spin.FULL);
+        scoring.onLock(cleared, spinType, cleared > 0 && board.isEmpty());
         if (board.hasHiddenBlocks()) { gameOver = true; return; }
         spawnNext();
     }
