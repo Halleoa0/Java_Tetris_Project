@@ -26,7 +26,8 @@ final class TutorialOverlayRenderer implements Consumer<Graphics2D> {
     }
 
     @Override public void accept(Graphics2D g) {
-        int x = 520, y = 86, width = 700, height = 126;
+        // 보드는 x=517..767, 매트릭스 아트는 x=378..906이므로 오른쪽 여백에 배치한다.
+        int x = 920, y = 150, width = 344, height = 190;
         g.setColor(BUBBLE);
         g.fillRoundRect(x, y, width, height, 18, 18);
         g.setColor(BORDER);

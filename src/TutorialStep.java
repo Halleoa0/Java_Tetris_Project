@@ -24,21 +24,21 @@ final class TutorialStep {
 
     static TutorialStep move() {
         return new TutorialStep(
-                "← 또는 → 키를 눌러 T 블록을 양쪽으로 각각 한 번 이상 움직여 보세요.",
+                "← 또는 → 키를 눌러 블록을 양쪽으로 움직여 보세요.",
                 Set.of("left", "right"), false, true, new FixedPieceGenerator(Tetromino.Tmino),
                 Goal.MOVE_LEFT_AND_RIGHT);
     }
 
     static TutorialStep rotate() {
         return new TutorialStep(
-                "↑ 또는 X 키로 시계 방향, Z 키로 반시계 방향 회전을 각각 해보세요.",
+                "↑ 또는 X 키로 시계 방향, Z 키로 반시계 방향 회전을 해보세요.",
                 Set.of("rotateCW", "rotateCCW"), false, true, new FixedPieceGenerator(Tetromino.Tmino),
                 Goal.ROTATE_BOTH_DIRECTIONS);
     }
 
     static TutorialStep clearLine() {
         return new TutorialStep(
-                "블록을 쌓은 뒤 Space 키로 한 줄 이상 지워 보세요.",
+                "블록을 쌓아 한 줄을 지워 보세요.",
                 Set.of("left", "right", "softDrop", "rotateCW", "rotateCCW", "hardDrop", "hold", "restart"),
                 true, false, null, Goal.CLEAR_AT_LEAST_ONE_LINE);
     }
