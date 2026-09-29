@@ -74,6 +74,7 @@ final class TutorialController implements GameListener {
         TutorialStep step = steps.get(currentStep);
         panel.setInputFilter(step.allowedActions::contains);
         game.setGravityEnabled(step.gravityEnabled);
+        game.setSpawnVisible(step.spawnVisible);
         game.setPieceGenerator(step.pieceGenerator);
         game.restart();
         overlay.showStep(currentStep + 1, STEP_COUNT, step.message);

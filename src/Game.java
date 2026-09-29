@@ -25,6 +25,7 @@ final class Game {
     private final List<GameListener> listeners = new ArrayList<>();
     private PieceGenerator pieceGenerator;
     private boolean gravityEnabled = true;
+    private boolean spawnVisible;
 
     Game() { this(null); }
 
@@ -45,6 +46,9 @@ final class Game {
         gravityElapsed = 0;
         lockElapsed = 0;
     }
+
+    /** 다음 블록을 화면에 보이는 행에서 시작할지 설정한다. 다음 스폰/재시작부터 적용된다. */
+    void setSpawnVisible(boolean visible) { spawnVisible = visible; }
 
     /** 보드와 점수, 블록 대기열을 초기 상태로 되돌린다. */
     void restart() {
@@ -75,7 +79,7 @@ final class Game {
         // 새 블록은 보드 위쪽 숨김 영역에서 시작한다.
         // Next를 최신화한다. (최근 미노 제거, 마지막미노 생성)
         active = queue.removeFirst(); queue.addLast(nextPiece());
-        x = 3; y = -1; rotation = 0; holdUsed = false;
+        x = 3; y = spawnVisible ? Board.HIDDEN_ROWS : -1; rotation = 0; holdUsed = false;
         lastMoveWasRotation = false; lockElapsed = 0; lockResets = 0; gravityElapsed = 0;
         if (!board.canPlace(active, x, y, rotation)) setGameOver();
     }
@@ -141,7 +145,7 @@ final class Game {
         Tetromino current = active;
         if (held == null) { held = current; spawnNext(); }
         else {
-            active = held; held = current; x = 3; y = -1; rotation = 0;
+            active = held; held = current; x = 3; y = spawnVisible ? Board.HIDDEN_ROWS : -1; rotation = 0;
             lastMoveWasRotation = false; lockElapsed = 0; lockResets = 0;
             if (!board.canPlace(active, x, y, rotation)) setGameOver();
         }

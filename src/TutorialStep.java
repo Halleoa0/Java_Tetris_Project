@@ -7,15 +7,17 @@ final class TutorialStep {
     final String message;
     final Set<String> allowedActions;
     final boolean gravityEnabled;
+    final boolean spawnVisible;
     final PieceGenerator pieceGenerator;
     private final Goal goal;
     private boolean movedLeft, movedRight, rotatedClockwise, rotatedCounterClockwise, clearedLine;
 
-    TutorialStep(String message, Set<String> allowedActions, boolean gravityEnabled,
+    TutorialStep(String message, Set<String> allowedActions, boolean gravityEnabled, boolean spawnVisible,
                  PieceGenerator pieceGenerator, Goal goal) {
         this.message = message;
         this.allowedActions = Set.copyOf(allowedActions);
         this.gravityEnabled = gravityEnabled;
+        this.spawnVisible = spawnVisible;
         this.pieceGenerator = pieceGenerator;
         this.goal = goal;
     }
@@ -23,14 +25,14 @@ final class TutorialStep {
     static TutorialStep move() {
         return new TutorialStep(
                 "← 또는 → 키를 눌러 T 블록을 양쪽으로 각각 한 번 이상 움직여 보세요.",
-                Set.of("left", "right"), false, new FixedPieceGenerator(Tetromino.Tmino),
+                Set.of("left", "right"), false, true, new FixedPieceGenerator(Tetromino.Tmino),
                 Goal.MOVE_LEFT_AND_RIGHT);
     }
 
     static TutorialStep rotate() {
         return new TutorialStep(
                 "↑ 또는 X 키로 시계 방향, Z 키로 반시계 방향 회전을 각각 해보세요.",
-                Set.of("rotateCW", "rotateCCW"), false, new FixedPieceGenerator(Tetromino.Tmino),
+                Set.of("rotateCW", "rotateCCW"), false, true, new FixedPieceGenerator(Tetromino.Tmino),
                 Goal.ROTATE_BOTH_DIRECTIONS);
     }
 
@@ -38,7 +40,7 @@ final class TutorialStep {
         return new TutorialStep(
                 "블록을 쌓은 뒤 Space 키로 한 줄 이상 지워 보세요.",
                 Set.of("left", "right", "softDrop", "rotateCW", "rotateCCW", "hardDrop", "hold", "restart"),
-                true, null, Goal.CLEAR_AT_LEAST_ONE_LINE);
+                true, false, null, Goal.CLEAR_AT_LEAST_ONE_LINE);
     }
 
     void onMove(int dx, int dy) {
