@@ -18,8 +18,6 @@ final class Game {
     // 현재 블록과 Hold 블록의 상태. x, y는 블록의 기준 격자 원점이다.
     Tetromino active, held;
     int x, y, rotation;
-    int score, lines, level = 1;
-
     int dropCount = 0; // 쌓은 블록 수
     float pps, timer = 0.0f; // Pieces Per Second - 초당 쌓은 블록
     boolean startCal = false;
@@ -137,7 +135,6 @@ final class Game {
             timer += elapsedMs / 1000.0f;
         }
 
-        int gravity = Math.max(70, 800 - (level - 1) * 60);
         int gravity = Math.max(70, 800 - (scoring.level - 1) * 60);
         gravityElapsed += elapsedMs;
         while (gravityElapsed >= gravity) {
@@ -167,19 +164,12 @@ final class Game {
 
         board.lock(active, x, y, rotation);
         int cleared = board.clearLines();
-        int[] normal = {0, 100, 300, 500, 800};
-        int[] fullSpin = {400, 800, 1200, 1600};
-        int[] miniSpin = {100, 200, 400};
-        if (spin) score += (mini ? miniSpin[Math.min(cleared, miniSpin.length - 1)] : fullSpin[Math.min(cleared, fullSpin.length - 1)]) * level;
-        else score += normal[Math.min(cleared, 4)] * level;
-        if (cleared > 0) { lines += cleared; level = lines / 10 + 1; }
         if (entirelyInHiddenRows) { gameOver = true; return; }
         startCal = true; // pps 계산 시작
         dropCount++; // 드랍 수 + 1
         ScoreManager.Spin spinType = !spin ? ScoreManager.Spin.NONE
                 : (mini ? ScoreManager.Spin.MINI : ScoreManager.Spin.FULL);
         scoring.onLock(cleared, spinType, cleared > 0 && board.isEmpty());
-        if (board.hasHiddenBlocks()) { gameOver = true; return; }
         spawnNext();
     }
 

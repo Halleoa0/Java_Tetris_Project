@@ -69,11 +69,8 @@ final class GamePanel extends JPanel {
         minoTiles = loadMinoTiles("Images/Mino.png");
         bindHeld("LEFT", () -> game.move(-1, 0));
         bindHeld("RIGHT", () -> game.move(1, 0));
-        bindHeld("DOWN", () -> { if (game.move(0, 1)) game.score += 1; });
+        bindHeld("DOWN", game::softDrop);
         // bind("UP", "rotateCW", () -> game.rotate(1));
-        bind("LEFT", "left", () -> game.move(-1, 0));
-        bind("RIGHT", "right", () -> game.move(1, 0));
-        bind("DOWN", "softDrop", game::softDrop);
         bind("UP", "rotateCW", () -> game.rotate(1));
         bind("X", "rotateCWX", () -> game.rotate(1));
         bind("Z", "rotateCCW", () -> game.rotate(-1));
@@ -291,9 +288,7 @@ final class GamePanel extends JPanel {
         List<Tetromino> next = game.preview();
         for (int i = 0; i < next.size(); i++) {
             drawPreviewPiece(g, next.get(i), 774, 120 + i * 68, 126, 50, 25);
-        g.setColor(color.darker()); g.fillRoundRect(x + 1, y + 1, CELL - 2, CELL - 2, 6, 6);
-        g.setColor(color); g.fillRoundRect(x + 3, y + 3, CELL - 7, CELL - 7, 5, 5);
-        g.setColor(new Color(255,255,255,85)); g.drawLine(x + 5, y + 5, x + CELL - 7, y + 5);
+        }
     }
 
     private void drawSidebar(Graphics2D g) {
@@ -342,7 +337,7 @@ final class GamePanel extends JPanel {
             int unit = hold ? 18 : 14;
             int startX = x + (156 - (maxX-minX+1)*unit)/2;
             int startY = y + 27 + i*slotH + (slotH - (maxY-minY+1)*unit)/2;
-            for (int[] c : type.cells(0)) drawMiniCell(g, startX + (c[0]-minX)*unit, startY + (c[1]-minY)*unit, unit, type.color);
+            for (int[] c : type.cells(0)) drawMiniCell(g, startX + (c[0]-minX)*unit, startY + (c[1]-minY)*unit, unit, type);
         }
     }
 
@@ -400,7 +395,7 @@ final class GamePanel extends JPanel {
         g.setFont(interMedium.deriveFont(16f));
         g.drawString("LINES", 456, 539);
         g.setFont(interBlack.deriveFont(24f));
-        String lineText = String.format(Locale.ROOT, "%d", game.lines);
+        String lineText = String.format(Locale.ROOT, "%d", game.scoring.lines);
         FontMetrics metrics = g.getFontMetrics();
         g.drawString(lineText, 500 - metrics.stringWidth(lineText), 539 + 28);
     }
@@ -411,7 +406,7 @@ final class GamePanel extends JPanel {
         g.setFont(interMedium.deriveFont(16f));
         g.drawString("SCORE", 783, 466);
         g.setFont(interBlack.deriveFont(24f));
-        g.drawString(String.format(Locale.US, "%,d",game.score), 783, 466 + 28);
+        g.drawString(String.format(Locale.US, "%,d", game.scoring.score), 783, 466 + 28);
     }
 
     /// 현재 플레이 시간 띄우기

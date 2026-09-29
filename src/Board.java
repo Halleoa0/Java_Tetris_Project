@@ -49,12 +49,6 @@ final class Board {
     boolean occupied(int x, int y) { return y >= 0 && y < HEIGHT && cells[y][x] != null; }
     Tetromino get(int x, int y) { return cells[y][x]; }
 
-    /// 블록을 천장 그 위에 쌓으면 게임 오버 처리하기 위한 변수 (HIDDEN_ROW는 천장 위 2칸을 의미)
-    boolean hasHiddenBlocks() {
-        for (int y = 0; y < HIDDEN_ROWS; y++) for (Tetromino cell : cells[y]) if (cell != null) return true;
-        return false;
-    }
-
     // 보드가 완전히 비었는지 (퍼펙트 클리어 판정용)
     boolean isEmpty() {
         for (Tetromino[] row : cells ) for (Tetromino c : row) if (c != null) return false;
