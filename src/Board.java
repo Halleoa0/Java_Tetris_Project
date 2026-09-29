@@ -49,12 +49,6 @@ final class Board {
     boolean occupied(int x, int y) { return y >= 0 && y < HEIGHT && cells[y][x] != null; }
     Tetromino get(int x, int y) { return cells[y][x]; }
 
-    /// 블록을 천장 그 위에 쌓으면 게임 오버 처리하기 위한 변수 (HIDDEN_ROW는 천장 위 2칸을 의미)
-    boolean hasHiddenBlocks() {
-        for (int y = 0; y < HIDDEN_ROWS; y++) for (Tetromino cell : cells[y]) if (cell != null) return true;
-        return false;
-    }
-
     // 보드에 있는 미노 다 지우기
     void clear() { for (Tetromino[] row : cells) Arrays.fill(row, null); }
 }

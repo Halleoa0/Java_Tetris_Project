@@ -3,16 +3,28 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontFormatException;
+import java.awt.GraphicsEnvironment;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 /** Swing 화면, 키 입력, 주기적인 게임 업데이트를 연결한다.
  * 사용 예: IntelliJ에서 Main을 실행한 뒤 방향키로 이동하고 Space로 즉시 낙하한다.
@@ -20,31 +32,60 @@ import java.util.List;
  * Space 하드드롭, C Hold, R 재시작.
  */
 final class GamePanel extends JPanel {
-    private static final int CELL = 28, BOARD_X = 34, BOARD_Y = 30;
-    private static final Color BACKGROUND = new Color(19, 23, 34);
+
+    // 조각의 크기는 25 (25x25), 보드의 위치는 x 517, x 111
+    private static final int CELL = 25, BOARD_X = 517, BOARD_Y = 111;
+    private static final int MATRIX_X = 378, MATRIX_Y = 111, MATRIX_W = 528, MATRIX_H = 505;
+    private static final Color BACKGROUND = new Color(41, 41, 41);
     private static final Color PANEL = new Color(30, 36, 51);
     private final Game game = new Game();
     private long lastTick = System.nanoTime();
+    private final Image matrixImage;
+    private final Image guideImage;
+    private final Image gameNamePanelImage;
+    private final BufferedImage[] minoTiles;
+    private final Font interBlack;
+    private final Font interMedium;
+    private final Font sansKRBlack;
+    private final Set<String> heldKeys = new HashSet<>();
+    private final Set<String> repeatingKeys = new HashSet<>();
+    private final Map<String, Integer> heldKeyElapsed = new HashMap<>();
+    private final Map<String, Runnable> heldKeyActions = new HashMap<>();
+
+    // 현재 진행 중 모드
+    private String gameName = "테스트 플레이";
 
     // 키를 게임 동작에 연결하고 16ms 간격으로 게임 상태를 갱신한다.
     GamePanel() {
         setPreferredSize(new Dimension(1280, 720));
         setBackground(BACKGROUND);
         setFocusable(true);
-        bind("LEFT", "left", () -> game.move(-1, 0));
-        bind("RIGHT", "right", () -> game.move(1, 0));
-        bind("DOWN", "softDrop", () -> { if (game.move(0, 1)) game.score += 1; });
-        bind("UP", "rotateCW", () -> game.rotate(1));
+        interBlack = loadBlack();
+        interMedium = loadMedium();
+        sansKRBlack = loadKRBlack();
+        matrixImage = loadImage("Images/Board/Matrix.png");
+        guideImage = loadImage("Images/Board/Guide.png");
+        gameNamePanelImage = loadImage("Images/Board/GameNamePanel.png");
+        minoTiles = loadMinoTiles("Images/Mino.png");
+        bindHeld("LEFT", () -> game.move(-1, 0));
+        bindHeld("RIGHT", () -> game.move(1, 0));
+        bindHeld("DOWN", () -> { if (game.move(0, 1)) game.score += 1; });
+        // bind("UP", "rotateCW", () -> game.rotate(1));
         bind("X", "rotateCWX", () -> game.rotate(1));
         bind("Z", "rotateCCW", () -> game.rotate(-1));
         bind("SPACE", "hardDrop", game::hardDrop);
         bind("C", "hold", game::hold);
         bind("R", "restart", game::restart);
+        addFocusListener(new FocusAdapter() {
+            @Override public void focusLost(FocusEvent e) { clearHeldKeys(); }
+        });
+
         new Timer(16, e -> {
             long now = System.nanoTime();
             int elapsed = (int) Math.min(100, (now - lastTick) / 1_000_000L);
             lastTick = now;
             game.tick(elapsed);
+            tickHeldKeys(elapsed);
             repaint();
         }).start();
     }
@@ -62,6 +103,7 @@ final class GamePanel extends JPanel {
         requestFocusInWindow();
     }
 
+    /// 키보드 입력을 bind 하기
     private void bind(String key, String name, Runnable action) {
         // Swing의 Key Binding으로 키 입력을 게임 동작에 연결한다.
         getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed " + key), name);
@@ -70,14 +112,101 @@ final class GamePanel extends JPanel {
         });
     }
 
+    private void bindHeld(String key, Runnable action) {
+        String pressedName = key + "HeldPressed";
+        String releasedName = key + "HeldReleased";
+        heldKeyActions.put(key, action);
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed " + key), pressedName);
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released " + key), releasedName);
+        getActionMap().put(pressedName, new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) {
+                if (heldKeys.add(key)) {
+                    heldKeyElapsed.put(key, 0);
+                    repeatingKeys.remove(key);
+                    action.run();
+                    repaint();
+                }
+            }
+        });
+        getActionMap().put(releasedName, new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) { releaseHeldKey(key); }
+        });
+    }
+
+
+    /// 키 입력 후에 다시 재입력
+    private void tickHeldKeys(int elapsedMs) {
+        for (String key : heldKeys) {
+            int elapsed = heldKeyElapsed.getOrDefault(key, 0) + elapsedMs;
+            int delay = repeatingKeys.contains(key) ? 55 : 180;
+            if (elapsed >= delay) {
+                elapsed -= delay;
+                repeatingKeys.add(key);
+                heldKeyActions.get(key).run();
+            }
+            heldKeyElapsed.put(key, elapsed);
+        }
+    }
+
+    private void releaseHeldKey(String key) {
+        heldKeys.remove(key);
+        repeatingKeys.remove(key);
+        heldKeyElapsed.remove(key);
+    }
+
+    private void clearHeldKeys() {
+        heldKeys.clear();
+        repeatingKeys.clear();
+        heldKeyElapsed.clear();
+    }
+
+    /// 실제로 그리기
     @Override protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
+        graphics.drawImage(matrixImage, MATRIX_X, MATRIX_Y, MATRIX_W, MATRIX_H, this);
+        graphics.drawImage(guideImage, 40, 545, this);
         Graphics2D g = (Graphics2D) graphics.create();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        drawMatrixPreviews(g);
         drawBoard(g);
-        drawSidebar(g);
+        drawGameNamePanel(g);
+        drawPpsLabel(g);
+        drawLineLable(g);
+        drawScoreLable(g);
+        drawTimeLable(g);
         if (game.gameOver) drawGameOver(g);
         g.dispose();
+    }
+
+    /// 이미지를 가져오는 함수
+    private Image loadImage(String path) {
+        try {
+            return javax.imageio.ImageIO.read(Path.of(path).toFile());
+        } catch (IOException e) {
+            throw new IllegalStateException("이미지를 불러올 수 없음. " + path, e);
+        }
+    }
+
+    /// 미노 이미지를 불러옵니다. (25x25 사이즈가 8개가 가로로 존재하는 200x25 크기의 이미지)
+    private BufferedImage[] loadMinoTiles(String path) {
+        try {
+
+            BufferedImage sheet = javax.imageio.ImageIO.read(Path.of(path).toFile());
+            if (sheet.getWidth() != 200 || sheet.getHeight() != 25) {
+                throw new IllegalStateException("이미지 사이즈가 200x25가 아님. " + path);
+            }
+
+            // 이미지를 25 크기마다 자름.
+            BufferedImage[] tiles = new BufferedImage[8];
+            for (int i = 0; i < tiles.length; i++) {
+                tiles[i] = sheet.getSubimage(i * 25, 0, 25, 25);
+            }
+
+            return tiles;
+
+        } catch (IOException e) {
+            throw new IllegalStateException("미노 이미지에 문제 발생. " + path, e);
+        }
     }
 
 
@@ -87,18 +216,14 @@ final class GamePanel extends JPanel {
 
     // 보드와 쌓은 블록, 현재블록과 고스트를 그림
     private void drawBoard(Graphics2D g) {
-        int boardW = Board.WIDTH * CELL, boardH = (Board.HEIGHT - Board.HIDDEN_ROWS) * CELL;
-        g.setColor(PANEL);
-        g.fillRoundRect(BOARD_X - 7, BOARD_Y - 7, boardW + 14, boardH + 14, 12, 12);
-        for (int row = Board.HIDDEN_ROWS; row < Board.HEIGHT; row++) {
+        for (int row = 0; row < Board.HEIGHT; row++) {
             for (int col = 0; col < Board.WIDTH; col++) {
                 int sx = BOARD_X + col * CELL, sy = BOARD_Y + (row - Board.HIDDEN_ROWS) * CELL;
-                g.setColor(new Color(39, 46, 62));
-                g.fillRect(sx, sy, CELL - 1, CELL - 1);
                 Tetromino locked = game.board.get(col, row);
-                if (locked != null) drawCell(g, sx, sy, locked.color, false);
+                if (locked != null) drawCell(g, sx, sy, locked, false);
             }
         }
+
         if (!game.gameOver) {
             // 현재 블록을 아래로 복사 이동해 예상 착지 위치(고스트)를 먼저 그린다.
             int ghostY = game.y;
@@ -113,77 +238,184 @@ final class GamePanel extends JPanel {
     private void drawPiece(Graphics2D g, Tetromino type, int x, int y, int rotation, boolean ghost) {
         for (int[] cell : type.cells(rotation)) {
             int bx = x + cell[0], by = y + cell[1];
+            if (by < -Board.HIDDEN_ROWS || by >= Board.HEIGHT) continue;
             int visibleY = by - Board.HIDDEN_ROWS;
-            if (visibleY < 0 || visibleY >= Board.HEIGHT - Board.HIDDEN_ROWS) continue;
-            drawCell(g, BOARD_X + bx * CELL, BOARD_Y + visibleY * CELL, type.color, ghost);
+            drawCell(g, BOARD_X + bx * CELL, BOARD_Y + visibleY * CELL, type, ghost);
         }
     }
 
 
     // 보드 뒤에 격자 만들기
-    private void drawCell(Graphics2D g, int x, int y, Color color, boolean ghost) {
-        if (ghost) {
-            g.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 55));
-            g.fillRoundRect(x + 3, y + 3, CELL - 7, CELL - 7, 5, 5);
-            g.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 170));
-            g.setStroke(new BasicStroke(2));
-            g.drawRoundRect(x + 3, y + 3, CELL - 7, CELL - 7, 5, 5);
-            return;
+    private void drawCell(Graphics2D g, int x, int y, Tetromino type, boolean ghost) {
+        int tile = ghost ? 7 : minoTileIndex(type);
+        g.drawImage(minoTiles[tile], x, y, CELL, CELL, this);
+    }
+
+    private int minoTileIndex(Tetromino type) {
+        return switch (type) {
+            case Zmino -> 0;
+            case Lmino -> 1;
+            case Omino -> 2;
+            case Smino -> 3;
+            case Imino -> 4;
+            case Jmino -> 5;
+            case Tmino -> 6;
+        };
+    }
+
+    // 텍스트 정보를 띄웁니다.
+    private void drawInfoBox(Graphics2D g, int x, int y, int w, int h, int fontSize, String label, String value) {
+        g.setColor(PANEL);
+        g.setColor(new Color(255, 255, 255)); g.setFont(interBlack.deriveFont((float) fontSize));
+        g.drawString(label, x, y);
+        g.setColor(Color.WHITE); g.setFont(interBlack.deriveFont(20f));
+        g.drawString(value, x + 12, y + h - 14);
+    }
+
+    // 200x15 사이즈 Mino.png를 25x25로 잘라서 미노로 씁니다.
+    private void drawMiniCell(Graphics2D g, int x, int y, int size, Tetromino type) {
+        g.drawImage(minoTiles[minoTileIndex(type)], x, y, size, size, this);
+    }
+
+    // Next와 Hold에 미노를 표시합니다.
+    private void drawMatrixPreviews(Graphics2D g) {
+        if (game.held != null) {
+            drawPreviewPiece(g, game.held, 386, 112, 126, 78, 25);
         }
-        g.setColor(color.darker()); g.fillRoundRect(x + 1, y + 1, CELL - 2, CELL - 2, 6, 6);
-        g.setColor(color); g.fillRoundRect(x + 3, y + 3, CELL - 7, CELL - 7, 5, 5);
-        g.setColor(new Color(255,255,255,85)); g.drawLine(x + 5, y + 5, x + CELL - 7, y + 5);
-    }
 
-    private void drawSidebar(Graphics2D g) {
-        int x = 340;
-        g.setColor(Color.WHITE); g.setFont(new Font("SansSerif", Font.BOLD, 23));
-        g.drawString("TETRIS", x, 45);
-        drawInfoBox(g, x, 64, 156, 74, "SCORE", String.valueOf(game.score));
-        drawInfoBox(g, x, 148, 74, 66, "LEVEL", String.valueOf(game.level));
-        drawInfoBox(g, x + 82, 148, 74, 66, "LINES", String.valueOf(game.lines));
-        drawPreview(g, x, 226, "NEXT", game.preview(), false);
-        drawPreview(g, x, 442, "HOLD", game.held == null ? List.of() : List.of(game.held), true);
-        g.setColor(new Color(188, 196, 213)); g.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        g.drawString("← → Move    ↓ Soft drop", x, 594);
-        g.drawString("↑ / X Rotate    Z Reverse", x, 612);
-        g.drawString("Space Drop    C Hold    R Restart", x, 630);
-    }
-
-    private void drawInfoBox(Graphics2D g, int x, int y, int w, int h, String label, String value) {
-        g.setColor(PANEL); g.fillRoundRect(x, y, w, h, 10, 10);
-        g.setColor(new Color(164, 174, 195)); g.setFont(new Font("SansSerif", Font.BOLD, 11)); g.drawString(label, x + 12, y + 19);
-        g.setColor(Color.WHITE); g.setFont(new Font("SansSerif", Font.BOLD, 20)); g.drawString(value, x + 12, y + h - 14);
-    }
-
-    private void drawPreview(Graphics2D g, int x, int y, String title, List<Tetromino> pieces, boolean hold) {
-        g.setColor(PANEL); g.fillRoundRect(x, y, 156, hold ? 120 : 204, 10, 10);
-        g.setColor(new Color(164, 174, 195)); g.setFont(new Font("SansSerif", Font.BOLD, 11)); g.drawString(title, x + 12, y + 20);
-        int slotH = hold ? 86 : 35;
-        for (int i = 0; i < pieces.size(); i++) {
-            Tetromino type = pieces.get(i);
-            int minX=4, maxX=0, minY=4, maxY=0;
-            for (int[] c : type.cells(0)) { minX=Math.min(minX,c[0]); maxX=Math.max(maxX,c[0]); minY=Math.min(minY,c[1]); maxY=Math.max(maxY,c[1]); }
-            int unit = hold ? 18 : 14;
-            int startX = x + (156 - (maxX-minX+1)*unit)/2;
-            int startY = y + 27 + i*slotH + (slotH - (maxY-minY+1)*unit)/2;
-            for (int[] c : type.cells(0)) drawMiniCell(g, startX + (c[0]-minX)*unit, startY + (c[1]-minY)*unit, unit, type.color);
+        List<Tetromino> next = game.preview();
+        for (int i = 0; i < next.size(); i++) {
+            drawPreviewPiece(g, next.get(i), 774, 120 + i * 68, 126, 50, 25);
         }
     }
 
-    private void drawMiniCell(Graphics2D g, int x, int y, int size, Color color) {
-        g.setColor(color.darker()); g.fillRoundRect(x, y, size - 2, size - 2, 4, 4);
-        g.setColor(color); g.fillRoundRect(x + 2, y + 2, size - 5, size - 5, 3, 3);
+    // 4개까지 NEXT 미노를 보여줌
+    private void drawPreviewPiece(Graphics2D g, Tetromino type, int x, int y, int width, int height, int unit) {
+        int minX = 4, maxX = 0, minY = 4, maxY = 0;
+        int[][] cells = type.cells(0);
+        for (int[] cell : cells) {
+            minX = Math.min(minX, cell[0]); maxX = Math.max(maxX, cell[0]);
+            minY = Math.min(minY, cell[1]); maxY = Math.max(maxY, cell[1]);
+        }
+        int pieceWidth = (maxX - minX + 1) * unit;
+        int pieceHeight = (maxY - minY + 1) * unit;
+        int startX = x + (width - pieceWidth) / 2 - minX * unit;
+        int startY = y + (height - pieceHeight) / 2 - minY * unit;
+        for (int[] cell : cells) {
+            drawMiniCell(g, startX + cell[0] * unit, startY + cell[1] * unit, unit, type);
+        }
     }
 
+    /// ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ 라벨 구현 부분 ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+
+    /// 왼쪽 위의 pps 스텟
+    private void drawPpsLabel(Graphics2D g) {
+        g.setColor(Color.WHITE);
+        g.setFont(interMedium.deriveFont(16f));
+        g.drawString("PPS", 470, 466);
+        g.setFont(interBlack.deriveFont(24f));
+        float pps = game.timer > 0f ? game.calPPS() : 0f;
+        String ppsText = String.format(Locale.ROOT, "%.2f/s", pps);
+        FontMetrics metrics = g.getFontMetrics();
+        g.drawString(ppsText, 500 - metrics.stringWidth(ppsText), 466 + 28);
+    }
+
+    /// 현재 진행 중 게임 라벨
+    private void drawGameNamePanel(Graphics2D g) {
+        int boardWidth = Board.WIDTH * CELL;
+        int boardBottom = BOARD_Y + (Board.HEIGHT - Board.HIDDEN_ROWS) * CELL;
+        int x = BOARD_X + (boardWidth - gameNamePanelImage.getWidth(this)) / 2;
+        int y = boardBottom + 20;
+        g.drawImage(gameNamePanelImage, x, y, this);
+
+        g.setColor(Color.WHITE);
+        g.setFont(sansKRBlack.deriveFont(15f));
+        String text = gameName;
+        FontMetrics metrics = g.getFontMetrics();
+        int textX = x + (gameNamePanelImage.getWidth(this) - metrics.stringWidth(text)) / 2;
+        int textY = y + (gameNamePanelImage.getHeight(this) - metrics.getHeight()) / 2 + metrics.getAscent() - 1;
+        g.drawString(text, textX, textY);
+    }
+
+    /// 삭제한 줄 개수
+    private void drawLineLable(Graphics2D g) {
+        g.setColor(Color.WHITE);
+        g.setFont(interMedium.deriveFont(16f));
+        g.drawString("LINES", 456, 539);
+        g.setFont(interBlack.deriveFont(24f));
+        String lineText = String.format(Locale.ROOT, "%d", game.lines);
+        FontMetrics metrics = g.getFontMetrics();
+        g.drawString(lineText, 500 - metrics.stringWidth(lineText), 539 + 28);
+    }
+
+    /// 현재 점수 띄우기
+    private void drawScoreLable(Graphics2D g) {
+        g.setColor(Color.WHITE);
+        g.setFont(interMedium.deriveFont(16f));
+        g.drawString("SCORE", 783, 466);
+        g.setFont(interBlack.deriveFont(24f));
+        g.drawString(String.format(Locale.US, "%,d",game.score), 783, 466 + 28);
+    }
+
+    /// 현재 플레이 시간 띄우기
+    private void drawTimeLable(Graphics2D g) {
+        g.setColor(Color.WHITE);
+        g.setFont(interMedium.deriveFont(16f));
+        g.drawString("TIME", 783, 539);
+
+        int totalSeconds = (int) game.timer;
+        int min = totalSeconds / 60;
+        int sec = totalSeconds % 60;
+        g.setFont(interBlack.deriveFont(24f));
+        String timeText = String.format(Locale.ROOT, "%02d:%02d", min, sec);
+        g.drawString(timeText, 783, 539 + 28);
+    }
+
+    /// ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ 라벨 구현 부분 ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+
+
+    // 게임 오버 시
     private void drawGameOver(Graphics2D g) {
         int x = BOARD_X - 7, y = BOARD_Y + 230;
         g.setColor(new Color(12, 16, 25, 220)); g.fillRoundRect(x + 15, y, 250, 100, 12, 12);
-        g.setColor(Color.WHITE); g.setFont(new Font("SansSerif", Font.BOLD, 24));
+        g.setColor(Color.WHITE); g.setFont(interBlack.deriveFont(24f));
         FontMetrics fm = g.getFontMetrics(); String text = "GAME OVER";
         g.drawString(text, x + (280 - fm.stringWidth(text))/2, y + 39);
-        g.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        g.setFont(interBlack.deriveFont(14f));
         text = "Press R to restart"; fm = g.getFontMetrics();
         g.drawString(text, x + (280 - fm.stringWidth(text))/2, y + 68);
+    }
+
+    /// 폰트를 가져옵니다. Black(가장 굵은)
+    private Font loadBlack() {
+        try {
+            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Inter_18pt-Black.ttf").toFile());
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+            return font;
+        } catch (IOException | FontFormatException e) {
+            throw new IllegalStateException("Inter_18pt-Black 폰트를 불러올 수 없습니다.", e);
+        }
+    }
+
+    /// 폰트를 가져옵니다. Medium(보통)
+    private Font loadMedium() {
+        try {
+            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Inter_18pt-Medium.ttf").toFile());
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+            return font;
+        } catch (IOException | FontFormatException e) {
+            throw new IllegalStateException("Inter_18pt-Medium 폰트를 불러올 수 없습니다.", e);
+        }
+    }
+
+    /// 폰트를 가져옵니다. 한글 전용
+    private Font loadKRBlack() {
+        try {
+            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/NotoSansKR-Black.ttf").toFile());
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+            return font;
+        } catch (IOException | FontFormatException e) {
+            throw new IllegalStateException("NotoSansKR-Black 폰트를 불러올 수 없습니다.", e);
+        }
     }
 }
