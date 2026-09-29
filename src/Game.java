@@ -212,7 +212,6 @@ final class Game {
         ScoreManager.Spin spinType = !spin ? ScoreManager.Spin.NONE
                 : (mini ? ScoreManager.Spin.MINI : ScoreManager.Spin.FULL);
         scoring.onLock(cleared, spinType, cleared > 0 && board.isEmpty());
-        if (board.hasHiddenBlocks()) { setGameOver(); return; }
         spawnNext();
     }
 
