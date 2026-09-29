@@ -71,6 +71,10 @@ final class GamePanel extends JPanel {
         bindHeld("RIGHT", () -> game.move(1, 0));
         bindHeld("DOWN", () -> { if (game.move(0, 1)) game.score += 1; });
         // bind("UP", "rotateCW", () -> game.rotate(1));
+        bind("LEFT", "left", () -> game.move(-1, 0));
+        bind("RIGHT", "right", () -> game.move(1, 0));
+        bind("DOWN", "softDrop", game::softDrop);
+        bind("UP", "rotateCW", () -> game.rotate(1));
         bind("X", "rotateCWX", () -> game.rotate(1));
         bind("Z", "rotateCCW", () -> game.rotate(-1));
         bind("SPACE", "hardDrop", game::hardDrop);
@@ -86,6 +90,7 @@ final class GamePanel extends JPanel {
             lastTick = now;
             game.tick(elapsed);
             tickHeldKeys(elapsed);
+            game.scoring.tick(elapsed);
             repaint();
         }).start();
     }
@@ -286,6 +291,58 @@ final class GamePanel extends JPanel {
         List<Tetromino> next = game.preview();
         for (int i = 0; i < next.size(); i++) {
             drawPreviewPiece(g, next.get(i), 774, 120 + i * 68, 126, 50, 25);
+        g.setColor(color.darker()); g.fillRoundRect(x + 1, y + 1, CELL - 2, CELL - 2, 6, 6);
+        g.setColor(color); g.fillRoundRect(x + 3, y + 3, CELL - 7, CELL - 7, 5, 5);
+        g.setColor(new Color(255,255,255,85)); g.drawLine(x + 5, y + 5, x + CELL - 7, y + 5);
+    }
+
+    private void drawSidebar(Graphics2D g) {
+        int x = 340;
+        g.setColor(Color.WHITE); g.setFont(new Font("SansSerif", Font.BOLD, 23));
+        g.drawString("TETRIS", x, 45);
+        drawInfoBox(g, x, 64, 156, 74, "SCORE", String.valueOf(game.scoring.score));
+        drawInfoBox(g, x, 148, 74, 66, "LEVEL", String.valueOf(game.scoring.level));
+        drawInfoBox(g, x + 82, 148, 74, 66, "LINES", String.valueOf(game.scoring.lines));
+        drawPreview(g, x, 226, "NEXT", game.preview(), false);
+        drawPreview(g, x, 442, "HOLD", game.held == null ? List.of() : List.of(game.held), true);
+        g.setColor(new Color(188, 196, 213)); g.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        g.drawString("← → Move    ↓ Soft drop", x, 594);
+        g.drawString("↑ / X Rotate    Z Reverse", x, 612);
+        g.drawString("Space Drop    C Hold    R Restart", x, 630);
+        drawScoreLabel(g, x, 680);
+    }
+
+    /** 마지막 점수 문구와 획득 점수를 서서히 사라지게 그린다 */
+    private void drawScoreLabel(Graphics2D g, int x, int y) {
+        float a = game.scoring.labelAlpha();
+        if (a <= 0f) return;
+        int alpha = (int) (255 * a);
+        g.setFont(new Font("SansSerif", Font.BOLD, 15));
+        g.setColor(new Color(255, 215, 90, alpha));
+        g.drawString(game.scoring.lastLabel, x, y);
+        g.setFont(new Font("SansSerif", Font.BOLD, 20));
+        g.setColor(new Color(255, 255, 255, alpha));
+        g.drawString("+" + game.scoring.lastGain, x, y + 26);
+    }
+
+    private void drawInfoBox(Graphics2D g, int x, int y, int w, int h, String label, String value) {
+        g.setColor(PANEL); g.fillRoundRect(x, y, w, h, 10, 10);
+        g.setColor(new Color(164, 174, 195)); g.setFont(new Font("SansSerif", Font.BOLD, 11)); g.drawString(label, x + 12, y + 19);
+        g.setColor(Color.WHITE); g.setFont(new Font("SansSerif", Font.BOLD, 20)); g.drawString(value, x + 12, y + h - 14);
+    }
+
+    private void drawPreview(Graphics2D g, int x, int y, String title, List<Tetromino> pieces, boolean hold) {
+        g.setColor(PANEL); g.fillRoundRect(x, y, 156, hold ? 120 : 204, 10, 10);
+        g.setColor(new Color(164, 174, 195)); g.setFont(new Font("SansSerif", Font.BOLD, 11)); g.drawString(title, x + 12, y + 20);
+        int slotH = hold ? 86 : 35;
+        for (int i = 0; i < pieces.size(); i++) {
+            Tetromino type = pieces.get(i);
+            int minX=4, maxX=0, minY=4, maxY=0;
+            for (int[] c : type.cells(0)) { minX=Math.min(minX,c[0]); maxX=Math.max(maxX,c[0]); minY=Math.min(minY,c[1]); maxY=Math.max(maxY,c[1]); }
+            int unit = hold ? 18 : 14;
+            int startX = x + (156 - (maxX-minX+1)*unit)/2;
+            int startY = y + 27 + i*slotH + (slotH - (maxY-minY+1)*unit)/2;
+            for (int[] c : type.cells(0)) drawMiniCell(g, startX + (c[0]-minX)*unit, startY + (c[1]-minY)*unit, unit, type.color);
         }
     }
 

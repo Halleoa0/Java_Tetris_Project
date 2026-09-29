@@ -25,6 +25,7 @@ final class Game {
     boolean startCal = false;
 
 
+    final ScoreManager scoring = new ScoreManager();
     boolean gameOver, holdUsed, lastMoveWasRotation;
 
     private int lastKickIndex;
@@ -42,7 +43,7 @@ final class Game {
     void restart() {
         dropCount = 0; startCal = false; timer = 0.0f;
         board.clear(); bag.clear(); queue.clear(); held = null;
-        score = lines = 0; level = 1; gameOver = false; holdUsed = false;
+        scoring.reset(); gameOver = false; holdUsed = false;
         lockElapsed = 0; lockResets = 0; gravityElapsed = 0;
         for (int i = 0; i < PREVIEW_COUNT + 1; i++) queue.addLast(drawPiece());
         spawnNext();
@@ -107,8 +108,12 @@ final class Game {
         if (gameOver) return;
         int distance = 0;
         while (board.canPlace(active, x, y + 1, rotation)) { y++; distance++; }
-        score += distance * 2;
+        scoring.onHardDrop(distance);
         lockPiece();
+    }
+
+    void softDrop() {
+        if (move(0, 1)) scoring.onSoftDrop(1);
     }
 
     /** 현재 블록을 Hold 칸과 바꾸며, 블록 하나당 한 번만 허용한다. */
@@ -133,6 +138,7 @@ final class Game {
         }
 
         int gravity = Math.max(70, 800 - (level - 1) * 60);
+        int gravity = Math.max(70, 800 - (scoring.level - 1) * 60);
         gravityElapsed += elapsedMs;
         while (gravityElapsed >= gravity) {
             gravityElapsed -= gravity;
@@ -170,6 +176,10 @@ final class Game {
         if (entirelyInHiddenRows) { gameOver = true; return; }
         startCal = true; // pps 계산 시작
         dropCount++; // 드랍 수 + 1
+        ScoreManager.Spin spinType = !spin ? ScoreManager.Spin.NONE
+                : (mini ? ScoreManager.Spin.MINI : ScoreManager.Spin.FULL);
+        scoring.onLock(cleared, spinType, cleared > 0 && board.isEmpty());
+        if (board.hasHiddenBlocks()) { gameOver = true; return; }
         spawnNext();
     }
 
