@@ -91,8 +91,10 @@ final class Game {
     /** direction이 양수면 시계 방향, 음수면 반시계 방향으로 SRS 회전을 시도한다. */
     boolean rotate(int direction) {
         int rotationDirection = direction > 0 ? 1 : -1;
-        for (GameListener listener : List.copyOf(listeners)) listener.onRotate(rotationDirection);
-        if (gameOver || active == Tetromino.Omino) return false;
+        if (gameOver || active == Tetromino.Omino) {
+            notifyRotate(rotationDirection);
+            return false;
+        }
         int from = rotation, to = (rotation + (direction > 0 ? 1 : 3)) & 3;
         // 회전 후 겹치면 SRS 킥 후보를 순서대로 적용해 옆이나 위로 이동을 시도한다.
         int[][] tests = kickTests(active, from, to);
@@ -100,10 +102,17 @@ final class Game {
             int nx = x + tests[i][0], ny = y + tests[i][1];
             if (board.canPlace(active, nx, ny, to)) {
                 x = nx; y = ny; rotation = to; lastMoveWasRotation = true; lastKickIndex = i;
-                afterPlayerMove(); return true;
+                afterPlayerMove();
+                notifyRotate(rotationDirection);
+                return true;
             }
         }
+        notifyRotate(rotationDirection);
         return false;
+    }
+
+    private void notifyRotate(int direction) {
+        for (GameListener listener : List.copyOf(listeners)) listener.onRotate(direction);
     }
 
 
