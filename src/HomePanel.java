@@ -20,8 +20,8 @@ final class HomePanel extends JPanel {
     private static final Color T_COLOR = new Color(170, 85, 205);
     private static final Color L_COLOR = new Color(240, 145, 55);
     private static final Font MENU_FONT = MenuFonts.loadPressStart2P();
-    private static final Font TITLE_FONT = MENU_FONT.deriveFont(32f);
-    private static final Font BUTTON_FONT = MENU_FONT.deriveFont(16f);
+    private static final Font TITLE_FONT = MENU_FONT.deriveFont(40f);
+    private static final Font BUTTON_FONT = MENU_FONT.deriveFont(24f);
 
     private final List<BlockButton> buttons;
     private BlockButton hoveredButton;
@@ -35,7 +35,7 @@ final class HomePanel extends JPanel {
                 new BlockButton("Play", new String[]{"##", "##"}, O_COLOR, 380, 270, screens::startGame),
                 new BlockButton("Tutorial", new String[]{"####"}, I_COLOR, 640, 285, screens::startTutorial),
                 new BlockButton("Shop", new String[]{"###", ".#."}, T_COLOR, 380, 475, screens::showShop),
-                new BlockButton("Settings", new String[]{"#.", "#.", "##"}, L_COLOR, 760, 425, screens::showSettings));
+                new BlockButton("Settings", new String[]{"..#", "###"}, L_COLOR, 760, 425, screens::showSettings));
 
         MouseAdapter mouse = new MouseAdapter() {
             @Override public void mouseMoved(MouseEvent event) { updateHover(event.getX(), event.getY()); }
@@ -93,7 +93,8 @@ final class HomePanel extends JPanel {
         Color face = pressed ? scale(button.color, 0.78f)
                 : hoveredButton == button ? brighten(button.color) : button.color;
         int widestRow = button.widestRow();
-        int widestCells = button.rows[widestRow].length();
+        int firstCell = button.firstCellInRow(widestRow);
+        int widestCells = button.occupiedCellsInRow(widestRow);
 
         g.setColor(face);
         for (int row = 0; row < button.rows.length; row++) {
@@ -123,9 +124,11 @@ final class HomePanel extends JPanel {
         g.setFont(BUTTON_FONT);
         FontMetrics metrics = g.getFontMetrics();
         String label = button.label;
-        int textX = button.x + (widestCells * CELL_SIZE - metrics.stringWidth(label)) / 2 + offset;
+        int textX = button.x + firstCell * CELL_SIZE
+                + (widestCells * CELL_SIZE - metrics.stringWidth(label)) / 2 + offset;
         int textY = button.y + widestRow * CELL_SIZE
-                + (CELL_SIZE - metrics.getHeight()) / 2 + metrics.getAscent() + offset;
+                + (CELL_SIZE - metrics.getHeight()) / 2 + metrics.getAscent() + offset
+                + ("Play".equals(label) ? 35 : 0);
         g.drawString(label, textX, textY);
     }
 
@@ -173,9 +176,21 @@ final class HomePanel extends JPanel {
         private int widestRow() {
             int widest = 0;
             for (int row = 1; row < rows.length; row++) {
-                if (rows[row].length() > rows[widest].length()) widest = row;
+                if (occupiedCellsInRow(row) > occupiedCellsInRow(widest)) widest = row;
             }
             return widest;
+        }
+
+        private int firstCellInRow(int row) {
+            return rows[row].indexOf('#');
+        }
+
+        private int occupiedCellsInRow(int row) {
+            int count = 0;
+            for (int col = 0; col < rows[row].length(); col++) {
+                if (rows[row].charAt(col) == '#') count++;
+            }
+            return count;
         }
     }
 }
