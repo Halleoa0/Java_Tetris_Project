@@ -12,7 +12,7 @@ final class ScoreManager {
     private static final int COMBO_BONUS = 50;
     private static final int LINES_PER_LEVEL = 10;
     /** 점수 문구를 화면에 보여주는 시간(ms). */
-    private static final int LABEL_SHOW_MS = 2000, LABEL_FADE_MS = 500;
+    private static final int LABEL_SHOW_MS = 1000, LABEL_FADE_MS = 500, LABEL_TRACKING_ANIMATION_MS = 1200;
     private int labelLeft;
 
     int score, lines, level = 1;
@@ -22,18 +22,37 @@ final class ScoreManager {
     boolean backToBack;
     /** 마지막으로 획득한 점수와 설명 (화면에 표시하고 싶을 때 사용) */
     int lastGain;
-    String lastLabel = "";
+    String cleardLineString = "";
+    String skillString = "";
+    String comboString = "";
+    String perfectString = "";
 
     void reset() {
         score = lines = 0; level = 1; combo = -1; backToBack = false;
-        lastGain = 0; lastLabel = ""; labelLeft = 0;
+        lastGain = 0; cleardLineString = ""; labelLeft = 0; skillString = ""; comboString = "";
+        perfectString = "";
     }
 
     /** 문구 표시 시간 줄이기. GamePanel 타이머에서 프레임 호출 */
     void tick(int elapsedMs) {
         if (labelLeft <=0) return;
         labelLeft -= elapsedMs;
-        if (labelLeft <= 0) {labelLeft = 0; lastLabel = ""; lastGain = 0;}
+        if (labelLeft <= 0) {
+            labelLeft = 0;
+            skillString = "";
+            cleardLineString = "";
+            comboString = "";
+            perfectString = "";
+            lastGain = 0;
+        }
+    }
+
+    
+    /// easeOut 형식의 자간 조절
+    float clearLineTracking() {
+        float progress = Math.max(0f, Math.min(1f, (LABEL_SHOW_MS - labelLeft) / (float) LABEL_TRACKING_ANIMATION_MS));
+        float easedProgress = 1f - (1f - progress) * (1f - progress);
+        return -0.30f + 0.55f * easedProgress;
     }
 
     /** 문구 투명도 0.0~1.0 (마지막 0.5초동안 서서히 사라짐) */
@@ -90,27 +109,41 @@ final class ScoreManager {
         }
 
         score += gain;
-        String text = label(cleared, spin, b2bApplied, perfect);
-        if (!text.isEmpty()) {            // 줄을 안 지운 블록은 이전 문구 유지
-            lastGain = gain; lastLabel = text; labelLeft = LABEL_SHOW_MS;
-        }
+
+        // B2B 문구는 현재 연속 상태가 아니라 이번 삭제에 보너스가 실제 적용됐을 때 표시한다.
+        label(cleared, spin, b2bApplied, perfect);
 
         // 줄 수 & 레벨 (점수 계산 후에 올려야 '지운 시점의 레벨'로 점수가 계산)
         if (cleared > 0) { lines += cleared; level = lines / LINES_PER_LEVEL + 1; }
         return gain;
     }
 
-    private String label(int cleared, Spin spin, boolean b2b, boolean perfect) {
-        if (cleared == 0 && spin == Spin.NONE) return "";
-        StringBuilder sb = new StringBuilder();
-        if (b2b) sb.append("B2B ");
-        if (spin == Spin.MINI) sb.append("Mini T-Spin ");
-        else if (spin == Spin.FULL) sb.append("T-Spin ");
-        sb.append(switch (cleared) {
-            case 1 -> "Single"; case 2 -> "Double"; case 3 -> "Triple"; case 4 -> "Tetris"; default -> "";
+    private void label(int cleared, Spin spin, boolean b2b, boolean perfect) {
+        if (cleared == 0 && spin == Spin.NONE) return;
+
+        StringBuilder skillSb = new StringBuilder();
+        StringBuilder clearSb = new StringBuilder();
+        StringBuilder comboSb = new StringBuilder();
+        StringBuilder perfectSb = new StringBuilder();
+        if (b2b) skillSb.append("B2B "); else skillSb.append("");
+        if (spin == Spin.MINI) skillSb.append("MINI T-SPIN ");
+        else if (spin == Spin.FULL) skillSb.append("T-SPIN ");
+
+        clearSb.append(switch (cleared) {
+            case 1 -> "SINGLE";
+            case 2 -> "DOUBLE";
+            case 3 -> "TRIPLE";
+            case 4 -> "TETRIS";
+            default -> "";
         });
-        if (combo > 0) sb.append("  ").append(combo).append(" Combo");
-        if (perfect) sb.append("  PERFECT CLEAR");
-        return sb.toString().trim();
+
+        if (combo > 0) comboSb.append(combo).append(" Combo");
+        if (perfect) perfectSb.append("ALL CLEAR");
+
+        skillString = skillSb.toString();
+        cleardLineString = clearSb.toString();
+        comboString = comboSb.toString();
+        perfectString = perfectSb.toString();
+        labelLeft = LABEL_SHOW_MS;
     }
 }
