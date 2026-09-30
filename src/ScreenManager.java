@@ -17,7 +17,7 @@ final class ScreenManager extends JPanel {
         setPreferredSize(new Dimension(1280, 720));
         homePanel = new HomePanel(this);
         add(homePanel, MENU);
-        //add(new SettingsPanel(this), SETTINGS);//
+        // 설정 화면은 최신 설정값을 반영하기 위해 showSettings() 호출 시 동적으로 생성합니다.
         add(new ShopPanel(this), SHOP);
         showMenu();
     }
@@ -25,6 +25,8 @@ final class ScreenManager extends JPanel {
     void showMenu() {
         removeActiveGame();
         cards.show(this, MENU);
+        // 메뉴 화면 BGM 재생 (Block Groove)
+        AudioManager.get().playMenuBgm();
     }
 
     void startGame() {
@@ -34,6 +36,8 @@ final class ScreenManager extends JPanel {
         activeGamePanel = panel;
         add(panel, "game");
         cards.show(this, "game");
+        // 인게임 BGM 재생 (A/B 중 무작위 선택)
+        AudioManager.get().startGameBgm();
         revalidate();
         repaint();
         panel.requestFocusInWindow();
@@ -50,6 +54,8 @@ final class ScreenManager extends JPanel {
         activeGamePanel = panel;
         add(panel, "tutorial");
         cards.show(this, "tutorial");
+        // 튜토리얼 BGM 재생 (차분한 Grid Pulse)
+        AudioManager.get().playTutorialBgm();
         revalidate();
         repaint();
         panel.requestFocusInWindow();
@@ -63,19 +69,19 @@ final class ScreenManager extends JPanel {
         settingsPanel = new SettingsPanel(this);
         add(settingsPanel, SETTINGS);
         cards.show(this, SETTINGS);
+        // 설정 화면에서도 메뉴 BGM 유지
+        AudioManager.get().playMenuBgm();
         revalidate();
         repaint();
     }
 
 
-    /*void showSettings() {
-        removeActiveGame();
-        cards.show(this, SETTINGS);
-    }*/
 
     void showShop() {
         removeActiveGame();
         cards.show(this, SHOP);
+        // 상점 화면에서도 메뉴 BGM 유지
+        AudioManager.get().playMenuBgm();
     }
 
     private void removeActiveGame() {

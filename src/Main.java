@@ -11,6 +11,17 @@ public class Main {
             frame.setContentPane(new ScreenManager());
             frame.pack();
             frame.setLocationRelativeTo(null);
+
+            // 설정의 '창 비활성화 시 소리 끄기' 옵션 반영을 위해 창 포커스 상태 전달
+            frame.addWindowFocusListener(new java.awt.event.WindowAdapter() {
+                @Override public void windowGainedFocus(java.awt.event.WindowEvent e) {
+                    AudioManager.get().setWindowActive(true);
+                }
+                @Override public void windowLostFocus(java.awt.event.WindowEvent e) {
+                    AudioManager.get().setWindowActive(false);
+                }
+            });
+
             frame.setVisible(true);
         });
     }

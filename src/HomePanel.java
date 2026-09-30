@@ -51,7 +51,10 @@ final class HomePanel extends JPanel {
             }
             @Override public void mouseReleased(MouseEvent event) {
                 BlockButton released = buttonAt(event.getX(), event.getY());
-                if (pressedButton != null && pressedButton == released) pressedButton.action.run();
+                if (pressedButton != null && pressedButton == released) {
+                    AudioManager.get().playMenuSelect(); // 메인 메뉴 버튼 클릭 효과음
+                    pressedButton.action.run();
+                }
                 pressedButton = null;
                 updateHover(event.getX(), event.getY());
             }

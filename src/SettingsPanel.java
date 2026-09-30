@@ -91,7 +91,11 @@ final class SettingsPanel extends JPanel {
                     JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) { s.resetAllExceptKeys(); rebuild(); }
         });
         JButton back = button("뒤로가기");
-        back.addActionListener(e -> { cancelKeyWait(); screens.showMenu(); });
+        back.addActionListener(e -> {
+            AudioManager.get().playMenuSelect();
+            cancelKeyWait();
+            screens.showMenu();
+        });
         bottom.add(resetAll);
         bottom.add(back);
         add(bottom, BorderLayout.SOUTH);
@@ -257,7 +261,7 @@ final class SettingsPanel extends JPanel {
         refreshing = false;
     }
 
-    // UI 헬퍼//
+    // 화면 구성 도우미 함수 (UI 컴포넌트 생성) //
 
     private JPanel card(String titleText) {
         JPanel p = new JPanel();

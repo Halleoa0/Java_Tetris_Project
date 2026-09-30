@@ -79,6 +79,9 @@ final class GamePanel extends JPanel {
     private Runnable pauseRestartCallback;
 
 
+    // 하드 드롭 후 바로 바닥에 닿았을 때 일반 락 효과음이 중복으로 울리는 것을 방지하는 플래그
+    private boolean justHardDropped;
+
     private final JButton gameOverRestartButton = new JButton("다시 시작");
     private final JButton gameOverMenuButton = new JButton("메인화면");
 
@@ -112,18 +115,63 @@ final class GamePanel extends JPanel {
             @Override public void actionPerformed(ActionEvent e) { ignoreSpaceUntilRelease = false; }
         });
         bind(Settings.Action.HOLD,    "hold",    game::hold);
-        bind(Settings.Action.RESTART, "restart", game::restart);
+        bind(Settings.Action.RESTART, "restart", () -> {
+            game.restart();
+            AudioManager.get().startGameBgm();
+        });
         bindPauseNavigation("UP", -1);
         bindPauseNavigation("DOWN", 1);
 
         bindUnfiltered("ESCAPE", "pauseToggle", () -> { if (!paused) setPaused(true); });
-        bindUnfiltered("ENTER", "pauseResume", () -> { if (paused) setPaused(false); });
+        bindUnfiltered("ENTER", "pauseConfirm", () -> { if (paused) confirmPauseSelection(); });
         bindUnfiltered("M", "menu", () -> { if (paused || game.gameOver) menuCallback.run(); });
         configureOverlayButtons();
+
+        // 게임 조작 및 이벤트에 맞춰 효과음 재생 리스너 연결
+        game.addListener(new GameListener() {
+            @Override public void onMove(int dx, int dy) {
+                AudioManager.get().playMove();
+            }
+            @Override public void onRotate(int direction) {
+                AudioManager.get().playRotate();
+            }
+            @Override public void onSoftDrop() {
+                AudioManager.get().playSoftDrop();
+            }
+            @Override public void onHardDrop() {
+                justHardDropped = true;
+                AudioManager.get().playHardDrop();
+            }
+            @Override public void onHold() {
+                AudioManager.get().playHold();
+            }
+            @Override public void onLock(Tetromino type) {
+                // 하드 드롭 안착 시에는 이미 소리가 났으므로 일반 락 효과음 생략
+                if (justHardDropped) {
+                    justHardDropped = false;
+                } else {
+                    AudioManager.get().playLock();
+                }
+            }
+            @Override public void onLinesCleared(int lines) {
+                AudioManager.get().playLineClear(lines);
+            }
+            @Override public void onLevelUp(int newLevel) {
+                AudioManager.get().playLevelUpDelayed();
+            }
+            @Override public void onGameOver() {
+                AudioManager.get().playGameOver();
+            }
+        });
+
         addFocusListener(new FocusAdapter() {
             @Override public void focusLost(FocusEvent e) {
                 clearHeldKeys();
                 ignoreSpaceUntilRelease = false;
+                AudioManager.get().setWindowActive(false);
+            }
+            @Override public void focusGained(FocusEvent e) {
+                AudioManager.get().setWindowActive(true);
             }
         });
 
@@ -158,10 +206,12 @@ final class GamePanel extends JPanel {
         if (paused) {
             pauseSelection = 0;
             timer.stop();
+            AudioManager.get().pauseBgm(); // 일시정지 시 BGM 일시정지 (재생 위치 보존)
         }
         else {
             lastTick = System.nanoTime();
             timer.restart();
+            AudioManager.get().resumeBgm(); // 재개 시 멈춘 위치부터 BGM 이어 재생
         }
         updateOverlayButtons();
         repaint();
@@ -171,13 +221,18 @@ final class GamePanel extends JPanel {
         gameOverRestartButton.setBounds(548, 414, 108, 30);
         gameOverMenuButton.setBounds(662, 414, 96, 30);
         gameOverRestartButton.addActionListener(event -> {
+            AudioManager.get().playMenuSelect();
             game.restart();
+            AudioManager.get().startGameBgm(); // 재시작 시 인게임 BGM 무작위 재생
             updateOverlayButtons();
             repaint();
             requestFocusInWindow();
         });
 
-        gameOverMenuButton.addActionListener(event -> menuCallback.run());
+        gameOverMenuButton.addActionListener(event -> {
+            AudioManager.get().playMenuSelect();
+            menuCallback.run();
+        });
         add(gameOverRestartButton);
         add(gameOverMenuButton);
         updateOverlayButtons();
@@ -195,23 +250,9 @@ final class GamePanel extends JPanel {
         clearHeldKeys();
     }
 
-    /// 키보드 입력을 bind 하기
-    /** private void bind(String key, String name, Runnable action) {
-     // Swing의 Key Binding으로 키 입력을 게임 동작에 연결한다.
-     String bindingName = name + "_" + key;
-     getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed " + key), bindingName);
-     getActionMap().put(bindingName, new AbstractAction() {
-    @Override public void actionPerformed(ActionEvent e) {
-    if (key.equals("SPACE") && ignoreSpaceUntilRelease) return;
-    if (paused) handlePauseInput(key);
-    else if (inputFilter == null || inputFilter.allow(name)) action.run();
-    repaint();
-    }
-    });
-     } */
-
+    /// 환경설정에 지정된 키 입력을 게임 동작에 연결하는 함수
     private void bind(Settings.Action action, String name, Runnable run) {
-        //KeyStroke ks = Settings.get().pressed(action);
+        // 동작별 키 설정값(KeyStroke)을 액션 이름과 묶어 등록합니다.
         String bindingName = name + "_" + action.name();
         getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().pressed(action), bindingName);
         getActionMap().put(bindingName, new AbstractAction() {
@@ -494,6 +535,7 @@ final class GamePanel extends JPanel {
             @Override public void actionPerformed(ActionEvent e) {
                 if (paused) {
                     pauseSelection = Math.floorMod(pauseSelection + direction, PAUSE_OPTIONS.length);
+                    AudioManager.get().playMenuSelect(); // 일시정지 옵션 이동음
                     repaint();
                 } else if (gameplayAction != null) {
                     gameplayAction.actionPerformed(e);
@@ -502,21 +544,27 @@ final class GamePanel extends JPanel {
         });
     }
 
-    private void handlePauseInput(Settings.Action a) {
-        switch (a) {
-            case HARD_DROP -> {
-                ignoreSpaceUntilRelease = true;
-                switch (pauseSelection) {
-                    case 0 -> setPaused(false);
-                    case 1 -> {
-                        if (pauseRestartCallback != null) pauseRestartCallback.run();
-                        else game.restart();
-                        setPaused(false);
-                    }
-                    case 2 -> menuCallback.run();
+    /// 일시정지 메뉴에서 선택된 항목(RESUME, RESTART, QUIT)을 실행한다.
+    private void confirmPauseSelection() {
+        AudioManager.get().playMenuSelect(); // 일시정지 옵션 결정음
+        switch (pauseSelection) {
+            case 0 -> setPaused(false); // 계속하기 (RESUME)
+            case 1 -> { // 다시 시작 (RESTART)
+                if (pauseRestartCallback != null) pauseRestartCallback.run();
+                else {
+                    game.restart();
+                    AudioManager.get().startGameBgm();
                 }
+                setPaused(false);
             }
-            default -> { }
+            case 2 -> menuCallback.run(); // 메인화면/종료 (QUIT)
+        }
+    }
+
+    private void handlePauseInput(Settings.Action a) {
+        if (a == Settings.Action.HARD_DROP) {
+            ignoreSpaceUntilRelease = true;
+            confirmPauseSelection();
         }
     }
 

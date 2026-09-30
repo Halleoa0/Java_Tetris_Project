@@ -111,7 +111,6 @@ final class Game {
     boolean rotate(int direction) {
         int rotationDirection = direction > 0 ? 1 : -1;
         if (gameOver || active == Tetromino.Omino) {
-            notifyRotate(rotationDirection);
             return false;
         }
         int from = rotation, to = (rotation + (direction > 0 ? 1 : 3)) & 3;
@@ -122,11 +121,10 @@ final class Game {
             if (board.canPlace(active, nx, ny, to)) {
                 x = nx; y = ny; rotation = to; lastMoveWasRotation = true; lastKickIndex = i;
                 afterPlayerMove();
-                notifyRotate(rotationDirection);
+                notifyRotate(rotationDirection); // 회전 성공 시에만 리스너에 알립니다.
                 return true;
             }
         }
-        notifyRotate(rotationDirection);
         return false;
     }
 
@@ -147,11 +145,16 @@ final class Game {
         int distance = 0;
         while (board.canPlace(active, x, y + 1, rotation)) { y++; distance++; }
         scoring.onHardDrop(distance);
+        for (GameListener listener : List.copyOf(listeners)) listener.onHardDrop();
         lockPiece();
     }
 
+    /** 소프트 드롭: 아래로 1칸 내린다. */
     void softDrop() {
-        if (move(0, 1)) scoring.onSoftDrop(1);
+        if (move(0, 1)) {
+            scoring.onSoftDrop(1);
+            for (GameListener listener : List.copyOf(listeners)) listener.onSoftDrop();
+        }
     }
 
     /** 현재 블록을 Hold 칸과 바꾸며, 블록 하나당 한 번만 허용한다. */
@@ -165,6 +168,7 @@ final class Game {
             if (!board.canPlace(active, x, y, rotation)) setGameOver();
         }
         holdUsed = true;
+        for (GameListener listener : List.copyOf(listeners)) listener.onHold();
     }
 
     /** 타이머가 전달한 경과 시간만큼 중력 낙하와 락 지연을 진행한다. */
@@ -207,12 +211,18 @@ final class Game {
         int cleared = board.clearLines();
         if (cleared > 0)
             for (GameListener listener : List.copyOf(listeners)) listener.onLinesCleared(cleared);
-        if (entirelyInHiddenRows) { gameOver = true; return; }
+        if (entirelyInHiddenRows) { setGameOver(); return; }
         startCal = true; // pps 계산 시작
         dropCount++; // 드랍 수 + 1
         ScoreManager.Spin spinType = !spin ? ScoreManager.Spin.NONE
                 : (mini ? ScoreManager.Spin.MINI : ScoreManager.Spin.FULL);
+        
+        int prevLevel = scoring.level;
         scoring.onLock(cleared, spinType, cleared > 0 && board.isEmpty());
+        // 줄을 지워 레벨이 올랐다면 레벨업 이벤트를 알립니다.
+        if (scoring.level > prevLevel) {
+            for (GameListener listener : List.copyOf(listeners)) listener.onLevelUp(scoring.level);
+        }
         spawnNext();
     }
 

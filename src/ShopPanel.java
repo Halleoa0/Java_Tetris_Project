@@ -9,7 +9,10 @@ final class ShopPanel extends JPanel {
         setLayout(new FlowLayout());
         add(new JLabel("준비 중"));
         JButton back = new JButton("뒤로가기");
-        back.addActionListener(event -> screens.showMenu());
+        back.addActionListener(event -> {
+            AudioManager.get().playMenuSelect();
+            screens.showMenu();
+        });
         add(back);
     }
 }
