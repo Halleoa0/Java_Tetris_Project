@@ -17,7 +17,7 @@ final class ScreenManager extends JPanel {
         setPreferredSize(new Dimension(1280, 720));
         homePanel = new HomePanel(this);
         add(homePanel, MENU);
-        add(new SettingsPanel(this), SETTINGS);
+        //add(new SettingsPanel(this), SETTINGS);//
         add(new ShopPanel(this), SHOP);
         showMenu();
     }
@@ -55,10 +55,23 @@ final class ScreenManager extends JPanel {
         panel.requestFocusInWindow();
     }
 
+    private SettingsPanel settingsPanel;
+
     void showSettings() {
         removeActiveGame();
+        if (settingsPanel != null) remove(settingsPanel);
+        settingsPanel = new SettingsPanel(this);
+        add(settingsPanel, SETTINGS);
         cards.show(this, SETTINGS);
+        revalidate();
+        repaint();
     }
+
+
+    /*void showSettings() {
+        removeActiveGame();
+        cards.show(this, SETTINGS);
+    }*/
 
     void showShop() {
         removeActiveGame();

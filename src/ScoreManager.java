@@ -114,7 +114,7 @@ final class ScoreManager {
         label(cleared, spin, b2bApplied, perfect);
 
         // 줄 수 & 레벨 (점수 계산 후에 올려야 '지운 시점의 레벨'로 점수가 계산)
-        if (cleared > 0) { lines += cleared; level = lines / LINES_PER_LEVEL + 1; }
+        if (cleared > 0) { lines += cleared; level = Math.max(level, lines / LINES_PER_LEVEL + 1); }
         return gain;
     }
 

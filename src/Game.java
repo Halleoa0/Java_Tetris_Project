@@ -66,7 +66,8 @@ final class Game {
     void restart() {
         dropCount = 0; startCal = false; timer = 0.0f;
         board.clear(); bag.clear(); queue.clear(); held = null;
-        scoring.reset(); gameOver = false; holdUsed = false;
+        scoring.reset();
+        scoring.level = Settings.get().startLevel(); gameOver = false; holdUsed = false;
         lockElapsed = 0; lockResets = 0; gravityElapsed = 0;
         for (int i = 0; i < PREVIEW_COUNT + 1; i++) queue.addLast(nextPiece());
         spawnNext();
@@ -173,7 +174,7 @@ final class Game {
         if (startCal) {
             timer += elapsedMs / 1000.0f;
         }
-        int gravity = Math.max(70, 800 - (scoring.level - 1) * 60);
+        int gravity = Settings.get().gravityMs(scoring.level);
         gravityElapsed += elapsedMs;
         while (gravityElapsed >= gravity) {
             gravityElapsed -= gravity;
