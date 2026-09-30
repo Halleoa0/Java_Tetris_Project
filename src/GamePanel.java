@@ -48,10 +48,13 @@ final class GamePanel extends JPanel {
     private final Image matrixImage;
     private final Image guideImage;
     private final Image gameNamePanelImage;
+    private final LabelUI labelUI;
     private final BufferedImage[] minoTiles;
     public final Font interBlack;
     public final Font interMedium;
     public final Font sansKRBlack;
+    public final Font orbitBlack;
+    public final Font orbitBold;
     private final Set<String> heldKeys = new HashSet<>();
     private final Set<String> repeatingKeys = new HashSet<>();
     private final Map<String, Integer> heldKeyElapsed = new HashMap<>();
@@ -71,9 +74,12 @@ final class GamePanel extends JPanel {
         interBlack = loadBlack();
         interMedium = loadMedium();
         sansKRBlack = loadKRBlack();
+        orbitBlack = loadOrbitBlack();
+        orbitBold = loadOrbitBold();
         matrixImage = loadImage("Images/Board/Matrix.png");
         guideImage = loadImage("Images/Board/Guide.png");
         gameNamePanelImage = loadImage("Images/Board/GameNamePanel.png");
+        labelUI = new LabelUI(game, interBlack, interMedium, sansKRBlack, orbitBlack, orbitBold, gameNamePanelImage, gameName);
         minoTiles = loadMinoTiles("Images/Mino.png");
         bindHeld("LEFT", () -> game.move(-1, 0));
         bindHeld("RIGHT", () -> game.move(1, 0));
@@ -186,11 +192,12 @@ final class GamePanel extends JPanel {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         drawMatrixPreviews(g);
         drawBoard(g);
-        drawGameNamePanel(g);
-        drawPpsLabel(g);
-        drawLineLable(g);
-        drawScoreLable(g);
-        drawTimeLable(g);
+        labelUI.drawGameNamePanel(g);
+        labelUI.drawPpsLabel(g);
+        labelUI.drawLineLabel(g);
+        labelUI.drawScoreValueLabel(g);
+        labelUI.drawTimeLabel(g);
+        labelUI.drawScoreLabel(g);
         if (game.gameOver) drawGameOver(g);
         if (overlayRenderer != null) overlayRenderer.accept(g);
         g.dispose();
@@ -307,40 +314,6 @@ final class GamePanel extends JPanel {
         }
     }
 
-    private void drawSidebar(Graphics2D g) {
-        int x = 340;
-        g.setColor(Color.WHITE); g.setFont(new Font("SansSerif", Font.BOLD, 23));
-        g.drawString("TETRIS", x, 45);
-        drawInfoBox(g, x, 64, 156, 74, "SCORE", String.valueOf(game.scoring.score));
-        drawInfoBox(g, x, 148, 74, 66, "LEVEL", String.valueOf(game.scoring.level));
-        drawInfoBox(g, x + 82, 148, 74, 66, "LINES", String.valueOf(game.scoring.lines));
-        drawPreview(g, x, 226, "NEXT", game.preview(), false);
-        drawPreview(g, x, 442, "HOLD", game.held == null ? List.of() : List.of(game.held), true);
-        g.setColor(new Color(188, 196, 213)); g.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        g.drawString("← → Move    ↓ Soft drop", x, 594);
-        g.drawString("↑ / X Rotate    Z Reverse", x, 612);
-        g.drawString("Space Drop    C Hold    R Restart", x, 630);
-        drawScoreLabel(g, x, 680);
-    }
-
-    /** 마지막 점수 문구와 획득 점수를 서서히 사라지게 그린다 */
-    private void drawScoreLabel(Graphics2D g, int x, int y) {
-        float a = game.scoring.labelAlpha();
-        if (a <= 0f) return;
-        int alpha = (int) (255 * a);
-        g.setFont(new Font("SansSerif", Font.BOLD, 15));
-        g.setColor(new Color(255, 215, 90, alpha));
-        g.drawString(game.scoring.lastLabel, x, y);
-        g.setFont(new Font("SansSerif", Font.BOLD, 20));
-        g.setColor(new Color(255, 255, 255, alpha));
-        g.drawString("+" + game.scoring.lastGain, x, y + 26);
-    }
-
-    private void drawInfoBox(Graphics2D g, int x, int y, int w, int h, String label, String value) {
-        g.setColor(PANEL); g.fillRoundRect(x, y, w, h, 10, 10);
-        g.setColor(new Color(164, 174, 195)); g.setFont(new Font("SansSerif", Font.BOLD, 11)); g.drawString(label, x + 12, y + 19);
-        g.setColor(Color.WHITE); g.setFont(new Font("SansSerif", Font.BOLD, 20)); g.drawString(value, x + 12, y + h - 14);
-    }
 
     private void drawPreview(Graphics2D g, int x, int y, String title, List<Tetromino> pieces, boolean hold) {
         g.setColor(PANEL); g.fillRoundRect(x, y, 156, hold ? 120 : 204, 10, 10);
@@ -373,74 +346,6 @@ final class GamePanel extends JPanel {
             drawMiniCell(g, startX + cell[0] * unit, startY + cell[1] * unit, unit, type);
         }
     }
-
-    /// ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ 라벨 구현 부분 ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-
-    /// 왼쪽 위의 pps 스텟
-    private void drawPpsLabel(Graphics2D g) {
-        g.setColor(Color.WHITE);
-        g.setFont(interMedium.deriveFont(16f));
-        g.drawString("PPS", 470, 466);
-        g.setFont(interBlack.deriveFont(24f));
-        float pps = game.timer > 0f ? game.calPPS() : 0f;
-        String ppsText = String.format(Locale.ROOT, "%.2f/s", pps);
-        FontMetrics metrics = g.getFontMetrics();
-        g.drawString(ppsText, 500 - metrics.stringWidth(ppsText), 466 + 28);
-    }
-
-    /// 현재 진행 중 게임 라벨
-    private void drawGameNamePanel(Graphics2D g) {
-        int boardWidth = Board.WIDTH * CELL;
-        int boardBottom = BOARD_Y + (Board.HEIGHT - Board.HIDDEN_ROWS) * CELL;
-        int x = BOARD_X + (boardWidth - gameNamePanelImage.getWidth(this)) / 2;
-        int y = boardBottom + 20;
-        g.drawImage(gameNamePanelImage, x, y, this);
-
-        g.setColor(Color.WHITE);
-        g.setFont(sansKRBlack.deriveFont(15f));
-        String text = gameName;
-        FontMetrics metrics = g.getFontMetrics();
-        int textX = x + (gameNamePanelImage.getWidth(this) - metrics.stringWidth(text)) / 2;
-        int textY = y + (gameNamePanelImage.getHeight(this) - metrics.getHeight()) / 2 + metrics.getAscent() - 1;
-        g.drawString(text, textX, textY);
-    }
-
-    /// 삭제한 줄 개수
-    private void drawLineLable(Graphics2D g) {
-        g.setColor(Color.WHITE);
-        g.setFont(interMedium.deriveFont(16f));
-        g.drawString("LINES", 456, 539);
-        g.setFont(interBlack.deriveFont(24f));
-        String lineText = String.format(Locale.ROOT, "%d", game.scoring.lines);
-        FontMetrics metrics = g.getFontMetrics();
-        g.drawString(lineText, 500 - metrics.stringWidth(lineText), 539 + 28);
-    }
-
-    /// 현재 점수 띄우기
-    private void drawScoreLable(Graphics2D g) {
-        g.setColor(Color.WHITE);
-        g.setFont(interMedium.deriveFont(16f));
-        g.drawString("SCORE", 783, 466);
-        g.setFont(interBlack.deriveFont(24f));
-        g.drawString(String.format(Locale.US, "%,d", game.scoring.score), 783, 466 + 28);
-    }
-
-    /// 현재 플레이 시간 띄우기
-    private void drawTimeLable(Graphics2D g) {
-        g.setColor(Color.WHITE);
-        g.setFont(interMedium.deriveFont(16f));
-        g.drawString("TIME", 783, 539);
-
-        int totalSeconds = (int) game.timer;
-        int min = totalSeconds / 60;
-        int sec = totalSeconds % 60;
-        g.setFont(interBlack.deriveFont(24f));
-        String timeText = String.format(Locale.ROOT, "%02d:%02d", min, sec);
-        g.drawString(timeText, 783, 539 + 28);
-    }
-
-    /// ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ 라벨 구현 부분 ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
-
 
     // 게임 오버 시
     private void drawGameOver(Graphics2D g) {
@@ -484,6 +389,26 @@ final class GamePanel extends JPanel {
             return font;
         } catch (IOException | FontFormatException e) {
             throw new IllegalStateException("NotoSansKR-Black 폰트를 불러올 수 없습니다.", e);
+        }
+    }
+
+    private Font loadOrbitBlack() {
+        try {
+            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Orbitron-Black.ttf").toFile());
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+            return font;
+        } catch (IOException | FontFormatException e) {
+            throw new IllegalStateException("Orbitron-Black 폰트를 불러올 수 없습니다.", e);
+        }
+    }
+
+    private Font loadOrbitBold() {
+        try {
+            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Orbitron-Bold.ttf").toFile());
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+            return font;
+        } catch (IOException | FontFormatException e) {
+            throw new IllegalStateException("Orbitron-Bold 폰트를 불러올 수 없습니다.", e);
         }
     }
 }
