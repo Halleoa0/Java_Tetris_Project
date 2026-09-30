@@ -16,6 +16,7 @@ final class TutorialController implements GameListener {
     TutorialController(Game game, GamePanel panel) {
         this.game = game;
         this.panel = panel;
+        panel.setPauseRestartCallback(this::start);
         overlay = new TutorialOverlayRenderer(panel.sansKRBlack);
         panel.setOverlayRenderer(overlay);
     }
