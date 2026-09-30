@@ -3,7 +3,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.awt.FlowLayout;
 
-/** 상점 화면의 임시 자리표시자. */
+/** 임시 상점 화면 */
 final class ShopPanel extends JPanel {
     ShopPanel(ScreenManager screens) {
         setLayout(new FlowLayout());

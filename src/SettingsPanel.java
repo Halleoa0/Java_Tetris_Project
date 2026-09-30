@@ -3,7 +3,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.awt.FlowLayout;
 
-/** 설정 화면의 임시 자리표시자. */
+/** 임시 설정 화면 */
 final class SettingsPanel extends JPanel {
     SettingsPanel(ScreenManager screens) {
         setLayout(new FlowLayout());

@@ -1,4 +1,5 @@
 import javax.swing.AbstractAction;
+import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
@@ -61,6 +62,10 @@ final class GamePanel extends JPanel {
     private final Timer timer;
     private boolean paused;
     private Runnable menuCallback = () -> { };
+    private final JButton gameOverRestartButton = new JButton("다시 시작");
+    private final JButton gameOverMenuButton = new JButton("메인화면");
+    private final JButton resumeButton = new JButton("계속하기");
+    private final JButton pauseMenuButton = new JButton("메인화면");
 
     // 현재 진행 중 모드
     private String gameName = "테스트 플레이";
@@ -70,6 +75,7 @@ final class GamePanel extends JPanel {
 
     GamePanel(Game game) {
         this.game = game;
+        setLayout(null);
         setPreferredSize(new Dimension(1280, 720));
         setBackground(BACKGROUND);
         setFocusable(true);
@@ -93,9 +99,10 @@ final class GamePanel extends JPanel {
         bind("SPACE", "hardDrop", game::hardDrop);
         bind("C", "hold", game::hold);
         bind("R", "restart", game::restart);
-        bindUnfiltered("ESCAPE", "pauseToggle", () -> setPaused(!paused));
+        bindUnfiltered("ESCAPE", "pauseToggle", () -> { if (!paused) setPaused(true); });
         bindUnfiltered("ENTER", "pauseResume", () -> { if (paused) setPaused(false); });
         bindUnfiltered("M", "menu", () -> { if (paused || game.gameOver) menuCallback.run(); });
+        configureOverlayButtons();
         addFocusListener(new FocusAdapter() {
             @Override public void focusLost(FocusEvent e) { clearHeldKeys(); }
         });
@@ -107,6 +114,7 @@ final class GamePanel extends JPanel {
             game.tick(elapsed);
             tickHeldKeys(elapsed);
             game.scoring.tick(elapsed);
+            updateOverlayButtons();
             repaint();
         });
         timer.start();
@@ -129,7 +137,36 @@ final class GamePanel extends JPanel {
             lastTick = System.nanoTime();
             timer.restart();
         }
+        updateOverlayButtons();
         repaint();
+    }
+
+    private void configureOverlayButtons() {
+        gameOverRestartButton.setBounds(548, 414, 108, 30);
+        gameOverMenuButton.setBounds(662, 414, 96, 30);
+        resumeButton.setBounds(500, 365, 125, 34);
+        pauseMenuButton.setBounds(640, 365, 125, 34);
+        gameOverRestartButton.addActionListener(event -> {
+            game.restart();
+            updateOverlayButtons();
+            repaint();
+            requestFocusInWindow();
+        });
+        gameOverMenuButton.addActionListener(event -> menuCallback.run());
+        resumeButton.addActionListener(event -> setPaused(false));
+        pauseMenuButton.addActionListener(event -> menuCallback.run());
+        add(gameOverRestartButton);
+        add(gameOverMenuButton);
+        add(resumeButton);
+        add(pauseMenuButton);
+        updateOverlayButtons();
+    }
+
+    private void updateOverlayButtons() {
+        gameOverRestartButton.setVisible(game.gameOver && !paused);
+        gameOverMenuButton.setVisible(game.gameOver && !paused);
+        resumeButton.setVisible(paused);
+        pauseMenuButton.setVisible(paused);
     }
 
 
@@ -367,27 +404,21 @@ final class GamePanel extends JPanel {
     // 게임 오버 시
     private void drawGameOver(Graphics2D g) {
         int x = BOARD_X - 7, y = BOARD_Y + 230;
-        g.setColor(new Color(12, 16, 25, 220)); g.fillRoundRect(x + 15, y, 250, 100, 12, 12);
+        g.setColor(new Color(12, 16, 25, 220)); g.fillRoundRect(x + 15, y, 250, 112, 12, 12);
         g.setColor(Color.WHITE); g.setFont(interBlack.deriveFont(24f));
         FontMetrics fm = g.getFontMetrics(); String text = "GAME OVER";
         g.drawString(text, x + (280 - fm.stringWidth(text))/2, y + 39);
         g.setFont(interBlack.deriveFont(14f));
-        text = "R: restart    M: menu"; fm = g.getFontMetrics();
-        g.drawString(text, x + (280 - fm.stringWidth(text))/2, y + 68);
     }
 
     private void drawPauseOverlay(Graphics2D g) {
         g.setColor(new Color(0, 0, 0, 170));
         g.fillRect(0, 0, getWidth(), getHeight());
         g.setColor(Color.WHITE);
-        g.setFont(interBlack.deriveFont(30f));
+        g.setFont(sansKRBlack.deriveFont(30f));
         String title = "일시정지";
         FontMetrics metrics = g.getFontMetrics();
         g.drawString(title, (getWidth() - metrics.stringWidth(title)) / 2, 300);
-        g.setFont(interMedium.deriveFont(18f));
-        String choices = "Enter 또는 Esc: 계속하기    M: 메뉴로";
-        metrics = g.getFontMetrics();
-        g.drawString(choices, (getWidth() - metrics.stringWidth(choices)) / 2, 345);
     }
 
     private void bindUnfiltered(String key, String name, Runnable action) {

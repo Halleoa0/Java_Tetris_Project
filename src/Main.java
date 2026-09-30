@@ -5,7 +5,7 @@ import javax.swing.JFrame;
 public class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Modern Tetris");
+            JFrame frame = new JFrame("Tetris");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setResizable(false);
             frame.setContentPane(new ScreenManager());

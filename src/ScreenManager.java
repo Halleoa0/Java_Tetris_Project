@@ -9,14 +9,14 @@ final class ScreenManager extends JPanel {
     private static final String SHOP = "shop";
 
     private final CardLayout cards = new CardLayout();
-    private final MenuPanel menuPanel;
+    private final HomePanel homePanel;
     private GamePanel activeGamePanel;
 
     ScreenManager() {
         setLayout(cards);
         setPreferredSize(new Dimension(1280, 720));
-        menuPanel = new MenuPanel(this);
-        add(menuPanel, MENU);
+        homePanel = new HomePanel(this);
+        add(homePanel, MENU);
         add(new SettingsPanel(this), SETTINGS);
         add(new ShopPanel(this), SHOP);
         showMenu();
