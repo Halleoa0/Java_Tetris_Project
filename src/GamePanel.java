@@ -1,5 +1,5 @@
 import javax.swing.AbstractAction;
-import javax.swing.JFrame;
+import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
@@ -59,6 +59,13 @@ final class GamePanel extends JPanel {
     private final Set<String> repeatingKeys = new HashSet<>();
     private final Map<String, Integer> heldKeyElapsed = new HashMap<>();
     private final Map<String, Runnable> heldKeyActions = new HashMap<>();
+    private final Timer timer;
+    private boolean paused;
+    private Runnable menuCallback = () -> { };
+    private final JButton gameOverRestartButton = new JButton("다시 시작");
+    private final JButton gameOverMenuButton = new JButton("메인화면");
+    private final JButton resumeButton = new JButton("계속하기");
+    private final JButton pauseMenuButton = new JButton("메인화면");
 
     // 현재 진행 중 모드
     private String gameName = "테스트 플레이";
@@ -68,6 +75,7 @@ final class GamePanel extends JPanel {
 
     GamePanel(Game game) {
         this.game = game;
+        setLayout(null);
         setPreferredSize(new Dimension(1280, 720));
         setBackground(BACKGROUND);
         setFocusable(true);
@@ -91,36 +99,81 @@ final class GamePanel extends JPanel {
         bind("SPACE", "hardDrop", game::hardDrop);
         bind("C", "hold", game::hold);
         bind("R", "restart", game::restart);
+        bindUnfiltered("ESCAPE", "pauseToggle", () -> { if (!paused) setPaused(true); });
+        bindUnfiltered("ENTER", "pauseResume", () -> { if (paused) setPaused(false); });
+        bindUnfiltered("M", "menu", () -> { if (paused || game.gameOver) menuCallback.run(); });
+        configureOverlayButtons();
         addFocusListener(new FocusAdapter() {
             @Override public void focusLost(FocusEvent e) { clearHeldKeys(); }
         });
 
-        new Timer(16, e -> {
+        timer = new Timer(16, e -> {
             long now = System.nanoTime();
             int elapsed = (int) Math.min(100, (now - lastTick) / 1_000_000L);
             lastTick = now;
             game.tick(elapsed);
             tickHeldKeys(elapsed);
             game.scoring.tick(elapsed);
+            updateOverlayButtons();
             repaint();
-        }).start();
+        });
+        timer.start();
     }
 
     void setInputFilter(InputFilter inputFilter) { this.inputFilter = inputFilter; }
 
     void setOverlayRenderer(Consumer<Graphics2D> overlayRenderer) { this.overlayRenderer = overlayRenderer; }
 
+    void setMenuCallback(Runnable menuCallback) {
+        this.menuCallback = menuCallback == null ? () -> { } : menuCallback;
+    }
 
-    // 게임 윈도우 창을 만듦
-    void showWindow() {
-        JFrame frame = new JFrame("Modern Tetris");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setContentPane(this);
-        frame.pack();
-        frame.setResizable(false);
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-        requestFocusInWindow();
+    private void setPaused(boolean paused) {
+        if (this.paused == paused) return;
+        this.paused = paused;
+        clearHeldKeys();
+        if (paused) timer.stop();
+        else {
+            lastTick = System.nanoTime();
+            timer.restart();
+        }
+        updateOverlayButtons();
+        repaint();
+    }
+
+    private void configureOverlayButtons() {
+        gameOverRestartButton.setBounds(548, 414, 108, 30);
+        gameOverMenuButton.setBounds(662, 414, 96, 30);
+        resumeButton.setBounds(500, 365, 125, 34);
+        pauseMenuButton.setBounds(640, 365, 125, 34);
+        gameOverRestartButton.addActionListener(event -> {
+            game.restart();
+            updateOverlayButtons();
+            repaint();
+            requestFocusInWindow();
+        });
+        gameOverMenuButton.addActionListener(event -> menuCallback.run());
+        resumeButton.addActionListener(event -> setPaused(false));
+        pauseMenuButton.addActionListener(event -> menuCallback.run());
+        add(gameOverRestartButton);
+        add(gameOverMenuButton);
+        add(resumeButton);
+        add(pauseMenuButton);
+        updateOverlayButtons();
+    }
+
+    private void updateOverlayButtons() {
+        gameOverRestartButton.setVisible(game.gameOver && !paused);
+        gameOverMenuButton.setVisible(game.gameOver && !paused);
+        resumeButton.setVisible(paused);
+        pauseMenuButton.setVisible(paused);
+    }
+
+
+    /** 화면에서 제거될 때 주기적인 게임 업데이트를 멈춘다. */
+    void stop() {
+        timer.stop();
+        clearHeldKeys();
     }
 
     /// 키보드 입력을 bind 하기
@@ -129,7 +182,7 @@ final class GamePanel extends JPanel {
         getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed " + key), name);
         getActionMap().put(name, new AbstractAction() {
             @Override public void actionPerformed(ActionEvent e) {
-                if (inputFilter == null || inputFilter.allow(name)) action.run();
+                if (!paused && (inputFilter == null || inputFilter.allow(name))) action.run();
                 repaint();
             }
         });
@@ -143,7 +196,7 @@ final class GamePanel extends JPanel {
         getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released " + key), releasedName);
         getActionMap().put(pressedName, new AbstractAction() {
             @Override public void actionPerformed(ActionEvent e) {
-                if (heldKeys.add(key)) {
+                if (!paused && heldKeys.add(key)) {
                     heldKeyElapsed.put(key, 0);
                     repeatingKeys.remove(key);
                     action.run();
@@ -200,6 +253,7 @@ final class GamePanel extends JPanel {
         labelUI.drawScoreLabel(g);
         if (game.gameOver) drawGameOver(g);
         if (overlayRenderer != null) overlayRenderer.accept(g);
+        if (paused) drawPauseOverlay(g);
         g.dispose();
     }
 
@@ -350,13 +404,31 @@ final class GamePanel extends JPanel {
     // 게임 오버 시
     private void drawGameOver(Graphics2D g) {
         int x = BOARD_X - 7, y = BOARD_Y + 230;
-        g.setColor(new Color(12, 16, 25, 220)); g.fillRoundRect(x + 15, y, 250, 100, 12, 12);
+        g.setColor(new Color(12, 16, 25, 220)); g.fillRoundRect(x + 15, y, 250, 112, 12, 12);
         g.setColor(Color.WHITE); g.setFont(interBlack.deriveFont(24f));
         FontMetrics fm = g.getFontMetrics(); String text = "GAME OVER";
         g.drawString(text, x + (280 - fm.stringWidth(text))/2, y + 39);
         g.setFont(interBlack.deriveFont(14f));
-        text = "Press R to restart"; fm = g.getFontMetrics();
-        g.drawString(text, x + (280 - fm.stringWidth(text))/2, y + 68);
+    }
+
+    private void drawPauseOverlay(Graphics2D g) {
+        g.setColor(new Color(0, 0, 0, 170));
+        g.fillRect(0, 0, getWidth(), getHeight());
+        g.setColor(Color.WHITE);
+        g.setFont(sansKRBlack.deriveFont(30f));
+        String title = "일시정지";
+        FontMetrics metrics = g.getFontMetrics();
+        g.drawString(title, (getWidth() - metrics.stringWidth(title)) / 2, 300);
+    }
+
+    private void bindUnfiltered(String key, String name, Runnable action) {
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed " + key), name);
+        getActionMap().put(name, new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) {
+                action.run();
+                repaint();
+            }
+        });
     }
 
     /// 폰트를 가져옵니다. Black(가장 굵은)
