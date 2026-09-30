@@ -291,9 +291,9 @@ final class AudioManager {
         return allowed && calculateBgmGain() > 0.0001f;
     }
 
-    /// 모드별 BGM 게인 계산 (튜토리얼은 설명 집중을 위해 60% 볼륨)
+    /// 모드별 BGM 게인 계산 (효과음이 또렷하게 들리도록 BGM을 70% 수준으로 밸런스 조정, 튜토리얼은 50%)
     private float calculateBgmGain() {
-        float scale = "tutorial".equals(currentMode) ? 0.60f : 1.00f;
+        float scale = "tutorial".equals(currentMode) ? 0.50f : 0.70f;
         return Settings.get().bgmGain() * scale;
     }
 
