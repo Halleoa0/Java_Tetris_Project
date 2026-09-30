@@ -2,7 +2,7 @@
 
 Java Swing으로 만든 테트리스 게임 프로젝트입니다.
 
-## 최신 구조도 (Architecture)
+## 구조도 (Architecture)
 
 ```mermaid
 flowchart TD
