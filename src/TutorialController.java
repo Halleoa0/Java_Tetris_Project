@@ -88,7 +88,7 @@ final class TutorialController implements GameListener {
         game.setGravityEnabled(false);
         panel.setInputFilter(action -> false);
         overlay.showComplete();
-        AudioManager.get().playTutorialClear(); // 튜토리얼 전체 완료 효과음 재생
+        AudioManager.get().playTutorialClear(); // 튜토리얼 완료 효과음을 재생한다.
         panel.repaint();
         completionCallback.run();
     }

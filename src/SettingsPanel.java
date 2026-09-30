@@ -261,7 +261,7 @@ final class SettingsPanel extends JPanel {
         refreshing = false;
     }
 
-    // 화면 구성 도우미 함수 (UI 컴포넌트 생성) //
+    // UI 헬퍼 //
 
     private JPanel card(String titleText) {
         JPanel p = new JPanel();

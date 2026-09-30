@@ -17,27 +17,26 @@ import java.util.Random;
 final class AudioManager {
 
     // 음원 파일명 정의 //
-    // BGM 후보 2곡
-    private static final String BGM_A = "bgm-a-grid-pulse";   // A: 신스 펄스 (128 BPM)
-    private static final String BGM_B = "bgm-b-block-groove"; // B: 칩 그루브 (128 BPM)
+    private static final String BGM_A = "bgm-a-grid-pulse";   // 그리드 펄스 (신스)
+    private static final String BGM_B = "bgm-b-block-groove"; // 블록 그루브 (칩튠)
 
-    // SFX 12종
+    // 효과음 파일명 목록 //
     private static final String[] SFX_NAMES = {
-            "menu-select",    // 메뉴 버튼 및 일시정지 옵션 선택
-            "move",           // 좌우 블록 이동
+            "menu-select",    // 메뉴 선택
+            "move",           // 블록 이동
             "rotate",         // 블록 회전
-            "softdrop",       // 소프트 드롭 (아래 이동)
-            "lock",           // 블록 바닥 안착/고정
-            "harddrop",       // 하드 드롭 (스페이스바 즉시 낙하)
-            "hold",           // 블록 홀드 교체
-            "lineclear",      // 일반 1~3줄 라인 삭제
-            "tetris",         // 4줄 동시 삭제 (테트리스)
+            "softdrop",       // 소프트 드롭
+            "lock",           // 블록 안착
+            "harddrop",       // 하드 드롭
+            "hold",           // 홀드
+            "lineclear",      // 라인 삭제 (1~3줄)
+            "tetris",         // 테트리스 (4줄 삭제)
             "levelup",        // 레벨 상승
             "gameover",       // 게임 오버
             "tutorial-clear"  // 튜토리얼 완료
     };
 
-    // 싱글톤 인스턴스 (상수 선언 후 초기화)
+    // 싱글톤 인스턴스
     private static final AudioManager INSTANCE = new AudioManager();
 
     static AudioManager get() { return INSTANCE; }
@@ -45,19 +44,19 @@ final class AudioManager {
     // 오디오 클립 저장소 및 재생 상태 //
     private final Map<String, Clip> bgmClips = new HashMap<>();
     private final Map<String, Clip> sfxClips = new HashMap<>();
-    // 이동/드롭 연타 시 소리 중첩 완화용 시간 기록표 (ms)
+    // 이동/소프트 드롭 연타 시 효과음 중첩 완화용 시간 기록표 (ms)
     private final Map<String, Long> lastSoundTime = new HashMap<>();
     private final Random random = new Random();
 
     private Clip currentBgmClip;
     private String currentBgmName;
-    private String lastPlayedGameBgm; // 직전 인게임 BGM (중복 방지용)
+    private String lastPlayedGameBgm; // 직전 BGM (연속 재생 방지)
     private String currentMode = "menu"; // "menu", "tutorial", "game"
     private boolean bgmPaused = false;
     private boolean windowActive = true;
     private Timer levelUpTimer;
 
-    // 생성자: BGM 2곡과 SFX 12종을 메모리에 미리 로드 //
+    // BGM과 SFX 클립을 미리 메모리에 로드한다. //
     private AudioManager() {
         loadBgm(BGM_A);
         loadBgm(BGM_B);
@@ -67,18 +66,18 @@ final class AudioManager {
             if (clip != null) sfxClips.put(sfxName, clip);
         }
 
-        // Settings 볼륨 슬라이더 변경 시 즉시 반영
+        // 설정 변경 시 볼륨을 즉시 갱신한다.
         Settings.get().addListener(this::refreshVolume);
     }
 
-    /// 오디오 파일을 찾아 Clip 객체로 로딩
+    /// 오디오 파일을 Clip 객체로 불러온다.
     private Clip loadClip(String subFolder, String fileName) {
-        // 1순위: 로컬 전용 audio-candidates/Audio/, 2순위: 루트 Audio/
+        // 음원 파일을 탐색한다. (로컬 후보 폴더 우선, 그 후 기본 Audio 폴더)
         File file = new File("audio-candidates/Audio/" + subFolder + "/" + fileName);
         if (!file.exists()) {
             file = new File("Audio/" + subFolder + "/" + fileName);
         }
-        if (!file.exists()) return null; // 파일이 없어도 게임은 계속 실행
+        if (!file.exists()) return null; // 파일이 없어도 정상 진행한다.
 
         try (AudioInputStream stream = AudioSystem.getAudioInputStream(file)) {
             Clip clip = AudioSystem.getClip();
@@ -90,14 +89,14 @@ final class AudioManager {
         }
     }
 
-    /// BGM 파일 로딩 및 종료 이벤트 리스너 등록
+    /// BGM 파일을 불러오고 재생 종료 리스너를 등록한다.
     private void loadBgm(String bgmName) {
         Clip clip = loadClip("bgm", bgmName + ".wav");
         if (clip == null) return;
 
         bgmClips.put(bgmName, clip);
 
-        // 곡이 끝까지 재생되었을 때 다음 곡으로 자동 전환
+        // 곡 재생이 끝나면 다음 곡으로 전환한다.
         clip.addLineListener(event -> {
             if (event.getType() == LineEvent.Type.STOP) {
                 SwingUtilities.invokeLater(() -> {
@@ -111,25 +110,25 @@ final class AudioManager {
 
     // BGM 재생 및 상태 제어 //
 
-    /// 메인 메뉴, 설정, 상점 BGM 재생 (Block Groove)
+    /// 메뉴 화면 BGM을 재생한다.
     void playMenuBgm() {
         currentMode = "menu";
         playBgmInternal(BGM_B, false);
     }
 
-    /// 튜토리얼 BGM 재생 (Grid Pulse)
+    /// 튜토리얼 BGM을 재생한다.
     void playTutorialBgm() {
         currentMode = "tutorial";
         playBgmInternal(BGM_A, true);
     }
 
-    /// 일반 게임 플레이 BGM 재생 (A/B 중 무작위 선택)
+    /// 인게임 BGM을 무작위로 재생한다.
     void startGameBgm() {
         currentMode = "game";
         playBgmInternal(chooseRandomGameBgm(), true);
     }
 
-    /// 인게임 BGM 무작위 선택. 직전에 나온 곡은 연속으로 나오지 않게 제외
+    /// 직전 곡을 제외하고 인게임 BGM을 무작위로 선택한다.
     private String chooseRandomGameBgm() {
         String[] options = { BGM_A, BGM_B };
 
@@ -146,7 +145,7 @@ final class AudioManager {
         return selected;
     }
 
-    /// 한 곡 재생이 끝났을 때 호출. 인게임은 다른 곡으로 자동 전환
+    /// 곡 재생 완료 시 다음 곡으로 전환한다.
     private void onBgmFinished() {
         if ("game".equals(currentMode)) {
             playBgmInternal(chooseRandomGameBgm(), true);
@@ -157,12 +156,12 @@ final class AudioManager {
         }
     }
 
-    /// BGM 재생 내부 함수
+    /// 지정한 BGM을 재생한다.
     private void playBgmInternal(String bgmName, boolean restart) {
         Clip nextClip = bgmClips.get(bgmName);
         if (nextClip == null) return;
 
-        // 이미 같은 곡이 재생 중이고 처음부터 재생이 아니면 유지
+        // 같은 곡이 재생 중이면 유지한다.
         if (!restart && nextClip == currentBgmClip && nextClip.isRunning()) return;
 
         if (currentBgmClip != null && currentBgmClip.isRunning()) {
@@ -180,7 +179,7 @@ final class AudioManager {
         }
     }
 
-    /// BGM 일시정지 (재생 위치 보존)
+    /// BGM을 일시정지한다. 재생 위치를 보존한다.
     void pauseBgm() {
         bgmPaused = true;
         if (currentBgmClip != null && currentBgmClip.isRunning()) {
@@ -188,7 +187,7 @@ final class AudioManager {
         }
     }
 
-    /// BGM 재개 (멈췄던 위치부터 이어 재생)
+    /// BGM을 멈춘 위치부터 다시 재생한다.
     void resumeBgm() {
         bgmPaused = false;
         if (currentBgmClip != null && canOutputMusic()) {
@@ -196,7 +195,7 @@ final class AudioManager {
         }
     }
 
-    /// BGM 완전 정지
+    /// BGM을 정지하고 처음 위치로 되돌린다.
     void stopBgm() {
         bgmPaused = false;
         if (currentBgmClip != null) {
@@ -207,34 +206,34 @@ final class AudioManager {
 
     // 효과음(SFX) 재생 //
 
-    /// 메뉴 버튼 클릭 / 항목 변경음
+    /// 메뉴 선택 효과음을 재생한다.
     void playMenuSelect() { playSound("menu-select"); }
 
-    /// 좌우 이동음 (연타 시 80ms 간격 제한)
+    /// 블록 이동 효과음을 재생한다. 연타 간격을 제한한다.
     void playMove() { playSoundWithInterval("move", 80); }
 
-    /// 블록 회전음
+    /// 블록 회전 효과음을 재생한다.
     void playRotate() { playSound("rotate"); }
 
-    /// 소프트 드롭음 (100ms 간격 제한)
+    /// 소프트 드롭 효과음을 재생한다. 연타 간격을 제한한다.
     void playSoftDrop() { playSoundWithInterval("softdrop", 100); }
 
-    /// 블록 바닥 안착/고정음
+    /// 블록 안착 효과음을 재생한다.
     void playLock() { playSound("lock"); }
 
-    /// 하드 드롭 즉시 낙하음
+    /// 하드 드롭 효과음을 재생한다.
     void playHardDrop() { playSound("harddrop"); }
 
-    /// 블록 홀드 교체음
+    /// 홀드 효과음을 재생한다.
     void playHold() { playSound("hold"); }
 
-    /// 라인 삭제음 (4줄은 테트리스 전용 효과음)
+    /// 라인 삭제 효과음을 재생한다. 4줄은 전용 효과음을 쓴다.
     void playLineClear(int lines) {
         if (lines >= 4) playSound("tetris");
         else if (lines > 0) playSound("lineclear");
     }
 
-    /// 레벨업 효과음 (줄 삭제음과 겹치지 않게 300ms 후 재생)
+    /// 라인 삭제음과 겹치지 않도록 지연 후 레벨업 효과음을 재생한다.
     void playLevelUpDelayed() {
         if (levelUpTimer != null) levelUpTimer.stop();
         levelUpTimer = new Timer(300, e -> playSound("levelup"));
@@ -242,16 +241,16 @@ final class AudioManager {
         levelUpTimer.start();
     }
 
-    /// 게임 오버 효과음 (BGM 정지 후 재생)
+    /// BGM을 멈추고 게임 오버 효과음을 재생한다.
     void playGameOver() {
         stopBgm();
         playSound("gameover");
     }
 
-    /// 튜토리얼 단계/전체 완료음
+    /// 튜토리얼 완료 효과음을 재생한다.
     void playTutorialClear() { playSound("tutorial-clear"); }
 
-    /// 단발성 효과음 재생
+    /// 효과음을 처음부터 재생한다.
     private void playSound(String sfxName) {
         if (!canOutputSounds()) return;
         Clip clip = sfxClips.get(sfxName);
@@ -263,7 +262,7 @@ final class AudioManager {
         clip.start();
     }
 
-    /// 연타 조작(이동, 소프트 드롭)의 효과음 중첩 완화
+    /// 지정한 간격 이내의 연속 효과음 재생을 제한한다.
     private void playSoundWithInterval(String sfxName, int minIntervalMs) {
         long now = System.currentTimeMillis();
         long last = lastSoundTime.getOrDefault(sfxName, 0L);
@@ -275,7 +274,7 @@ final class AudioManager {
 
     // 볼륨 및 사운드 출력 제어 //
 
-    /// 창 활성화/비활성화 상태 설정 (창 포커스 아웃 음소거 연동)
+    /// 창 활성화 상태를 갱신한다.
     void setWindowActive(boolean active) {
         this.windowActive = active;
         refreshVolume();
@@ -291,13 +290,13 @@ final class AudioManager {
         return allowed && calculateBgmGain() > 0.0001f;
     }
 
-    /// 모드별 BGM 게인 계산 (효과음이 또렷하게 들리도록 BGM을 70% 수준으로 밸런스 조정, 튜토리얼은 50%)
+    /// 모드에 맞게 BGM 출력 비율을 계산한다.
     private float calculateBgmGain() {
         float scale = "tutorial".equals(currentMode) ? 0.50f : 0.70f;
         return Settings.get().bgmGain() * scale;
     }
 
-    /// Settings 볼륨 변경 시 실시간 반영
+    /// 변경된 볼륨 설정을 재생 중인 클립에 반영한다.
     private void refreshVolume() {
         if (currentBgmClip != null) {
             applyVolumeToClip(currentBgmClip, calculateBgmGain());
@@ -313,7 +312,7 @@ final class AudioManager {
         }
     }
 
-    /// 0.0~1.0 배율을 데시벨(dB)로 변환해 Clip에 적용
+    /// 볼륨 배율을 데시벨로 변환해 클립에 적용한다.
     private void applyVolumeToClip(Clip clip, float gain) {
         if (clip == null || !clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) return;
 

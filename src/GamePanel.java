@@ -75,11 +75,10 @@ final class GamePanel extends JPanel {
     private int pauseSelection;
     private boolean ignoreSpaceUntilRelease;
     private Runnable menuCallback = () -> { };
-    // 일시정지 메뉴의 RESTART 동작 (튜토리얼은 1단계부터 다시 시작하도록 교체). null이면 game.restart()
+    // 일시정지 메뉴의 재시작 콜백. null이면 game.restart()를 수행한다.
     private Runnable pauseRestartCallback;
 
-
-    // 하드 드롭 후 바로 바닥에 닿았을 때 일반 락 효과음이 중복으로 울리는 것을 방지하는 플래그
+    // 하드 드롭 직후 락 효과음 중복 재생을 방지한다.
     private boolean justHardDropped;
 
     private final JButton gameOverRestartButton = new JButton("다시 시작");
@@ -127,7 +126,7 @@ final class GamePanel extends JPanel {
         bindUnfiltered("M", "menu", () -> { if (paused || game.gameOver) menuCallback.run(); });
         configureOverlayButtons();
 
-        // 게임 조작 및 이벤트에 맞춰 효과음 재생 리스너 연결
+        // 게임 동작에 맞춰 효과음을 재생한다.
         game.addListener(new GameListener() {
             @Override public void onMove(int dx, int dy) {
                 AudioManager.get().playMove();
@@ -146,7 +145,7 @@ final class GamePanel extends JPanel {
                 AudioManager.get().playHold();
             }
             @Override public void onLock(Tetromino type) {
-                // 하드 드롭 안착 시에는 이미 소리가 났으므로 일반 락 효과음 생략
+                // 하드 드롭 직후에는 락 효과음을 생략한다.
                 if (justHardDropped) {
                     justHardDropped = false;
                 } else {
@@ -206,12 +205,12 @@ final class GamePanel extends JPanel {
         if (paused) {
             pauseSelection = 0;
             timer.stop();
-            AudioManager.get().pauseBgm(); // 일시정지 시 BGM 일시정지 (재생 위치 보존)
+            AudioManager.get().pauseBgm(); // BGM을 일시정지한다.
         }
         else {
             lastTick = System.nanoTime();
             timer.restart();
-            AudioManager.get().resumeBgm(); // 재개 시 멈춘 위치부터 BGM 이어 재생
+            AudioManager.get().resumeBgm(); // BGM을 재개한다.
         }
         updateOverlayButtons();
         repaint();
@@ -223,7 +222,7 @@ final class GamePanel extends JPanel {
         gameOverRestartButton.addActionListener(event -> {
             AudioManager.get().playMenuSelect();
             game.restart();
-            AudioManager.get().startGameBgm(); // 재시작 시 인게임 BGM 무작위 재생
+            AudioManager.get().startGameBgm(); // 인게임 BGM을 무작위로 재생한다.
             updateOverlayButtons();
             repaint();
             requestFocusInWindow();
@@ -250,9 +249,9 @@ final class GamePanel extends JPanel {
         clearHeldKeys();
     }
 
-    /// 환경설정에 지정된 키 입력을 게임 동작에 연결하는 함수
+    /// 설정된 키 입력을 게임 동작에 연결한다.
     private void bind(Settings.Action action, String name, Runnable run) {
-        // 동작별 키 설정값(KeyStroke)을 액션 이름과 묶어 등록합니다.
+        // 동작별 키 설정을 액션에 등록한다.
         String bindingName = name + "_" + action.name();
         getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().pressed(action), bindingName);
         getActionMap().put(bindingName, new AbstractAction() {
@@ -524,7 +523,7 @@ final class GamePanel extends JPanel {
         g.drawImage(pauseGuideImage, guideX, guideY, this);
     }
 
-    /// 일시정지 화면에서 위 아래 키로 옵션을 선택하는 함수
+    /// 일시정지 화면에서 위/아래 키로 옵션을 변경한다.
     private void bindPauseNavigation(String key, int direction) {
         KeyStroke stroke = KeyStroke.getKeyStroke("pressed " + key);
         Object gameplayBinding = getInputMap(WHEN_IN_FOCUSED_WINDOW).get(stroke);
@@ -535,7 +534,7 @@ final class GamePanel extends JPanel {
             @Override public void actionPerformed(ActionEvent e) {
                 if (paused) {
                     pauseSelection = Math.floorMod(pauseSelection + direction, PAUSE_OPTIONS.length);
-                    AudioManager.get().playMenuSelect(); // 일시정지 옵션 이동음
+                    AudioManager.get().playMenuSelect(); // 옵션 이동 효과음
                     repaint();
                 } else if (gameplayAction != null) {
                     gameplayAction.actionPerformed(e);
@@ -544,12 +543,12 @@ final class GamePanel extends JPanel {
         });
     }
 
-    /// 일시정지 메뉴에서 선택된 항목(RESUME, RESTART, QUIT)을 실행한다.
+    /// 일시정지 메뉴에서 선택한 항목을 실행한다.
     private void confirmPauseSelection() {
-        AudioManager.get().playMenuSelect(); // 일시정지 옵션 결정음
+        AudioManager.get().playMenuSelect(); // 옵션 선택 효과음
         switch (pauseSelection) {
-            case 0 -> setPaused(false); // 계속하기 (RESUME)
-            case 1 -> { // 다시 시작 (RESTART)
+            case 0 -> setPaused(false); // 계속하기
+            case 1 -> { // 다시 시작
                 if (pauseRestartCallback != null) pauseRestartCallback.run();
                 else {
                     game.restart();
@@ -557,7 +556,7 @@ final class GamePanel extends JPanel {
                 }
                 setPaused(false);
             }
-            case 2 -> menuCallback.run(); // 메인화면/종료 (QUIT)
+            case 2 -> menuCallback.run(); // 메인 화면으로 이동
         }
     }
 

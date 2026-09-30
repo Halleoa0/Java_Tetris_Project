@@ -19,7 +19,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 final class Settings {
 
-    // 열거형 정의 (동작, 난이도, 색각 보정 모드) //
+    // 열거형 //
 
     //키 바인딩 대상 동작//
     enum Action {
@@ -308,7 +308,7 @@ final class Settings {
         }
     }
 
-    // 유틸리티 도구 함수 (숫자 범위 제한 및 변환) //
+    // 유틸 //
 
     private static int clamp(int v, int lo, int hi) { return Math.max(lo, Math.min(hi, v)); }
     private static int parseInt(String s, int def) {

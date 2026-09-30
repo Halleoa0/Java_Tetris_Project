@@ -121,7 +121,7 @@ final class Game {
             if (board.canPlace(active, nx, ny, to)) {
                 x = nx; y = ny; rotation = to; lastMoveWasRotation = true; lastKickIndex = i;
                 afterPlayerMove();
-                notifyRotate(rotationDirection); // 회전 성공 시에만 리스너에 알립니다.
+                notifyRotate(rotationDirection); // 회전 성공 시 리스너에 알린다.
                 return true;
             }
         }
@@ -219,7 +219,7 @@ final class Game {
         
         int prevLevel = scoring.level;
         scoring.onLock(cleared, spinType, cleared > 0 && board.isEmpty());
-        // 줄을 지워 레벨이 올랐다면 레벨업 이벤트를 알립니다.
+        // 레벨이 올랐으면 리스너에 알린다.
         if (scoring.level > prevLevel) {
             for (GameListener listener : List.copyOf(listeners)) listener.onLevelUp(scoring.level);
         }
