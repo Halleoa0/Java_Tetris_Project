@@ -74,6 +74,7 @@ final class GamePanel extends JPanel {
     private int pauseSelection;
     private boolean ignoreSpaceUntilRelease;
     private Runnable menuCallback = () -> { };
+    private Runnable pauseRestartCallback;
 
 
     private final JButton gameOverRestartButton = new JButton("다시 시작");
@@ -87,6 +88,7 @@ final class GamePanel extends JPanel {
 
     GamePanel(Game game) {
         this.game = game;
+        pauseRestartCallback = game::restart;
         setLayout(null);
         setPreferredSize(new Dimension(1280, 720));
         setBackground(BACKGROUND);
@@ -113,7 +115,9 @@ final class GamePanel extends JPanel {
         bind("C", "hold", game::hold);
         bind("R", "restart", game::restart);
         bindUnfiltered("ESCAPE", "pauseToggle", () -> { if (!paused) setPaused(true); });
-        bindUnfiltered("ENTER", "pauseResume", () -> { if (paused) setPaused(false); });
+        bindUnfiltered("ENTER", "pauseSelect", () -> {
+            if (paused) handlePauseInput("ENTER");
+        });
         bindUnfiltered("M", "menu", () -> { if (paused || game.gameOver) menuCallback.run(); });
         configureOverlayButtons();
         addFocusListener(new FocusAdapter() {
@@ -142,6 +146,10 @@ final class GamePanel extends JPanel {
 
     void setMenuCallback(Runnable menuCallback) {
         this.menuCallback = menuCallback == null ? () -> { } : menuCallback;
+    }
+
+    void setPauseRestartCallback(Runnable restartCallback) {
+        this.pauseRestartCallback = restartCallback == null ? game::restart : restartCallback;
     }
 
     private void setPaused(boolean paused) {
@@ -458,12 +466,12 @@ final class GamePanel extends JPanel {
         switch (key) {
             case "UP" -> pauseSelection = Math.floorMod(pauseSelection - 1, PAUSE_OPTIONS.length);
             case "DOWN" -> pauseSelection = (pauseSelection + 1) % PAUSE_OPTIONS.length;
-            case "SPACE" -> {
-                ignoreSpaceUntilRelease = true;
+            case "SPACE", "ENTER" -> {
+                if (key.equals("SPACE")) ignoreSpaceUntilRelease = true;
                 switch (pauseSelection) {
                     case 0 -> setPaused(false);
                     case 1 -> {
-                        game.restart();
+                        pauseRestartCallback.run();
                         setPaused(false);
                     }
                     case 2 -> menuCallback.run();
