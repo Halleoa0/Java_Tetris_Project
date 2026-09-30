@@ -74,6 +74,8 @@ final class GamePanel extends JPanel {
     private int pauseSelection;
     private boolean ignoreSpaceUntilRelease;
     private Runnable menuCallback = () -> { };
+    // 일시정지 메뉴의 RESTART 동작 (튜토리얼은 1단계부터 다시 시작하도록 교체). null이면 game.restart()
+    private Runnable pauseRestartCallback;
 
 
     private final JButton gameOverRestartButton = new JButton("다시 시작");
@@ -98,20 +100,19 @@ final class GamePanel extends JPanel {
         gameNamePanelImage = loadImage("Images/Board/GameNamePanel.png");
         labelUI = new LabelUI(game, interBlack, interMedium, sansKRBlack, orbitBlack, orbitBold, gameNamePanelImage, gameName);
         minoTiles = loadMinoTiles("Images/Mino.png");
-        bindHeld("LEFT", () -> game.move(-1, 0));
-        bindHeld("RIGHT", () -> game.move(1, 0));
-        bindHeld("DOWN", game::softDrop);
-        // bind("UP", "rotateCW", () -> game.rotate(1));
-        bind("UP", "rotateCW", () -> game.rotate(1));
-        bind("X", "rotateCW", () -> game.rotate(1));
-        bind("Z", "rotateCCW", () -> game.rotate(-1));
-        bind("SPACE", "hardDrop", game::hardDrop);
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released SPACE"), "pauseSpaceReleased");
+        bindHeld(Settings.Action.MOVE_LEFT,  () -> game.move(-1, 0));
+        bindHeld(Settings.Action.MOVE_RIGHT, () -> game.move(1, 0));
+        bindHeld(Settings.Action.SOFT_DROP,  game::softDrop);
+        bind(Settings.Action.ROTATE_CW,  "rotateCW",  () -> game.rotate(1));
+        bind(Settings.Action.ROTATE_CCW, "rotateCCW", () -> game.rotate(-1));
+        bind(Settings.Action.HARD_DROP,  "hardDrop",  game::hardDrop);
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().released(Settings.Action.HARD_DROP), "pauseSpaceReleased");
         getActionMap().put("pauseSpaceReleased", new AbstractAction() {
             @Override public void actionPerformed(ActionEvent e) { ignoreSpaceUntilRelease = false; }
         });
-        bind("C", "hold", game::hold);
-        bind("R", "restart", game::restart);
+        bind(Settings.Action.HOLD,    "hold",    game::hold);
+        bind(Settings.Action.RESTART, "restart", game::restart);
+
         bindUnfiltered("ESCAPE", "pauseToggle", () -> { if (!paused) setPaused(true); });
         bindUnfiltered("ENTER", "pauseResume", () -> { if (paused) setPaused(false); });
         bindUnfiltered("M", "menu", () -> { if (paused || game.gameOver) menuCallback.run(); });
@@ -139,6 +140,9 @@ final class GamePanel extends JPanel {
     void setInputFilter(InputFilter inputFilter) { this.inputFilter = inputFilter; }
 
     void setOverlayRenderer(Consumer<Graphics2D> overlayRenderer) { this.overlayRenderer = overlayRenderer; }
+
+    /** 일시정지 메뉴에서 RESTART를 골랐을 때 실행할 동작을 지정한다. null이면 기본 game.restart(). */
+    void setPauseRestartCallback(Runnable callback) { this.pauseRestartCallback = callback; }
 
     void setMenuCallback(Runnable menuCallback) {
         this.menuCallback = menuCallback == null ? () -> { } : menuCallback;
@@ -189,35 +193,50 @@ final class GamePanel extends JPanel {
     }
 
     /// 키보드 입력을 bind 하기
-    private void bind(String key, String name, Runnable action) {
-        // Swing의 Key Binding으로 키 입력을 게임 동작에 연결한다.
-        String bindingName = name + "_" + key;
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed " + key), bindingName);
+    /** private void bind(String key, String name, Runnable action) {
+     // Swing의 Key Binding으로 키 입력을 게임 동작에 연결한다.
+     String bindingName = name + "_" + key;
+     getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed " + key), bindingName);
+     getActionMap().put(bindingName, new AbstractAction() {
+    @Override public void actionPerformed(ActionEvent e) {
+    if (key.equals("SPACE") && ignoreSpaceUntilRelease) return;
+    if (paused) handlePauseInput(key);
+    else if (inputFilter == null || inputFilter.allow(name)) action.run();
+    repaint();
+    }
+    });
+     } */
+
+    private void bind(Settings.Action action, String name, Runnable run) {
+        //KeyStroke ks = Settings.get().pressed(action);
+        String bindingName = name + "_" + action.name();
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().pressed(action), bindingName);
         getActionMap().put(bindingName, new AbstractAction() {
             @Override public void actionPerformed(ActionEvent e) {
-                if (key.equals("SPACE") && ignoreSpaceUntilRelease) return;
-                if (paused) handlePauseInput(key);
-                else if (inputFilter == null || inputFilter.allow(name)) action.run();
+                if (action == Settings.Action.HARD_DROP && ignoreSpaceUntilRelease) return;
+                if (paused) handlePauseInput(action);
+                else if (inputFilter == null || inputFilter.allow(name)) run.run();
                 repaint();
             }
         });
     }
 
-    private void bindHeld(String key, Runnable action) {
+    private void bindHeld(Settings.Action action, Runnable run) {
+        String key = action.name();                       // heldKeys 등 기존 Set/Map의 키로 그대로 사용
         String pressedName = key + "HeldPressed";
         String releasedName = key + "HeldReleased";
-        heldKeyActions.put(key, action);
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed " + key), pressedName);
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released " + key), releasedName);
+        heldKeyActions.put(key, run);
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().pressed(action), pressedName);
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().released(action), releasedName);
         getActionMap().put(pressedName, new AbstractAction() {
             @Override public void actionPerformed(ActionEvent e) {
                 if (paused) {
-                    handlePauseInput(key);
-                    repaint();
-                } else if (heldKeys.add(key)) {
+                    handlePauseInput(action); repaint();
+                }
+                else if (heldKeys.add(key)) {
                     heldKeyElapsed.put(key, 0);
                     repeatingKeys.remove(key);
-                    action.run();
+                    run.run();
                     repaint();
                 }
             }
@@ -228,11 +247,13 @@ final class GamePanel extends JPanel {
     }
 
 
+
     /// 키 입력 후에 다시 재입력
     private void tickHeldKeys(int elapsedMs) {
         for (String key : heldKeys) {
             int elapsed = heldKeyElapsed.getOrDefault(key, 0) + elapsedMs;
-            int delay = repeatingKeys.contains(key) ? 55 : 180;
+            int delay = repeatingKeys.contains(key) ? Math.max(1, Settings.get().arrMs())
+                    : Settings.get().dasMs();
             if (elapsed >= delay) {
                 elapsed -= delay;
                 repeatingKeys.add(key);
@@ -299,11 +320,38 @@ final class GamePanel extends JPanel {
                 tiles[i] = sheet.getSubimage(i * 25, 0, 25, 25);
             }
 
+            // 색맹 모드: 설정에 따라 미노 타일(0~6번)의 색만 바꾼다. 고스트(7번)는 그대로.
+            if (Settings.get().colorMode() != Settings.ColorMode.OFF) {
+                for (Tetromino t : Tetromino.values()) {
+                    int idx = minoTileIndex(t);
+                    tiles[idx] = tint(tiles[idx], Settings.get().minoColor(t));
+                }
+            }
+
             return tiles;
 
         } catch (IOException e) {
             throw new IllegalStateException("미노 이미지에 문제 발생. " + path, e);
         }
+    }
+
+    /// 원본 타일의 밝기(음영)는 유지하고 색상만 target 색으로 교체
+    private static BufferedImage tint(BufferedImage src, Color target) {
+        BufferedImage out = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        float base = (target.getRed() * 0.299f + target.getGreen() * 0.587f + target.getBlue() * 0.114f) / 255f;
+        for (int y = 0; y < src.getHeight(); y++) {
+            for (int x = 0; x < src.getWidth(); x++) {
+                int p = src.getRGB(x, y);
+                int a = p >>> 24;
+                float lum = (((p >> 16) & 255) * 0.299f + ((p >> 8) & 255) * 0.587f + (p & 255) * 0.114f) / 255f;
+                float k = base == 0 ? 1f : lum / base;
+                int r = Math.min(255, Math.round(target.getRed() * k));
+                int gr = Math.min(255, Math.round(target.getGreen() * k));
+                int b = Math.min(255, Math.round(target.getBlue() * k));
+                out.setRGB(x, y, (a << 24) | (r << 16) | (gr << 8) | b);
+            }
+        }
+        return out;
     }
 
 
@@ -322,10 +370,12 @@ final class GamePanel extends JPanel {
         }
 
         if (!game.gameOver) {
-            // 현재 블록을 아래로 복사 이동해 예상 착지 위치(고스트)를 먼저 그린다.
-            int ghostY = game.y;
-            while (game.board.canPlace(game.active, game.x, ghostY + 1, game.rotation)) ghostY++;
-            drawPiece(g, game.active, game.x, ghostY, game.rotation, true);
+            if (Settings.get().ghostPiece()) {
+                // 현재 블록을 아래로 복사 이동해 예상 착지 위치(고스트)를 먼저 그린다.
+                int ghostY = game.y;
+                while (game.board.canPlace(game.active, game.x, ghostY + 1, game.rotation)) ghostY++;
+                drawPiece(g, game.active, game.x, ghostY, game.rotation, true);
+            }
             drawPiece(g, game.active, game.x, game.y, game.rotation, false);
         }
     }
@@ -454,23 +504,26 @@ final class GamePanel extends JPanel {
         g.drawImage(pauseGuideImage, guideX, guideY, this);
     }
 
-    private void handlePauseInput(String key) {
-        switch (key) {
-            case "UP" -> pauseSelection = Math.floorMod(pauseSelection - 1, PAUSE_OPTIONS.length);
-            case "DOWN" -> pauseSelection = (pauseSelection + 1) % PAUSE_OPTIONS.length;
-            case "SPACE" -> {
+    private void handlePauseInput(Settings.Action a) {
+        switch (a) {
+            case ROTATE_CW -> pauseSelection = Math.floorMod(pauseSelection - 1, PAUSE_OPTIONS.length);
+            case SOFT_DROP -> pauseSelection = (pauseSelection + 1) % PAUSE_OPTIONS.length;
+            case HARD_DROP -> {
                 ignoreSpaceUntilRelease = true;
                 switch (pauseSelection) {
                     case 0 -> setPaused(false);
                     case 1 -> {
-                        game.restart();
+                        if (pauseRestartCallback != null) pauseRestartCallback.run();
+                        else game.restart();
                         setPaused(false);
                     }
                     case 2 -> menuCallback.run();
                 }
             }
+            default -> { }
         }
     }
+
 
     private void bindUnfiltered(String key, String name, Runnable action) {
         getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed " + key), name);
