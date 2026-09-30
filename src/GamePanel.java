@@ -6,8 +6,6 @@ import javax.swing.Timer;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.FontFormatException;
-import java.awt.GraphicsEnvironment;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -16,6 +14,7 @@ import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.font.TextAttribute;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -41,31 +40,44 @@ final class GamePanel extends JPanel {
     private static final int MATRIX_X = 378, MATRIX_Y = 111, MATRIX_W = 528, MATRIX_H = 505;
     private static final Color BACKGROUND = new Color(41, 41, 41);
     private static final Color PANEL = new Color(30, 36, 51);
+    private static final String[] PAUSE_OPTIONS = { "RESUME", "RESTART", "QUIT" };
+
     private final Game game;
     private InputFilter inputFilter;
     private Consumer<Graphics2D> overlayRenderer;
     private long lastTick = System.nanoTime();
+
+    /// 이미지 불러오기
     private final Image matrixImage;
     private final Image guideImage;
+    private final Image pauseGuideImage;
     private final Image gameNamePanelImage;
+
     private final LabelUI labelUI;
     private final BufferedImage[] minoTiles;
-    public final Font interBlack;
-    public final Font interMedium;
-    public final Font sansKRBlack;
-    public final Font orbitBlack;
-    public final Font orbitBold;
+
+    /// 폰트 불러오기
+    public final Font interBlack = MenuFonts.loadBlack();
+    public final Font interBold = MenuFonts.loadBold();
+    public final Font interMedium = MenuFonts.loadMedium();
+    public final Font sansKRBlack = MenuFonts.loadKRBlack();
+    public final Font orbitBlack = MenuFonts.loadOrbitBlack();
+    public final Font orbitBold = MenuFonts.loadOrbitBold();
+
     private final Set<String> heldKeys = new HashSet<>();
     private final Set<String> repeatingKeys = new HashSet<>();
     private final Map<String, Integer> heldKeyElapsed = new HashMap<>();
     private final Map<String, Runnable> heldKeyActions = new HashMap<>();
+
     private final Timer timer;
     private boolean paused;
+    private int pauseSelection;
+    private boolean ignoreSpaceUntilRelease;
     private Runnable menuCallback = () -> { };
+
+
     private final JButton gameOverRestartButton = new JButton("다시 시작");
     private final JButton gameOverMenuButton = new JButton("메인화면");
-    private final JButton resumeButton = new JButton("계속하기");
-    private final JButton pauseMenuButton = new JButton("메인화면");
 
     // 현재 진행 중 모드
     private String gameName = "테스트 플레이";
@@ -79,13 +91,10 @@ final class GamePanel extends JPanel {
         setPreferredSize(new Dimension(1280, 720));
         setBackground(BACKGROUND);
         setFocusable(true);
-        interBlack = loadBlack();
-        interMedium = loadMedium();
-        sansKRBlack = loadKRBlack();
-        orbitBlack = loadOrbitBlack();
-        orbitBold = loadOrbitBold();
+
         matrixImage = loadImage("Images/Board/Matrix.png");
         guideImage = loadImage("Images/Board/Guide.png");
+        pauseGuideImage = loadImage("Images/PauseGuide.png");
         gameNamePanelImage = loadImage("Images/Board/GameNamePanel.png");
         labelUI = new LabelUI(game, interBlack, interMedium, sansKRBlack, orbitBlack, orbitBold, gameNamePanelImage, gameName);
         minoTiles = loadMinoTiles("Images/Mino.png");
@@ -97,6 +106,10 @@ final class GamePanel extends JPanel {
         bind("X", "rotateCW", () -> game.rotate(1));
         bind("Z", "rotateCCW", () -> game.rotate(-1));
         bind("SPACE", "hardDrop", game::hardDrop);
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released SPACE"), "pauseSpaceReleased");
+        getActionMap().put("pauseSpaceReleased", new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) { ignoreSpaceUntilRelease = false; }
+        });
         bind("C", "hold", game::hold);
         bind("R", "restart", game::restart);
         bindUnfiltered("ESCAPE", "pauseToggle", () -> { if (!paused) setPaused(true); });
@@ -104,7 +117,10 @@ final class GamePanel extends JPanel {
         bindUnfiltered("M", "menu", () -> { if (paused || game.gameOver) menuCallback.run(); });
         configureOverlayButtons();
         addFocusListener(new FocusAdapter() {
-            @Override public void focusLost(FocusEvent e) { clearHeldKeys(); }
+            @Override public void focusLost(FocusEvent e) {
+                clearHeldKeys();
+                ignoreSpaceUntilRelease = false;
+            }
         });
 
         timer = new Timer(16, e -> {
@@ -132,7 +148,10 @@ final class GamePanel extends JPanel {
         if (this.paused == paused) return;
         this.paused = paused;
         clearHeldKeys();
-        if (paused) timer.stop();
+        if (paused) {
+            pauseSelection = 0;
+            timer.stop();
+        }
         else {
             lastTick = System.nanoTime();
             timer.restart();
@@ -144,29 +163,22 @@ final class GamePanel extends JPanel {
     private void configureOverlayButtons() {
         gameOverRestartButton.setBounds(548, 414, 108, 30);
         gameOverMenuButton.setBounds(662, 414, 96, 30);
-        resumeButton.setBounds(500, 365, 125, 34);
-        pauseMenuButton.setBounds(640, 365, 125, 34);
         gameOverRestartButton.addActionListener(event -> {
             game.restart();
             updateOverlayButtons();
             repaint();
             requestFocusInWindow();
         });
+
         gameOverMenuButton.addActionListener(event -> menuCallback.run());
-        resumeButton.addActionListener(event -> setPaused(false));
-        pauseMenuButton.addActionListener(event -> menuCallback.run());
         add(gameOverRestartButton);
         add(gameOverMenuButton);
-        add(resumeButton);
-        add(pauseMenuButton);
         updateOverlayButtons();
     }
 
     private void updateOverlayButtons() {
         gameOverRestartButton.setVisible(game.gameOver && !paused);
         gameOverMenuButton.setVisible(game.gameOver && !paused);
-        resumeButton.setVisible(paused);
-        pauseMenuButton.setVisible(paused);
     }
 
 
@@ -179,10 +191,13 @@ final class GamePanel extends JPanel {
     /// 키보드 입력을 bind 하기
     private void bind(String key, String name, Runnable action) {
         // Swing의 Key Binding으로 키 입력을 게임 동작에 연결한다.
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed " + key), name);
-        getActionMap().put(name, new AbstractAction() {
+        String bindingName = name + "_" + key;
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed " + key), bindingName);
+        getActionMap().put(bindingName, new AbstractAction() {
             @Override public void actionPerformed(ActionEvent e) {
-                if (!paused && (inputFilter == null || inputFilter.allow(name))) action.run();
+                if (key.equals("SPACE") && ignoreSpaceUntilRelease) return;
+                if (paused) handlePauseInput(key);
+                else if (inputFilter == null || inputFilter.allow(name)) action.run();
                 repaint();
             }
         });
@@ -196,7 +211,10 @@ final class GamePanel extends JPanel {
         getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released " + key), releasedName);
         getActionMap().put(pressedName, new AbstractAction() {
             @Override public void actionPerformed(ActionEvent e) {
-                if (!paused && heldKeys.add(key)) {
+                if (paused) {
+                    handlePauseInput(key);
+                    repaint();
+                } else if (heldKeys.add(key)) {
                     heldKeyElapsed.put(key, 0);
                     repeatingKeys.remove(key);
                     action.run();
@@ -412,13 +430,46 @@ final class GamePanel extends JPanel {
     }
 
     private void drawPauseOverlay(Graphics2D g) {
-        g.setColor(new Color(0, 0, 0, 170));
+        g.setColor(new Color(0, 0, 0, 255));
         g.fillRect(0, 0, getWidth(), getHeight());
+
+        Map<TextAttribute, Float> fontAttributes = Map.of(TextAttribute.TRACKING, 0.3f);
         g.setColor(Color.WHITE);
-        g.setFont(sansKRBlack.deriveFont(30f));
-        String title = "일시정지";
-        FontMetrics metrics = g.getFontMetrics();
-        g.drawString(title, (getWidth() - metrics.stringWidth(title)) / 2, 300);
+        g.setFont(orbitBlack.deriveFont(30f).deriveFont(fontAttributes));
+        String title = "PAUSE";
+        g.drawString(title, 40, 70);
+
+        int spacing = 80;
+        int firstCenterY = getHeight() / 2 - (PAUSE_OPTIONS.length - 1) * spacing / 2;
+        for (int i = 0; i < PAUSE_OPTIONS.length; i++) {
+            g.setColor(i == pauseSelection ? Color.WHITE : new Color(70, 70, 70));
+            g.setFont((i == pauseSelection ? interBlack : interMedium).deriveFont(32f).deriveFont(fontAttributes));
+            FontMetrics metrics = g.getFontMetrics();
+            int x = (getWidth() - metrics.stringWidth(PAUSE_OPTIONS[i])) / 2;
+            int y = firstCenterY + i * spacing + (metrics.getAscent() - metrics.getDescent()) / 2;
+            g.drawString(PAUSE_OPTIONS[i], x, y);
+        }
+        int guideX = (getWidth() - pauseGuideImage.getWidth(this)) / 2;
+        int guideY = getHeight() - pauseGuideImage.getHeight(this) - 50;
+        g.drawImage(pauseGuideImage, guideX, guideY, this);
+    }
+
+    private void handlePauseInput(String key) {
+        switch (key) {
+            case "UP" -> pauseSelection = Math.floorMod(pauseSelection - 1, PAUSE_OPTIONS.length);
+            case "DOWN" -> pauseSelection = (pauseSelection + 1) % PAUSE_OPTIONS.length;
+            case "SPACE" -> {
+                ignoreSpaceUntilRelease = true;
+                switch (pauseSelection) {
+                    case 0 -> setPaused(false);
+                    case 1 -> {
+                        game.restart();
+                        setPaused(false);
+                    }
+                    case 2 -> menuCallback.run();
+                }
+            }
+        }
     }
 
     private void bindUnfiltered(String key, String name, Runnable action) {
@@ -431,56 +482,4 @@ final class GamePanel extends JPanel {
         });
     }
 
-    /// 폰트를 가져옵니다. Black(가장 굵은)
-    private Font loadBlack() {
-        try {
-            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Inter_18pt-Black.ttf").toFile());
-            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
-            return font;
-        } catch (IOException | FontFormatException e) {
-            throw new IllegalStateException("Inter_18pt-Black 폰트를 불러올 수 없습니다.", e);
-        }
-    }
-
-    /// 폰트를 가져옵니다. Medium(보통)
-    private Font loadMedium() {
-        try {
-            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Inter_18pt-Medium.ttf").toFile());
-            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
-            return font;
-        } catch (IOException | FontFormatException e) {
-            throw new IllegalStateException("Inter_18pt-Medium 폰트를 불러올 수 없습니다.", e);
-        }
-    }
-
-    /// 폰트를 가져옵니다. 한글 전용
-    private Font loadKRBlack() {
-        try {
-            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/NotoSansKR-Black.ttf").toFile());
-            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
-            return font;
-        } catch (IOException | FontFormatException e) {
-            throw new IllegalStateException("NotoSansKR-Black 폰트를 불러올 수 없습니다.", e);
-        }
-    }
-
-    private Font loadOrbitBlack() {
-        try {
-            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Orbitron-Black.ttf").toFile());
-            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
-            return font;
-        } catch (IOException | FontFormatException e) {
-            throw new IllegalStateException("Orbitron-Black 폰트를 불러올 수 없습니다.", e);
-        }
-    }
-
-    private Font loadOrbitBold() {
-        try {
-            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Orbitron-Bold.ttf").toFile());
-            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
-            return font;
-        } catch (IOException | FontFormatException e) {
-            throw new IllegalStateException("Orbitron-Bold 폰트를 불러올 수 없습니다.", e);
-        }
-    }
 }

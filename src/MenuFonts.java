@@ -4,7 +4,7 @@ import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.nio.file.Path;
 
-/** 메인 메뉴에서 사용하는 커스텀 폰트 로딩 유틸리티. */
+/** 메뉴와 게임 화면에서 사용하는 커스텀 폰트 로딩 유틸리티. */
 final class MenuFonts {
     private MenuFonts() { }
 
@@ -16,6 +16,69 @@ final class MenuFonts {
             return font;
         } catch (IOException | FontFormatException e) {
             return new Font(Font.MONOSPACED, Font.PLAIN, 16);
+        }
+    }
+
+    /// 폰트를 가져옵니다. Black(가장 굵은)
+    static Font loadBlack() {
+        try {
+            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Inter_18pt-Black.ttf").toFile());
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+            return font;
+        } catch (IOException | FontFormatException e) {
+            throw new IllegalStateException("Inter_18pt-Black 폰트를 불러올 수 없습니다.", e);
+        }
+    }
+
+    static Font loadBold() {
+        try {
+            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Inter-Bold.ttf").toFile());
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+            return font;
+        } catch (IOException | FontFormatException e) {
+            throw new IllegalStateException("Inter-Bold 폰트를 불러올 수 없습니다.", e);
+        }
+    }
+
+    /// 폰트를 가져옵니다. Medium(보통)
+    static Font loadMedium() {
+        try {
+            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Inter_18pt-Medium.ttf").toFile());
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+            return font;
+        } catch (IOException | FontFormatException e) {
+            throw new IllegalStateException("Inter_18pt-Medium 폰트를 불러올 수 없습니다.", e);
+        }
+    }
+
+    /// 폰트를 가져옵니다. 한글 전용
+    static Font loadKRBlack() {
+        try {
+            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/NotoSansKR-Black.ttf").toFile());
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+            return font;
+        } catch (IOException | FontFormatException e) {
+            throw new IllegalStateException("NotoSansKR-Black 폰트를 불러올 수 없습니다.", e);
+        }
+    }
+
+    static Font loadOrbitBlack() {
+        try {
+            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Orbitron-Black.ttf").toFile());
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+            return font;
+        } catch (IOException | FontFormatException e) {
+            throw new IllegalStateException("Orbitron-Black 폰트를 불러올 수 없습니다.", e);
+        }
+    }
+
+    static Font loadOrbitBold() {
+        try {
+            Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Orbitron-Bold.ttf").toFile());
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+            return font;
+        } catch (IOException | FontFormatException e) {
+            throw new IllegalStateException("Orbitron-Bold 폰트를 불러올 수 없습니다.", e);
         }
     }
 }
