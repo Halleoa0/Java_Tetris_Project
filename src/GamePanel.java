@@ -1,4 +1,5 @@
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
@@ -112,6 +113,8 @@ final class GamePanel extends JPanel {
         });
         bind(Settings.Action.HOLD,    "hold",    game::hold);
         bind(Settings.Action.RESTART, "restart", game::restart);
+        bindPauseNavigation("UP", -1);
+        bindPauseNavigation("DOWN", 1);
 
         bindUnfiltered("ESCAPE", "pauseToggle", () -> { if (!paused) setPaused(true); });
         bindUnfiltered("ENTER", "pauseResume", () -> { if (paused) setPaused(false); });
@@ -410,15 +413,6 @@ final class GamePanel extends JPanel {
         };
     }
 
-    // 텍스트 정보를 띄웁니다.
-    private void drawInfoBox(Graphics2D g, int x, int y, int w, int h, int fontSize, String label, String value) {
-        g.setColor(PANEL);
-        g.setColor(new Color(255, 255, 255)); g.setFont(interBlack.deriveFont((float) fontSize));
-        g.drawString(label, x, y);
-        g.setColor(Color.WHITE); g.setFont(interBlack.deriveFont(20f));
-        g.drawString(value, x + 12, y + h - 14);
-    }
-
     // 200x15 사이즈 Mino.png를 25x25로 잘라서 미노로 씁니다.
     private void drawMiniCell(Graphics2D g, int x, int y, int size, Tetromino type) {
         g.drawImage(minoTiles[minoTileIndex(type)], x, y, size, size, this);
@@ -436,21 +430,6 @@ final class GamePanel extends JPanel {
         }
     }
 
-
-    private void drawPreview(Graphics2D g, int x, int y, String title, List<Tetromino> pieces, boolean hold) {
-        g.setColor(PANEL); g.fillRoundRect(x, y, 156, hold ? 120 : 204, 10, 10);
-        g.setColor(new Color(164, 174, 195)); g.setFont(new Font("SansSerif", Font.BOLD, 11)); g.drawString(title, x + 12, y + 20);
-        int slotH = hold ? 86 : 35;
-        for (int i = 0; i < pieces.size(); i++) {
-            Tetromino type = pieces.get(i);
-            int minX=4, maxX=0, minY=4, maxY=0;
-            for (int[] c : type.cells(0)) { minX=Math.min(minX,c[0]); maxX=Math.max(maxX,c[0]); minY=Math.min(minY,c[1]); maxY=Math.max(maxY,c[1]); }
-            int unit = hold ? 18 : 14;
-            int startX = x + (156 - (maxX-minX+1)*unit)/2;
-            int startY = y + 27 + i*slotH + (slotH - (maxY-minY+1)*unit)/2;
-            for (int[] c : type.cells(0)) drawMiniCell(g, startX + (c[0]-minX)*unit, startY + (c[1]-minY)*unit, unit, type);
-        }
-    }
 
     // 4개까지 NEXT 미노를 보여줌
     private void drawPreviewPiece(Graphics2D g, Tetromino type, int x, int y, int width, int height, int unit) {
@@ -504,10 +483,27 @@ final class GamePanel extends JPanel {
         g.drawImage(pauseGuideImage, guideX, guideY, this);
     }
 
+    /// 일시정지 화면에서 위 아래 키로 옵션을 선택하는 함수
+    private void bindPauseNavigation(String key, int direction) {
+        KeyStroke stroke = KeyStroke.getKeyStroke("pressed " + key);
+        Object gameplayBinding = getInputMap(WHEN_IN_FOCUSED_WINDOW).get(stroke);
+        Action gameplayAction = gameplayBinding == null ? null : getActionMap().get(gameplayBinding);
+        String bindingName = "pause" + key;
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(stroke, bindingName);
+        getActionMap().put(bindingName, new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) {
+                if (paused) {
+                    pauseSelection = Math.floorMod(pauseSelection + direction, PAUSE_OPTIONS.length);
+                    repaint();
+                } else if (gameplayAction != null) {
+                    gameplayAction.actionPerformed(e);
+                }
+            }
+        });
+    }
+
     private void handlePauseInput(Settings.Action a) {
         switch (a) {
-            case ROTATE_CW -> pauseSelection = Math.floorMod(pauseSelection - 1, PAUSE_OPTIONS.length);
-            case SOFT_DROP -> pauseSelection = (pauseSelection + 1) % PAUSE_OPTIONS.length;
             case HARD_DROP -> {
                 ignoreSpaceUntilRelease = true;
                 switch (pauseSelection) {

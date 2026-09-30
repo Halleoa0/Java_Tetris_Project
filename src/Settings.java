@@ -26,7 +26,7 @@ final class Settings {
         MOVE_LEFT("왼쪽 이동", KeyEvent.VK_LEFT),
         MOVE_RIGHT("오른쪽 이동", KeyEvent.VK_RIGHT),
         SOFT_DROP("소프트 드롭", KeyEvent.VK_DOWN),
-        ROTATE_CW("시계 회전", KeyEvent.VK_UP),
+        ROTATE_CW("시계 회전", KeyEvent.VK_X),
         ROTATE_CCW("반시계 회전", KeyEvent.VK_Z),
         HARD_DROP("하드 드롭", KeyEvent.VK_SPACE),
         HOLD("홀드", KeyEvent.VK_C),
