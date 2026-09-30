@@ -29,9 +29,5 @@ bin/
 ### Mac OS ###
 .DS_Store
 
-### 로컬 오디오 작업 및 임시 음원 리소스 ###
+### 로컬 오디오 생성 작업 및 임시 리소스 (Git 추적 제외) ###
 audio-candidates/
-Audio/
-/Audio/
-*.wav
-*.mp3
