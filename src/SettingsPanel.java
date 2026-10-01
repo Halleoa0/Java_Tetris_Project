@@ -94,7 +94,7 @@ final class SettingsPanel extends JPanel {
         back.addActionListener(e -> {
             AudioManager.get().playMenuSelect();
             cancelKeyWait();
-            screens.showMenu();
+            screens.showHome();
         });
         bottom.add(resetAll);
         bottom.add(back);
@@ -229,7 +229,7 @@ final class SettingsPanel extends JPanel {
         JButton reset = button("현재 사용자 키 초기화");
         reset.addActionListener(e -> { s.resetKeys(); refreshKeyButtons(); });
         p.add(reset);
-        JLabel hint = new JLabel("※ ESC / ENTER / M 은 일시정지·메뉴용이라 지정할 수 없어요. 이미 쓰는 키는 서로 교환됩니다.");
+        JLabel hint = new JLabel("※ ESC / ENTER / M 은 일시정지·메뉴용이라 지정할 수 없어요. 이미 사용되고 있는 키는 서로 교환됩니다.");
         hint.setForeground(SUB);
         hint.setFont(font.deriveFont(12f));
         p.add(hint);

@@ -11,7 +11,7 @@ final class ShopPanel extends JPanel {
         JButton back = new JButton("뒤로가기");
         back.addActionListener(event -> {
             AudioManager.get().playMenuSelect();
-            screens.showMenu();
+            screens.showHome();
         });
         add(back);
     }

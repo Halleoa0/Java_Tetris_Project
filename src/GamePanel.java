@@ -23,11 +23,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/** Swing 화면, 키 입력, 주기적인 게임 업데이트를 연결한다.
+/* Swing 화면, 키 입력, 주기적인 게임 업데이트를 연결한다.
  * 사용 예: IntelliJ에서 Main을 실행한 뒤 방향키로 이동하고 Space로 즉시 낙하한다.
  * 조작: ←/→ 이동, ↓ 소프트드롭, ↑ 또는 X 시계 회전, Z 반시계 회전,
  * Space 하드드롭, C Hold, R 재시작.
@@ -77,7 +76,7 @@ final class GamePanel extends JPanel {
     private boolean paused;
     private int pauseSelection;
     private boolean ignoreSpaceUntilRelease;
-    private Runnable menuCallback = () -> { };
+    private Runnable homeCallback = () -> { };
     // 일시정지 메뉴의 재시작 콜백. null이면 game.restart()를 수행한다.
     private Runnable pauseRestartCallback;
 
@@ -126,7 +125,7 @@ final class GamePanel extends JPanel {
 
         bindUnfiltered("ESCAPE", "pauseToggle", () -> { if (!paused) setPaused(true); });
         bindUnfiltered("ENTER", "pauseConfirm", () -> { if (paused) confirmPauseSelection(); });
-        bindUnfiltered("M", "menu", () -> { if (paused || game.gameOver) menuCallback.run(); });
+        bindUnfiltered("M", "menu", () -> { if (paused || game.gameOver) homeCallback.run(); });
         configureOverlayButtons();
 
         // 게임 동작에 맞춰 효과음을 재생한다.
@@ -200,8 +199,8 @@ final class GamePanel extends JPanel {
     /** 일시정지 메뉴에서 RESTART를 골랐을 때 실행할 동작을 지정한다. null이면 기본 game.restart(). */
     void setPauseRestartCallback(Runnable callback) { this.pauseRestartCallback = callback; }
 
-    void setMenuCallback(Runnable menuCallback) {
-        this.menuCallback = menuCallback == null ? () -> { } : menuCallback;
+    void setHomeCallback(Runnable homeCallback) {
+        this.homeCallback = homeCallback == null ? () -> { } : homeCallback;
     }
 
     private void setPaused(boolean paused) {
@@ -236,7 +235,7 @@ final class GamePanel extends JPanel {
 
         gameOverMenuButton.addActionListener(event -> {
             AudioManager.get().playMenuSelect();
-            menuCallback.run();
+            homeCallback.run();
         });
         add(gameOverRestartButton);
         add(gameOverMenuButton);
@@ -622,7 +621,7 @@ final class GamePanel extends JPanel {
                 }
                 setPaused(false);
             }
-            case 2 -> menuCallback.run(); // 메인 화면으로 이동
+            case 2 -> homeCallback.run(); // 메인 화면으로 이동
         }
     }
 
