@@ -162,6 +162,7 @@ final class SettingsPanel extends JPanel {
         p.add(row("난이도", diff));
         p.add(slider("DAS (첫 반복 지연, ms)", s::dasMs, s::setDasMs, 50, 400));
         p.add(slider("ARR (반복 간격, ms)", s::arrMs, s::setArrMs, 0, 120));
+        p.add(slider("SDF (소프트 드롭 배율)", s::sdf, s::setSdf, 1, 40));
         return p;
     }
 

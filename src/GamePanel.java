@@ -107,7 +107,10 @@ final class GamePanel extends JPanel {
         minoTiles = loadMinoTiles("Images/Mino.png");
         bindHeld(Settings.Action.MOVE_LEFT,  () -> game.move(-1, 0));
         bindHeld(Settings.Action.MOVE_RIGHT, () -> game.move(1, 0));
-        bindHeld(Settings.Action.SOFT_DROP,  game::softDrop);
+        bindHeld(Settings.Action.SOFT_DROP, () -> {
+            game.setSoftDropHeld(true);
+            game.softDrop();
+        });
         bindInitial(Settings.Action.ROTATE_CW,  "rotateCW",  () -> game.rotate(1));
         bindInitial(Settings.Action.ROTATE_CCW, "rotateCCW", () -> game.rotate(-1));
         bind(Settings.Action.HARD_DROP,  "hardDrop",  game::hardDrop);
@@ -357,7 +360,11 @@ final class GamePanel extends JPanel {
             if (elapsed >= delay) {
                 elapsed -= delay;
                 repeatingKeys.add(key);
-                heldKeyActions.get(key).run();
+                // 소프트 드롭은 Game.tick()의 SDF가 실제 낙하 속도를 담당
+                // 여기서 ARR 반복까지 적용하면 SDF와 중복되어 속도가 달라짐
+                if (!key.equals(Settings.Action.SOFT_DROP.name())) {
+                    heldKeyActions.get(key).run();
+                }
             }
             heldKeyElapsed.put(key, elapsed);
         }
@@ -367,6 +374,7 @@ final class GamePanel extends JPanel {
         boolean wasHeld = heldKeys.remove(key);
         repeatingKeys.remove(key);
         heldKeyElapsed.remove(key);
+        if (key.equals(Settings.Action.SOFT_DROP.name())) game.setSoftDropHeld(false);
         pressedMoveKeys.remove(key);
         // 반대 키가 이미 눌려 있으면 OS 반복 입력을 기다리지 않고 즉시 전환한다.
         String opposite = key.equals(Settings.Action.MOVE_LEFT.name()) ? Settings.Action.MOVE_RIGHT.name()
@@ -379,6 +387,7 @@ final class GamePanel extends JPanel {
         pressedMoveKeys.clear();
         repeatingKeys.clear();
         heldKeyElapsed.clear();
+        game.setSoftDropHeld(false);
         initialKeys.clear();
         game.setInitialInputs(false, 0);
     }

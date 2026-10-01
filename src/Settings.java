@@ -83,6 +83,8 @@ final class Settings {
     private boolean muted = false;
     private boolean ghostPiece = true, showGrid = true;
     private int dasMs = 180, arrMs = 55; // GamePanel.tickHeldKeys 의 기본값과 동일
+    // SDF
+    private int sdf = 20;
     private boolean muteWhenUnfocused = true;
 
     // 사용자(프로필)별 키 세팅
@@ -124,9 +126,27 @@ final class Settings {
 
     //Game.tick 의 중력 간격(ms). 기존 식에 난이도 배율만 곱//
     int gravityMs(int level) {
+        //레벨이 올라갈수록 낙하 간격을 줄이고, 난이도가 높을수록 더 빠르게 낙하
         int base = 800 - (level - 1) * 60;
         return Math.max(40, (int) Math.round(base * difficulty.gravityScale));
     }
+
+    /** 소프트 드롭 중 사용하는 중력 간격. SDF가 클수록 빠르게 내려감 */
+    int softDropGravityMs(int level) {
+        return Math.max(16, gravityMs(level) / Math.max(1, sdf));
+    }
+
+    /** 레벨/난이도에 따라 락 딜레이도 조금씩 짧아지도록 함 */
+    int lockDelayMs(int level) {
+        int base = (int) Math.round(500 * difficulty.gravityScale);
+        int levelReduction = Math.max(0, level -1) * 10;
+        return Math.max(100, base - levelReduction);
+    }
+
+    int sdf() {
+        return sdf;
+    }
+    void setSdf(int value) { sdf = Math.max(1, Math.min(40, value)); changed(); }
 
     int startLevel() { return difficulty.startLevel; }
 
@@ -258,6 +278,7 @@ final class Settings {
         p.setProperty("showGrid", String.valueOf(showGrid));
         p.setProperty("das", String.valueOf(dasMs));
         p.setProperty("arr", String.valueOf(arrMs));
+        p.setProperty("sdf", String.valueOf(sdf));
         p.setProperty("profile.current", currentProfile);
         p.setProperty("profile.names", String.join(",", profiles.keySet()));
         for (var e : profiles.entrySet())
@@ -290,6 +311,7 @@ final class Settings {
             showGrid = Boolean.parseBoolean(p.getProperty("showGrid", "true"));
             dasMs = clamp(parseInt(p.getProperty("das"), 180), 50, 400);
             arrMs = clamp(parseInt(p.getProperty("arr"), 55), 0, 120);
+            sdf = clamp(parseInt(p.getProperty("sdf"), 20), 1, 40);
 
             String names = p.getProperty("profile.names", DEFAULT_PROFILE);
             profiles.clear();
