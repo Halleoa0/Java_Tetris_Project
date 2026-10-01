@@ -66,9 +66,12 @@ final class GamePanel extends JPanel {
     public final Font orbitBold = MenuFonts.loadOrbitBold();
 
     private final Set<String> heldKeys = new HashSet<>();
+    private final Set<String> pressedMoveKeys = new HashSet<>();
     private final Set<String> repeatingKeys = new HashSet<>();
     private final Map<String, Integer> heldKeyElapsed = new HashMap<>();
     private final Map<String, Runnable> heldKeyActions = new HashMap<>();
+    private final Set<Settings.Action> initialKeys = new HashSet<>();
+    private int lastInitialRotation = 1;
 
     private final Timer timer;
     private boolean paused;
@@ -106,14 +109,14 @@ final class GamePanel extends JPanel {
         bindHeld(Settings.Action.MOVE_LEFT,  () -> game.move(-1, 0));
         bindHeld(Settings.Action.MOVE_RIGHT, () -> game.move(1, 0));
         bindHeld(Settings.Action.SOFT_DROP,  game::softDrop);
-        bind(Settings.Action.ROTATE_CW,  "rotateCW",  () -> game.rotate(1));
-        bind(Settings.Action.ROTATE_CCW, "rotateCCW", () -> game.rotate(-1));
+        bindInitial(Settings.Action.ROTATE_CW,  "rotateCW",  () -> game.rotate(1));
+        bindInitial(Settings.Action.ROTATE_CCW, "rotateCCW", () -> game.rotate(-1));
         bind(Settings.Action.HARD_DROP,  "hardDrop",  game::hardDrop);
         getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().released(Settings.Action.HARD_DROP), "pauseSpaceReleased");
         getActionMap().put("pauseSpaceReleased", new AbstractAction() {
             @Override public void actionPerformed(ActionEvent e) { ignoreSpaceUntilRelease = false; }
         });
-        bind(Settings.Action.HOLD,    "hold",    game::hold);
+        bindInitial(Settings.Action.HOLD, "hold", game::hold);
         bind(Settings.Action.RESTART, "restart", () -> {
             game.restart();
             AudioManager.get().startGameBgm();
@@ -187,7 +190,10 @@ final class GamePanel extends JPanel {
         timer.start();
     }
 
-    void setInputFilter(InputFilter inputFilter) { this.inputFilter = inputFilter; }
+    void setInputFilter(InputFilter inputFilter) {
+        this.inputFilter = inputFilter;
+        updateInitialInputs();
+    }
 
     void setOverlayRenderer(Consumer<Graphics2D> overlayRenderer) { this.overlayRenderer = overlayRenderer; }
 
@@ -256,12 +262,52 @@ final class GamePanel extends JPanel {
         getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().pressed(action), bindingName);
         getActionMap().put(bindingName, new AbstractAction() {
             @Override public void actionPerformed(ActionEvent e) {
-                if (action == Settings.Action.HARD_DROP && ignoreSpaceUntilRelease) return;
+                if (action == Settings.Action.HARD_DROP) {
+                    if (ignoreSpaceUntilRelease) return;
+                    ignoreSpaceUntilRelease = true;
+                }
                 if (paused) handlePauseInput(action);
                 else if (inputFilter == null || inputFilter.allow(name)) run.run();
                 repaint();
             }
         });
+    }
+
+    /** 즉시 조작은 한 번만 실행하고, 키 유지 상태는 다음 스폰에 전달한다. */
+    private void bindInitial(Settings.Action action, String name, Runnable run) {
+        String pressedName = name + "_" + action.name();
+        String releasedName = pressedName + "Released";
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().pressed(action), pressedName);
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().released(action), releasedName);
+        getActionMap().put(pressedName, new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) {
+                if (paused) handlePauseInput(action);
+                else if ((inputFilter == null || inputFilter.allow(name)) && initialKeys.add(action)) {
+                    if (action == Settings.Action.ROTATE_CW) lastInitialRotation = 1;
+                    else if (action == Settings.Action.ROTATE_CCW) lastInitialRotation = -1;
+                    updateInitialInputs();
+                    run.run();
+                }
+                repaint();
+            }
+        });
+        getActionMap().put(releasedName, new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) {
+                initialKeys.remove(action);
+                updateInitialInputs();
+            }
+        });
+    }
+
+    private void updateInitialInputs() {
+        boolean cw = initialKeyAllowed(Settings.Action.ROTATE_CW, "rotateCW");
+        boolean ccw = initialKeyAllowed(Settings.Action.ROTATE_CCW, "rotateCCW");
+        int direction = cw && ccw ? lastInitialRotation : cw ? 1 : ccw ? -1 : 0;
+        game.setInitialInputs(initialKeyAllowed(Settings.Action.HOLD, "hold"), direction);
+    }
+
+    private boolean initialKeyAllowed(Settings.Action action, String name) {
+        return initialKeys.contains(action) && (inputFilter == null || inputFilter.allow(name));
     }
 
     private void bindHeld(Settings.Action action, Runnable run) {
@@ -276,11 +322,10 @@ final class GamePanel extends JPanel {
                 if (paused) {
                     handlePauseInput(action); repaint();
                 }
-                else if (heldKeys.add(key)) {
-                    heldKeyElapsed.put(key, 0);
-                    repeatingKeys.remove(key);
-                    run.run();
-                    repaint();
+                else {
+                    if (action == Settings.Action.MOVE_LEFT || action == Settings.Action.MOVE_RIGHT)
+                        pressedMoveKeys.add(key);
+                    if (!oppositeMoveHeld(action)) activateHeldKey(key);
                 }
             }
         });
@@ -290,6 +335,19 @@ final class GamePanel extends JPanel {
     }
 
 
+
+    private void activateHeldKey(String key) {
+        if (!heldKeys.add(key)) return;
+        heldKeyElapsed.put(key, 0);
+        repeatingKeys.remove(key);
+        heldKeyActions.get(key).run();
+        repaint();
+    }
+
+    private boolean oppositeMoveHeld(Settings.Action action) {
+        return (action == Settings.Action.MOVE_LEFT && heldKeys.contains(Settings.Action.MOVE_RIGHT.name()))
+                || (action == Settings.Action.MOVE_RIGHT && heldKeys.contains(Settings.Action.MOVE_LEFT.name()));
+    }
 
     /// 키 입력 후에 다시 재입력
     private void tickHeldKeys(int elapsedMs) {
@@ -307,15 +365,23 @@ final class GamePanel extends JPanel {
     }
 
     private void releaseHeldKey(String key) {
-        heldKeys.remove(key);
+        boolean wasHeld = heldKeys.remove(key);
         repeatingKeys.remove(key);
         heldKeyElapsed.remove(key);
+        pressedMoveKeys.remove(key);
+        // 반대 키가 이미 눌려 있으면 OS 반복 입력을 기다리지 않고 즉시 전환한다.
+        String opposite = key.equals(Settings.Action.MOVE_LEFT.name()) ? Settings.Action.MOVE_RIGHT.name()
+                : key.equals(Settings.Action.MOVE_RIGHT.name()) ? Settings.Action.MOVE_LEFT.name() : null;
+        if (wasHeld && opposite != null && pressedMoveKeys.contains(opposite)) activateHeldKey(opposite);
     }
 
     private void clearHeldKeys() {
         heldKeys.clear();
+        pressedMoveKeys.clear();
         repeatingKeys.clear();
         heldKeyElapsed.clear();
+        initialKeys.clear();
+        game.setInitialInputs(false, 0);
     }
 
     /// 실제로 그리기
@@ -404,7 +470,7 @@ final class GamePanel extends JPanel {
 
     // 보드와 쌓은 블록, 현재블록과 고스트를 그림
     private void drawBoard(Graphics2D g) {
-        for (int row = 0; row < Board.HEIGHT; row++) {
+        for (int row = Board.MIN_ROW; row < Board.HEIGHT; row++) {
             for (int col = 0; col < Board.WIDTH; col++) {
                 int sx = BOARD_X + col * CELL, sy = BOARD_Y + (row - Board.HIDDEN_ROWS) * CELL;
                 Tetromino locked = game.board.get(col, row);
@@ -428,7 +494,7 @@ final class GamePanel extends JPanel {
     private void drawPiece(Graphics2D g, Tetromino type, int x, int y, int rotation, boolean ghost) {
         for (int[] cell : type.cells(rotation)) {
             int bx = x + cell[0], by = y + cell[1];
-            if (by < -Board.HIDDEN_ROWS || by >= Board.HEIGHT) continue;
+            if (by < Board.MIN_ROW || by >= Board.HEIGHT) continue;
             int visibleY = by - Board.HIDDEN_ROWS;
             drawCell(g, BOARD_X + bx * CELL, BOARD_Y + visibleY * CELL, type, ghost);
         }

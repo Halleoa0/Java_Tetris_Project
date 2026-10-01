@@ -33,6 +33,8 @@ final class Game {
     private PieceGenerator pieceGenerator;
     private boolean gravityEnabled = true;
     private boolean spawnVisible;
+    private boolean initialHold;
+    private int initialRotation;
 
     Game() { this(null); }
 
@@ -56,6 +58,12 @@ final class Game {
 
     /** 다음 블록을 화면에 보이는 행에서 시작할지 설정한다. 다음 스폰/재시작부터 적용된다. */
     void setSpawnVisible(boolean visible) { spawnVisible = visible; }
+
+    /** 유지 중인 키를 다음 미노의 IHS/IRS에 사용한다. 회전 방향은 -1, 0, 1. */
+    void setInitialInputs(boolean hold, int rotationDirection) {
+        initialHold = hold;
+        initialRotation = Integer.signum(rotationDirection);
+    }
 
     float calPPS() {
         pps = dropCount / timer;
@@ -93,9 +101,34 @@ final class Game {
     private void spawnNext() {
         // 새 블록은 보드 위쪽 숨김 영역에서 시작한다.
         // Next를 최신화한다. (최근 미노 제거, 마지막미노 생성)
-        active = queue.removeFirst(); queue.addLast(nextPiece());
-        x = 3; y = spawnVisible ? Board.HIDDEN_ROWS : -1; rotation = 0; holdUsed = false;
-        lastMoveWasRotation = false; lockElapsed = 0; lockResets = 0; gravityElapsed = 0;
+        active = takeNextPiece();
+        holdUsed = false;
+        gravityElapsed = 0;
+        // 홀드로 최종 미노를 먼저 결정한 뒤 한 번만 회전한다.
+        if (initialHold) {
+            swapHeldPiece();
+            holdUsed = true;
+        }
+        enterPiece();
+    }
+
+    private Tetromino takeNextPiece() {
+        Tetromino piece = queue.removeFirst();
+        queue.addLast(nextPiece());
+        return piece;
+    }
+
+    private void swapHeldPiece() {
+        Tetromino current = active;
+        active = held == null ? takeNextPiece() : held;
+        held = current;
+    }
+
+    private void enterPiece() {
+        x = 3; y = spawnVisible ? Board.HIDDEN_ROWS : -1; rotation = 0;
+        lastMoveWasRotation = false; lockElapsed = 0; lockResets = 0;
+        // IRS가 스폰 충돌을 해소할 수 있으므로 최종 위치에서 게임오버를 판정한다.
+        if (initialRotation != 0) rotate(initialRotation);
         if (!board.canPlace(active, x, y, rotation)) setGameOver();
     }
 
@@ -111,6 +144,7 @@ final class Game {
     boolean rotate(int direction) {
         int rotationDirection = direction > 0 ? 1 : -1;
         if (gameOver || active == Tetromino.Omino) {
+            notifyRotate(rotationDirection);
             return false;
         }
         int from = rotation, to = (rotation + (direction > 0 ? 1 : 3)) & 3;
@@ -121,10 +155,11 @@ final class Game {
             if (board.canPlace(active, nx, ny, to)) {
                 x = nx; y = ny; rotation = to; lastMoveWasRotation = true; lastKickIndex = i;
                 afterPlayerMove();
-                notifyRotate(rotationDirection); // 회전 성공 시 리스너에 알린다.
+                notifyRotate(rotationDirection);
                 return true;
             }
         }
+        notifyRotate(rotationDirection);
         return false;
     }
 
@@ -145,30 +180,20 @@ final class Game {
         int distance = 0;
         while (board.canPlace(active, x, y + 1, rotation)) { y++; distance++; }
         scoring.onHardDrop(distance);
-        for (GameListener listener : List.copyOf(listeners)) listener.onHardDrop();
         lockPiece();
     }
 
-    /** 소프트 드롭: 아래로 1칸 내린다. */
     void softDrop() {
-        if (move(0, 1)) {
-            scoring.onSoftDrop(1);
-            for (GameListener listener : List.copyOf(listeners)) listener.onSoftDrop();
-        }
+        if (move(0, 1)) scoring.onSoftDrop(1);
     }
 
     /** 현재 블록을 Hold 칸과 바꾸며, 블록 하나당 한 번만 허용한다. */
     void hold() {
         if (gameOver || holdUsed) return;
-        Tetromino current = active;
-        if (held == null) { held = current; spawnNext(); }
-        else {
-            active = held; held = current; x = 3; y = spawnVisible ? Board.HIDDEN_ROWS : -1; rotation = 0;
-            lastMoveWasRotation = false; lockElapsed = 0; lockResets = 0;
-            if (!board.canPlace(active, x, y, rotation)) setGameOver();
-        }
+        if (held == null) gravityElapsed = 0;
+        swapHeldPiece();
         holdUsed = true;
-        for (GameListener listener : List.copyOf(listeners)) listener.onHold();
+        enterPiece();
     }
 
     /** 타이머가 전달한 경과 시간만큼 중력 낙하와 락 지연을 진행한다. */
@@ -199,8 +224,7 @@ final class Game {
         Tetromino lockedType = active;
         boolean entirelyInHiddenRows = true;
         for (int[] cell : active.cells(rotation)) {
-            int cellY = y + cell[1];
-            if (cellY < 0 || cellY >= Board.HIDDEN_ROWS) {
+            if (y + cell[1] >= Board.HIDDEN_ROWS) {
                 entirelyInHiddenRows = false;
                 break;
             }
@@ -216,13 +240,7 @@ final class Game {
         dropCount++; // 드랍 수 + 1
         ScoreManager.Spin spinType = !spin ? ScoreManager.Spin.NONE
                 : (mini ? ScoreManager.Spin.MINI : ScoreManager.Spin.FULL);
-        
-        int prevLevel = scoring.level;
         scoring.onLock(cleared, spinType, cleared > 0 && board.isEmpty());
-        // 레벨이 올랐으면 리스너에 알린다.
-        if (scoring.level > prevLevel) {
-            for (GameListener listener : List.copyOf(listeners)) listener.onLevelUp(scoring.level);
-        }
         spawnNext();
     }
 
@@ -239,7 +257,8 @@ final class Game {
         return corners >= 3;
     }
     private boolean isCornerOccupied(int cx, int cy) {
-        return cx < 0 || cx >= Board.WIDTH || cy >= Board.HEIGHT || (cy >= 0 && board.occupied(cx, cy));
+        return cx < 0 || cx >= Board.WIDTH || cy < Board.MIN_ROW || cy >= Board.HEIGHT
+                || board.occupied(cx, cy);
     }
     private boolean isMiniTSpin() {
         if (lastKickIndex == 4) return false;
