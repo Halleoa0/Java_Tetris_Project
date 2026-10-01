@@ -9,7 +9,7 @@ final class Game {
 
     /** 화면에 미리 표시할 다음 블록 수. */
     static final int PREVIEW_COUNT = 4;
-    private static final int LOCK_DELAY_MS = 500, MAX_LOCK_RESETS = 15;
+    private static final int MAX_LOCK_RESETS = 15;
     final Board board = new Board();
     private final Random random = new Random();
     // bag은 7종 블록을 섞어 담고, queue는 다음 블록의 순서를 보관한다.
@@ -183,7 +183,12 @@ final class Game {
         lockPiece();
     }
 
+    /**
+     * 소프트 드롭. 키를 누르고 있는 동안 GamePanel의 반복 입력 대신에도
+     * 실제 중력 속도를 기준으로 처리할 수 있도록 한 칸을 즉시 내림
+     */
     void softDrop() {
+        if (gameOver) return;
         if (move(0, 1)) scoring.onSoftDrop(1);
     }
 
@@ -203,7 +208,11 @@ final class Game {
         if (startCal) {
             timer += elapsedMs / 1000.0f;
         }
-        int gravity = Settings.get().gravityMs(scoring.level);
+        Settings settings = Settings.get();
+        int gravity = settings.gravityMs(scoring.level);
+        // SDF는 Down 키를 누르고 있는 동안 중력 간격을 줄여 빠르게 낙하시킴
+        // GamePanel의 반복 입력과 중복으로 과도하게 빨라지지 않도록 별도 누적값으로 처리
+        if (softDropHeld) gravity = settings.softDropGravityMs(scoring.level);
         gravityElapsed += elapsedMs;
         while (gravityElapsed >= gravity) {
             gravityElapsed -= gravity;
@@ -212,10 +221,16 @@ final class Game {
         }
         if (!board.canPlace(active, x, y + 1, rotation)) {
             lockElapsed += elapsedMs;
-            if (lockElapsed >= LOCK_DELAY_MS) lockPiece();
+            if (lockElapsed >= settings.lockDelayMs(scoring.level)) lockPiece();
         } else lockElapsed = 0;
     }
     private int gravityElapsed;
+    private boolean softDropHeld;
+
+    void setSoftDropHeld(boolean held) {
+        if (softDropHeld != held) gravityElapsed = 0;
+        softDropHeld = held;
+    }
 
     private void lockPiece() {
         // 마지막 조작이 회전이고 T 블록의 세 모서리가 막힌 경우 T-spin 점수를 적용한다.
