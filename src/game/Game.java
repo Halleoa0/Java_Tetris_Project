@@ -71,7 +71,7 @@ public final class Game {
         initialHold = settings.ihs() && hold;
         initialRotation = settings.irs() ? Integer.signum(rotationDirection) : 0;
         //initialHold = hold;
-       // initialRotation = Integer.signum(rotationDirection);
+        // initialRotation = Integer.signum(rotationDirection);
     }
 
     boolean isSpawnDelayed() { return spawnDelayed; }
