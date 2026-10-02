@@ -74,7 +74,7 @@ public final class Game {
         // initialRotation = Integer.signum(rotationDirection);
     }
 
-    boolean isSpawnDelayed() { return spawnDelayed; }
+    public boolean isSpawnDelayed() { return spawnDelayed; }
 
     public float calPPS() {
         pps = dropCount / timer;
@@ -144,7 +144,7 @@ public final class Game {
     }
 
     /** dx/dy만큼 이동한다. 충돌하면 false, 이동하면 true를 반환한다. */
-    boolean move(int dx, int dy) {
+    public boolean move(int dx, int dy) {
         if (gameOver || spawnDelayed || active == null || !board.canPlace(active, x + dx, y + dy, rotation)) return false;
         x += dx; y += dy; lastMoveWasRotation = false;
         for (GameListener listener : List.copyOf(listeners)) listener.onMove(dx, dy);
@@ -186,7 +186,7 @@ public final class Game {
     }
 
     /** 가능한 가장 아래까지 내린 뒤 고정한다. 낙하 거리에 따라 점수를 준다. */
-    void hardDrop() {
+    public void hardDrop() {
         if (gameOver) return;
         int distance = 0;
         while (board.canPlace(active, x, y + 1, rotation)) { y++; distance++; }
@@ -198,13 +198,13 @@ public final class Game {
      * 소프트 드롭. 키를 누르고 있는 동안 GamePanel의 반복 입력 대신에도
      * 실제 중력 속도를 기준으로 처리할 수 있도록 한 칸을 즉시 내림
      */
-    void softDrop() {
+    public void softDrop() {
         if (gameOver) return;
         if (move(0, 1)) scoring.onSoftDrop(1);
     }
 
     /** 현재 블록을 Hold 칸과 바꾸며, 블록 하나당 한 번만 허용한다. */
-    void hold() {
+    public void hold() {
         if (gameOver || holdUsed) return;
         if (held == null) gravityElapsed = 0;
         swapHeldPiece();

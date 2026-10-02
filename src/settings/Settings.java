@@ -155,14 +155,14 @@ public final class Settings {
     }
     public void setSdf(int value) { sdf = Math.max(1, Math.min(40, value)); changed(); }
 
-    int spawnDelayMs() { return spawnDelayMs; }
-    void setSpawnDelayMs(int value) { spawnDelayMs = Math.max(0, Math.min(100, value)); changed(); }
-    boolean ihs() { return ihs; }
-    void setIhs(boolean value) { ihs = value; changed(); }
-    boolean irs() { return irs; }
-    void setIrs(boolean value) { irs = value; changed(); }
+    public int spawnDelayMs() { return spawnDelayMs; }
+    public void setSpawnDelayMs(int value) { spawnDelayMs = Math.max(0, Math.min(100, value)); changed(); }
+    public boolean ihs() { return ihs; }
+    public void setIhs(boolean value) { ihs = value; changed(); }
+    public boolean irs() { return irs; }
+    public void setIrs(boolean value) { irs = value; changed(); }
 
-    int startLevel() { return difficulty.startLevel; }
+    public int startLevel() { return difficulty.startLevel; }
 
     //사운드 (0~100)//
 
