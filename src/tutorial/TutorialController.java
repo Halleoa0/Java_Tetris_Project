@@ -1,7 +1,18 @@
+package tutorial;
+
+import audio.AudioManager;
+import game.Game;
+import game.GameListener;
 import java.util.List;
+import ui.GamePanel;
+
+
+
+
+
 
 /** 튜토리얼 설정을 게임과 화면에 적용하고, 게임 이벤트로 단계를 진행한다. */
-final class TutorialController implements GameListener {
+public final class TutorialController implements GameListener {
     private static final int STEP_COUNT = 3;
 
     private final Game game;
@@ -13,7 +24,7 @@ final class TutorialController implements GameListener {
     private int currentStep;
     private boolean started, complete;
 
-    TutorialController(Game game, GamePanel panel) {
+    public TutorialController(Game game, GamePanel panel) {
         this.game = game;
         this.panel = panel;
         panel.setPauseRestartCallback(this::start);
@@ -22,7 +33,7 @@ final class TutorialController implements GameListener {
     }
 
     /** 메뉴나 진입점에서 호출해 튜토리얼을 시작한다. */
-    void start() {
+    public void start() {
         if (!started) {
             game.addListener(this);
             started = true;
@@ -33,7 +44,7 @@ final class TutorialController implements GameListener {
     }
 
     /** 완료 시 메뉴 복귀 등 외부 동작을 연결하는 지점. */
-    void setCompletionCallback(Runnable callback) {
+    public void setCompletionCallback(Runnable callback) {
         completionCallback = callback == null ? () -> { } : callback;
     }
 

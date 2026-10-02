@@ -1,11 +1,20 @@
+package tutorial;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.function.Consumer;
 
+
+
+
+
+
+
+
 /** 게임 화면 위에 튜토리얼 말풍선과 진행도를 그린다. */
-final class TutorialOverlayRenderer implements Consumer<Graphics2D> {
+public final class TutorialOverlayRenderer implements Consumer<Graphics2D> {
     private static final Color BUBBLE = new Color(30, 36, 51, 238);
     private static final Color BORDER = new Color(95, 190, 220);
     private final Font sansKRBlack;
@@ -14,18 +23,18 @@ final class TutorialOverlayRenderer implements Consumer<Graphics2D> {
     private String message = "";
     private boolean complete;
 
-    TutorialOverlayRenderer(Font sansKRBlack) {
+    public TutorialOverlayRenderer(Font sansKRBlack) {
         this.sansKRBlack = sansKRBlack;
     }
 
-    void showStep(int stepNumber, int stepCount, String message) {
+    public void showStep(int stepNumber, int stepCount, String message) {
         this.stepNumber = stepNumber;
         this.stepCount = stepCount;
         this.message = message;
         complete = false;
     }
 
-    void showComplete() {
+    public void showComplete() {
         complete = true;
         message = "튜토리얼 완료!";
     }

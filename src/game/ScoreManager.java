@@ -1,8 +1,11 @@
+package game;
+
+
 /** 점수·레벨·줄 수·콤보·백투백 */
-final class ScoreManager {
+public final class ScoreManager {
 
     /** 회전으로 놓은 T미노의 판정 종류 */
-    enum Spin { NONE, MINI, FULL }
+    public enum Spin { NONE, MINI, FULL }
 
     private static final int[] NORMAL    = {0, 100, 300, 500, 800};   // 0~4줄
     private static final int[] MINI_SPIN = {100, 200, 400};           // 0~2줄
@@ -15,26 +18,26 @@ final class ScoreManager {
     private static final int LABEL_SHOW_MS = 1000, LABEL_FADE_MS = 500, LABEL_TRACKING_ANIMATION_MS = 1200;
     private int labelLeft;
 
-    int score, lines, level = 1;
+    public int score, lines, level = 1;
     /** 연속 줄 삭제 횟수. -1이면 콤보 없음, 0이면 첫 삭제(보너스 없음) */
-    int combo = -1;
+    public int combo = -1;
     /** 직전 삭제가 '어려운 삭제'(테트리스/T-스핀 삭제)였는지 */
-    boolean backToBack;
+    public boolean backToBack;
     /** 마지막으로 획득한 점수와 설명 (화면에 표시하고 싶을 때 사용) */
-    int lastGain;
-    String cleardLineString = "";
-    String skillString = "";
-    String comboString = "";
-    String perfectString = "";
+    public int lastGain;
+    public String cleardLineString = "";
+    public String skillString = "";
+    public String comboString = "";
+    public String perfectString = "";
 
-    void reset() {
+    public void reset() {
         score = lines = 0; level = 1; combo = -1; backToBack = false;
         lastGain = 0; cleardLineString = ""; labelLeft = 0; skillString = ""; comboString = "";
         perfectString = "";
     }
 
     /** 문구 표시 시간 줄이기. GamePanel 타이머에서 프레임 호출 */
-    void tick(int elapsedMs) {
+    public void tick(int elapsedMs) {
         if (labelLeft <=0) return;
         labelLeft -= elapsedMs;
         if (labelLeft <= 0) {
@@ -49,23 +52,23 @@ final class ScoreManager {
 
     
     /// easeOut 형식의 자간 조절
-    float clearLineTracking() {
+    public float clearLineTracking() {
         float progress = Math.max(0f, Math.min(1f, (LABEL_SHOW_MS - labelLeft) / (float) LABEL_TRACKING_ANIMATION_MS));
         float easedProgress = 1f - (1f - progress) * (1f - progress);
         return -0.30f + 0.55f * easedProgress;
     }
 
     /** 문구 투명도 0.0~1.0 (마지막 0.5초동안 서서히 사라짐) */
-    float labelAlpha() {
+    public float labelAlpha() {
         if (labelLeft <= 0) return 0f;
         return Math.min(1f, labelLeft / (float) LABEL_FADE_MS);
     }
 
     /** 소프트 드롭: 내려간 칸당 1점 */
-    void onSoftDrop(int cells) { if (cells > 0) score += cells; }
+    public void onSoftDrop(int cells) { if (cells > 0) score += cells; }
 
     /** 하드 드롭: 내려간 칸당 2점 */
-    void onHardDrop(int cells) { if (cells > 0) score += cells * 2; }
+    public void onHardDrop(int cells) { if (cells > 0) score += cells * 2; }
 
     /**
      * 블록이 고정될 때 호출. 점수를 계산해 반영하고, 줄 수/레벨도 갱신
@@ -74,7 +77,7 @@ final class ScoreManager {
      * @param perfect 줄 삭제 후 보드가 완전히 비었는지
      * @return 이번에 얻은 점수
      */
-    int onLock(int cleared, Spin spin, boolean perfect) {
+    public int onLock(int cleared, Spin spin, boolean perfect) {
         cleared = Math.max(0, Math.min(cleared, 4));
         int base;
         if (spin == Spin.FULL)      base = FULL_SPIN[Math.min(cleared, 3)];

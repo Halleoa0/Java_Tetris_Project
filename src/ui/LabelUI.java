@@ -1,14 +1,20 @@
+package ui;
+
+import game.Board;
+import game.Game;
 import java.awt.Color;
+import java.awt.font.TextAttribute;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.font.TextAttribute;
-import java.util.Map;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.util.Locale;
+import java.util.Map;
+
+
 
 /// GamePanel에 존재하면 Label을 따로 별개의 클래스로 뺌
-final class LabelUI {
+public final class LabelUI {
     private static final int CELL = 25;
     private static final int BOARD_X = 517;
     private static final int BOARD_Y = 111;
@@ -22,7 +28,7 @@ final class LabelUI {
     private final Image gameNamePanelImage;
     private final String gameName;
 
-    LabelUI(Game game, Font interBlack, Font interMedium, Font sansKRBlack, Font orbitBlack, Font orbitBold,
+    public LabelUI(Game game, Font interBlack, Font interMedium, Font sansKRBlack, Font orbitBlack, Font orbitBold,
             Image gameNamePanelImage, String gameName) {
         this.game = game;
         this.interBlack = interBlack;
@@ -34,7 +40,7 @@ final class LabelUI {
         this.gameName = gameName;
     }
 
-    void drawScoreLabel(Graphics2D g) {
+    public void drawScoreLabel(Graphics2D g) {
         float a = game.scoring.labelAlpha();
         if (a <= 0f) return;
         int alpha = (int) (255 * a);
@@ -65,7 +71,7 @@ final class LabelUI {
                 647 - metrics4.stringWidth(game.scoring.perfectString) / 2, 197);
     }
 
-    void drawPpsLabel(Graphics2D g) {
+    public void drawPpsLabel(Graphics2D g) {
         g.setColor(Color.WHITE);
         g.setFont(interMedium.deriveFont(16f));
         g.drawString("PPS", 470, 466);
@@ -76,7 +82,7 @@ final class LabelUI {
         g.drawString(ppsText, 500 - metrics.stringWidth(ppsText), 466 + 28);
     }
 
-    void drawGameNamePanel(Graphics2D g) {
+    public void drawGameNamePanel(Graphics2D g) {
         int boardWidth = Board.WIDTH * CELL;
         int boardBottom = BOARD_Y + (Board.HEIGHT - Board.HIDDEN_ROWS) * CELL;
         int x = BOARD_X + (boardWidth - gameNamePanelImage.getWidth(null)) / 2;
@@ -91,7 +97,7 @@ final class LabelUI {
         g.drawString(gameName, textX, textY);
     }
 
-    void drawLineLabel(Graphics2D g) {
+    public void drawLineLabel(Graphics2D g) {
         g.setColor(Color.WHITE);
         g.setFont(interMedium.deriveFont(16f));
         g.drawString("LINES", 456, 539);
@@ -101,7 +107,7 @@ final class LabelUI {
         g.drawString(lineText, 500 - metrics.stringWidth(lineText), 539 + 28);
     }
 
-    void drawScoreValueLabel(Graphics2D g) {
+    public void drawScoreValueLabel(Graphics2D g) {
         g.setColor(Color.WHITE);
         g.setFont(interMedium.deriveFont(16f));
         g.drawString("SCORE", 783, 466);
@@ -109,7 +115,7 @@ final class LabelUI {
         g.drawString(String.format(Locale.US, "%,d", game.scoring.score), 783, 466 + 28);
     }
 
-    void drawTimeLabel(Graphics2D g) {
+    public void drawTimeLabel(Graphics2D g) {
         g.setColor(Color.WHITE);
         g.setFont(interMedium.deriveFont(16f));
         g.drawString("TIME", 783, 539);

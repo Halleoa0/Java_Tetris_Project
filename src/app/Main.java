@@ -1,5 +1,9 @@
-import javax.swing.SwingUtilities;
+package app;
+
+import audio.AudioManager;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+
 
 /** 프로그램 시작점. Swing 화면 생성은 이벤트 처리 스레드에서 실행한다. */
 public class Main {

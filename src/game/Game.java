@@ -1,30 +1,34 @@
+package game;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Random;
+import settings.Settings;
 
-final class Game {
+
+public final class Game {
 
     /** 화면에 미리 표시할 다음 블록 수. */
-    static final int PREVIEW_COUNT = 4;
+    public static final int PREVIEW_COUNT = 4;
     private static final int MAX_LOCK_RESETS = 15;
-    final Board board = new Board();
+    public final Board board = new Board();
     private final Random random = new Random();
     // bag은 7종 블록을 섞어 담고, queue는 다음 블록의 순서를 보관한다.
     private final Deque<Tetromino> bag = new ArrayDeque<>(), queue = new ArrayDeque<>();
 
     // 현재 블록과 Hold 블록의 상태. x, y는 블록의 기준 격자 원점이다.
-    Tetromino active, held;
-    int x, y, rotation;
-    int dropCount = 0; // 쌓은 블록 수
-    float pps, timer = 0.0f; // Pieces Per Second - 초당 쌓은 블록
-    boolean startCal = false;
+    public Tetromino active, held;
+    public int x, y, rotation;
+    public int dropCount = 0; // 쌓은 블록 수
+    public float pps, timer = 0.0f; // Pieces Per Second - 초당 쌓은 블록
+    public boolean startCal = false;
 
 
-    final ScoreManager scoring = new ScoreManager();
-    boolean gameOver, holdUsed, lastMoveWasRotation;
+    public final ScoreManager scoring = new ScoreManager();
+    public boolean gameOver, holdUsed, lastMoveWasRotation;
 
     private int lastKickIndex;
     private long lockElapsed;
@@ -38,31 +42,31 @@ final class Game {
     private long spawnDelayElapsed;
     private boolean spawnDelayed;
 
-    Game() { this(null); }
+    public Game() { this(null); }
 
     /** generator가 null이면 기존 7-bag 랜덤 생성을 사용한다. */
-    Game(PieceGenerator generator) {
+    public Game(PieceGenerator generator) {
         pieceGenerator = generator;
         restart();
     }
 
     /** 생성기는 다음 restart()부터 적용된다. null은 기본 7-bag 생성기를 뜻한다. */
-    void setPieceGenerator(PieceGenerator generator) { pieceGenerator = generator; }
+    public void setPieceGenerator(PieceGenerator generator) { pieceGenerator = generator; }
 
-    void addListener(GameListener listener) { if (listener != null) listeners.add(listener); }
-    void removeListener(GameListener listener) { listeners.remove(listener); }
+    public void addListener(GameListener listener) { if (listener != null) listeners.add(listener); }
+    public void removeListener(GameListener listener) { listeners.remove(listener); }
 
-    void setGravityEnabled(boolean enabled) {
+    public void setGravityEnabled(boolean enabled) {
         gravityEnabled = enabled;
         gravityElapsed = 0;
         lockElapsed = 0;
     }
 
     /** 다음 블록을 화면에 보이는 행에서 시작할지 설정한다. 다음 스폰/재시작부터 적용된다. */
-    void setSpawnVisible(boolean visible) { spawnVisible = visible; }
+    public void setSpawnVisible(boolean visible) { spawnVisible = visible; }
 
     /** 유지 중인 키를 다음 미노의 IHS/IRS에 사용한다. 회전 방향은 -1, 0, 1. */
-    void setInitialInputs(boolean hold, int rotationDirection) {
+    public void setInitialInputs(boolean hold, int rotationDirection) {
         Settings settings = Settings.get();
         initialHold = settings.ihs() && hold;
         initialRotation = settings.irs() ? Integer.signum(rotationDirection) : 0;
@@ -72,13 +76,13 @@ final class Game {
 
     boolean isSpawnDelayed() { return spawnDelayed; }
 
-    float calPPS() {
+    public float calPPS() {
         pps = dropCount / timer;
         return pps;
     }
 
     /** 보드와 점수, 블록 대기열을 초기 상태로 되돌린다. */
-    void restart() {
+    public void restart() {
         dropCount = 0; startCal = false; timer = 0.0f;
         board.clear(); bag.clear(); queue.clear(); held = null;
         scoring.reset();
@@ -102,7 +106,7 @@ final class Game {
     private Tetromino nextPiece() { return pieceGenerator == null ? drawPiece() : pieceGenerator.next(); }
 
     /** 화면에 보여줄 다음 블록 목록을 반환한다. */
-    List<Tetromino> preview() { return new ArrayList<>(queue).subList(0, Math.min(PREVIEW_COUNT, queue.size())); }
+    public List<Tetromino> preview() { return new ArrayList<>(queue).subList(0, Math.min(PREVIEW_COUNT, queue.size())); }
 
     /// Next 미노를 생성
     private void spawnNext() {
@@ -148,7 +152,7 @@ final class Game {
     }
 
     /** direction이 양수면 시계 방향, 음수면 반시계 방향으로 SRS 회전을 시도한다. */
-    boolean rotate(int direction) {
+    public boolean rotate(int direction) {
         int rotationDirection = direction > 0 ? 1 : -1;
         if (gameOver || spawnDelayed || active == null || active == Tetromino.Omino) {
             notifyRotate(rotationDirection);
@@ -183,7 +187,7 @@ final class Game {
 
     /** 가능한 가장 아래까지 내린 뒤 고정한다. 낙하 거리에 따라 점수를 준다. */
     void hardDrop() {
-        if (gameOver || spawnDelayed || active == null) return;
+        if (gameOver) return;
         int distance = 0;
         while (board.canPlace(active, x, y + 1, rotation)) { y++; distance++; }
         scoring.onHardDrop(distance);
@@ -195,13 +199,13 @@ final class Game {
      * 실제 중력 속도를 기준으로 처리할 수 있도록 한 칸을 즉시 내림
      */
     void softDrop() {
-        if (gameOver || spawnDelayed || active == null) return;
+        if (gameOver) return;
         if (move(0, 1)) scoring.onSoftDrop(1);
     }
 
     /** 현재 블록을 Hold 칸과 바꾸며, 블록 하나당 한 번만 허용한다. */
     void hold() {
-        if (gameOver || spawnDelayed || holdUsed || active == null) return;
+        if (gameOver || holdUsed) return;
         if (held == null) gravityElapsed = 0;
         swapHeldPiece();
         holdUsed = true;
@@ -209,7 +213,7 @@ final class Game {
     }
 
     /** 타이머가 전달한 경과 시간만큼 중력 낙하와 락 지연을 진행한다. */
-    void tick(int elapsedMs) {
+    public void tick(int elapsedMs) {
         if (gameOver || !gravityEnabled) return;
 
         if (spawnDelayed) {
@@ -244,7 +248,7 @@ final class Game {
     private int gravityElapsed;
     private boolean softDropHeld;
 
-    void setSoftDropHeld(boolean held) {
+    public void setSoftDropHeld(boolean held) {
         if (softDropHeld != held) gravityElapsed = 0;
         softDropHeld = held;
     }
