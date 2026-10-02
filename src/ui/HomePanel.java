@@ -1,18 +1,24 @@
-import javax.swing.JPanel;
+package ui;
+
+import app.ScreenManager;
+import audio.AudioManager;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.List;
+import javax.swing.JPanel;
+
+
 
 /** 테트로미노 버튼으로 화면 전환을 제공하는 메인 메뉴. */
-final class HomePanel extends JPanel {
+public final class HomePanel extends JPanel {
     private static final int CELL_SIZE = 72;
     private static final Color BACKGROUND = new Color(41, 41, 41);
     private static final Color I_COLOR = new Color(75, 205, 235);
@@ -27,7 +33,7 @@ final class HomePanel extends JPanel {
     private BlockButton hoveredButton;
     private BlockButton pressedButton;
 
-    HomePanel(ScreenManager screens) {
+    public HomePanel(ScreenManager screens) {
         setPreferredSize(new Dimension(1280, 720));
         setBackground(BACKGROUND);
         setOpaque(true);

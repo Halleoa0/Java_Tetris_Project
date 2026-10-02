@@ -1,39 +1,49 @@
+package ui;
+
+import audio.AudioManager;
+import game.Board;
+import game.Game;
+import game.GameListener;
+import game.Tetromino;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.font.TextAttribute;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.awt.Image;
+import java.awt.RenderingHints;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.function.Consumer;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.RenderingHints;
-import java.awt.event.ActionEvent;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.font.TextAttribute;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.Map;
-import java.util.Set;
+import settings.Settings;
+
+
 
 /* Swing 화면, 키 입력, 주기적인 게임 업데이트를 연결한다.
  * 사용 예: IntelliJ에서 Main을 실행한 뒤 방향키로 이동하고 Space로 즉시 낙하한다.
  * 조작: ←/→ 이동, ↓ 소프트드롭, ↑ 또는 X 시계 회전, Z 반시계 회전,
  * Space 하드드롭, C Hold, R 재시작.
  */
-final class GamePanel extends JPanel {
+public final class GamePanel extends JPanel {
     @FunctionalInterface
-    interface InputFilter { boolean allow(String action); }
+    public interface InputFilter { boolean allow(String action); }
 
     // 조각의 크기는 25 (25x25), 보드의 위치는 x 517, x 111
     private static final int CELL = 25, BOARD_X = 517, BOARD_Y = 111;
@@ -90,9 +100,9 @@ final class GamePanel extends JPanel {
     private String gameName = "테스트 플레이";
 
     // 키를 게임 동작에 연결하고 16ms 간격으로 게임 상태를 갱신한다.
-    GamePanel() { this(new Game()); }
+    public GamePanel() { this(new Game()); }
 
-    GamePanel(Game game) {
+    public GamePanel(Game game) {
         this.game = game;
         setLayout(null);
         setPreferredSize(new Dimension(1280, 720));
@@ -192,17 +202,17 @@ final class GamePanel extends JPanel {
         timer.start();
     }
 
-    void setInputFilter(InputFilter inputFilter) {
+    public void setInputFilter(InputFilter inputFilter) {
         this.inputFilter = inputFilter;
         updateInitialInputs();
     }
 
-    void setOverlayRenderer(Consumer<Graphics2D> overlayRenderer) { this.overlayRenderer = overlayRenderer; }
+    public void setOverlayRenderer(Consumer<Graphics2D> overlayRenderer) { this.overlayRenderer = overlayRenderer; }
 
     /** 일시정지 메뉴에서 RESTART를 골랐을 때 실행할 동작을 지정한다. null이면 기본 game.restart(). */
-    void setPauseRestartCallback(Runnable callback) { this.pauseRestartCallback = callback; }
+    public void setPauseRestartCallback(Runnable callback) { this.pauseRestartCallback = callback; }
 
-    void setHomeCallback(Runnable homeCallback) {
+    public void setHomeCallback(Runnable homeCallback) {
         this.homeCallback = homeCallback == null ? () -> { } : homeCallback;
     }
 
@@ -252,7 +262,7 @@ final class GamePanel extends JPanel {
 
 
     /** 화면에서 제거될 때 주기적인 게임 업데이트를 멈춘다. */
-    void stop() {
+    public void stop() {
         timer.stop();
         clearHeldKeys();
     }

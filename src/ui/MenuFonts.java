@@ -1,14 +1,23 @@
+package ui;
+
 import java.awt.Font;
 import java.awt.FontFormatException;
 import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.nio.file.Path;
 
+
+
+
+
+
+
+
 /** 메뉴와 게임 화면에서 사용하는 커스텀 폰트 로딩 유틸리티. */
-final class MenuFonts {
+public final class MenuFonts {
     private MenuFonts() { }
 
-    static Font loadPressStart2P() {
+    public static Font loadPressStart2P() {
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT,
                     Path.of("Fonts/PressStart2P-Regular.ttf").toFile());
@@ -20,7 +29,7 @@ final class MenuFonts {
     }
 
     /// 폰트를 가져옵니다. Black(가장 굵은)
-    static Font loadBlack() {
+    public static Font loadBlack() {
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Inter_18pt-Black.ttf").toFile());
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
@@ -30,7 +39,7 @@ final class MenuFonts {
         }
     }
 
-    static Font loadBold() {
+    public static Font loadBold() {
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Inter-Bold.ttf").toFile());
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
@@ -41,7 +50,7 @@ final class MenuFonts {
     }
 
     /// 폰트를 가져옵니다. Medium(보통)
-    static Font loadMedium() {
+    public static Font loadMedium() {
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Inter_18pt-Medium.ttf").toFile());
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
@@ -52,7 +61,7 @@ final class MenuFonts {
     }
 
     /// 폰트를 가져옵니다. 한글 전용
-    static Font loadKRBlack() {
+    public static Font loadKRBlack() {
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/NotoSansKR-Black.ttf").toFile());
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
@@ -62,7 +71,7 @@ final class MenuFonts {
         }
     }
 
-    static Font loadOrbitBlack() {
+    public static Font loadOrbitBlack() {
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Orbitron-Black.ttf").toFile());
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
@@ -72,7 +81,7 @@ final class MenuFonts {
         }
     }
 
-    static Font loadOrbitBold() {
+    public static Font loadOrbitBold() {
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Orbitron-Bold.ttf").toFile());
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);

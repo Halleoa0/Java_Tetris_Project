@@ -1,3 +1,23 @@
+package ui;
+
+import app.ScreenManager;
+import audio.AudioManager;
+import game.Tetromino;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.GridLayout;
+import java.util.EnumMap;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
+import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -11,24 +31,15 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.ScrollPaneConstants;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.GridLayout;
-import java.awt.Graphics;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.IntConsumer;
-import java.util.function.IntSupplier;
+import settings.Settings;
+
+
+
+
+
 
 // 환경설정 화면. 모든 변경은 Settings 에 즉시 반영/저장//
-final class SettingsPanel extends JPanel {
+public final class SettingsPanel extends JPanel {
     private static final Color BG = new Color(41, 41, 41);
     private static final Color CARD = new Color(30, 36, 51);
     private static final Color TEXT = Color.WHITE;
@@ -45,7 +56,7 @@ final class SettingsPanel extends JPanel {
 
     private final ScreenManager screens;
 
-    SettingsPanel(ScreenManager screens) {
+    public SettingsPanel(ScreenManager screens) {
         this.screens = screens;
         build();
     }

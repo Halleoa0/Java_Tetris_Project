@@ -1,3 +1,9 @@
+package audio;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -5,16 +11,14 @@ import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineEvent;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import settings.Settings;
+
 
 /**
  * 테트리스 배경음악(BGM)과 효과음(SFX)을 총괄 관리한다.
  * 자바 표준 javax.sound.sampled.Clip 기반으로 동작하며 외부 라이브러리 없이 실행된다.
  */
-final class AudioManager {
+public final class AudioManager {
 
     // 음원 파일명 정의 //
     private static final String BGM_A = "bgm-a-grid-pulse";   // 그리드 펄스 (신스)
@@ -39,7 +43,7 @@ final class AudioManager {
     // 싱글톤 인스턴스
     private static final AudioManager INSTANCE = new AudioManager();
 
-    static AudioManager get() { return INSTANCE; }
+    public static AudioManager get() { return INSTANCE; }
 
     // 오디오 클립 저장소 및 재생 상태 //
     private final Map<String, Clip> bgmClips = new HashMap<>();
@@ -111,19 +115,19 @@ final class AudioManager {
     // BGM 재생 및 상태 제어 //
 
     /// 메뉴 화면 BGM을 재생한다.
-    void playMenuBgm() {
+    public void playMenuBgm() {
         currentMode = "menu";
         playBgmInternal(BGM_B, false);
     }
 
     /// 튜토리얼 BGM을 재생한다.
-    void playTutorialBgm() {
+    public void playTutorialBgm() {
         currentMode = "tutorial";
         playBgmInternal(BGM_A, true);
     }
 
     /// 인게임 BGM을 무작위로 재생한다.
-    void startGameBgm() {
+    public void startGameBgm() {
         currentMode = "game";
         playBgmInternal(chooseRandomGameBgm(), true);
     }
@@ -180,7 +184,7 @@ final class AudioManager {
     }
 
     /// BGM을 일시정지한다. 재생 위치를 보존한다.
-    void pauseBgm() {
+    public void pauseBgm() {
         bgmPaused = true;
         if (currentBgmClip != null && currentBgmClip.isRunning()) {
             currentBgmClip.stop();
@@ -188,7 +192,7 @@ final class AudioManager {
     }
 
     /// BGM을 멈춘 위치부터 다시 재생한다.
-    void resumeBgm() {
+    public void resumeBgm() {
         bgmPaused = false;
         if (currentBgmClip != null && canOutputMusic()) {
             currentBgmClip.start();
@@ -196,7 +200,7 @@ final class AudioManager {
     }
 
     /// BGM을 정지하고 처음 위치로 되돌린다.
-    void stopBgm() {
+    public void stopBgm() {
         bgmPaused = false;
         if (currentBgmClip != null) {
             currentBgmClip.stop();
@@ -207,34 +211,34 @@ final class AudioManager {
     // 효과음(SFX) 재생 //
 
     /// 메뉴 선택 효과음을 재생한다.
-    void playMenuSelect() { playSound("menu-select"); }
+    public void playMenuSelect() { playSound("menu-select"); }
 
     /// 블록 이동 효과음을 재생한다. 연타 간격을 제한한다.
-    void playMove() { playSoundWithInterval("move", 80); }
+    public void playMove() { playSoundWithInterval("move", 80); }
 
     /// 블록 회전 효과음을 재생한다.
-    void playRotate() { playSound("rotate"); }
+    public void playRotate() { playSound("rotate"); }
 
     /// 소프트 드롭 효과음을 재생한다. 연타 간격을 제한한다.
-    void playSoftDrop() { playSoundWithInterval("softdrop", 100); }
+    public void playSoftDrop() { playSoundWithInterval("softdrop", 100); }
 
     /// 블록 안착 효과음을 재생한다.
-    void playLock() { playSound("lock"); }
+    public void playLock() { playSound("lock"); }
 
     /// 하드 드롭 효과음을 재생한다.
-    void playHardDrop() { playSound("harddrop"); }
+    public void playHardDrop() { playSound("harddrop"); }
 
     /// 홀드 효과음을 재생한다.
-    void playHold() { playSound("hold"); }
+    public void playHold() { playSound("hold"); }
 
     /// 라인 삭제 효과음을 재생한다. 4줄은 전용 효과음을 쓴다.
-    void playLineClear(int lines) {
+    public void playLineClear(int lines) {
         if (lines >= 4) playSound("tetris");
         else if (lines > 0) playSound("lineclear");
     }
 
     /// 라인 삭제음과 겹치지 않도록 지연 후 레벨업 효과음을 재생한다.
-    void playLevelUpDelayed() {
+    public void playLevelUpDelayed() {
         if (levelUpTimer != null) levelUpTimer.stop();
         levelUpTimer = new Timer(300, e -> playSound("levelup"));
         levelUpTimer.setRepeats(false);
@@ -242,13 +246,13 @@ final class AudioManager {
     }
 
     /// BGM을 멈추고 게임 오버 효과음을 재생한다.
-    void playGameOver() {
+    public void playGameOver() {
         stopBgm();
         playSound("gameover");
     }
 
     /// 튜토리얼 완료 효과음을 재생한다.
-    void playTutorialClear() { playSound("tutorial-clear"); }
+    public void playTutorialClear() { playSound("tutorial-clear"); }
 
     /// 효과음을 처음부터 재생한다.
     private void playSound(String sfxName) {
@@ -275,7 +279,7 @@ final class AudioManager {
     // 볼륨 및 사운드 출력 제어 //
 
     /// 창 활성화 상태를 갱신한다.
-    void setWindowActive(boolean active) {
+    public void setWindowActive(boolean active) {
         this.windowActive = active;
         refreshVolume();
     }

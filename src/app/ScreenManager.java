@@ -1,9 +1,20 @@
-import javax.swing.JPanel;
+package app;
+
+import audio.AudioManager;
+import game.Game;
 import java.awt.CardLayout;
 import java.awt.Dimension;
+import javax.swing.JPanel;
+import tutorial.TutorialController;
+import ui.GamePanel;
+import ui.HomePanel;
+import ui.SettingsPanel;
+import ui.ShopPanel;
+
+
 
 /* cardLayout을 이용해 메뉴, 게임, 설정, 상점 등의 화면을 전환하고 현재 실행 중인 GamePanel의 생명주기를 관리함 */
-final class ScreenManager extends JPanel {
+public final class ScreenManager extends JPanel {
     private static final String HOME = "home";
     private static final String SETTINGS = "settings";
     private static final String SHOP = "shop";
@@ -14,7 +25,7 @@ final class ScreenManager extends JPanel {
     private SettingsPanel settingsPanel;
     private ShopPanel shopPanel;
 
-    ScreenManager() {
+    public ScreenManager() {
         setLayout(cards);
         setPreferredSize(new Dimension(1280, 720));
         homePanel = new HomePanel(this);
@@ -25,14 +36,14 @@ final class ScreenManager extends JPanel {
         showHome();
     }
 
-    void showHome() {
+    public void showHome() {
         removeActiveGame();
         cards.show(this, HOME);
         // 메뉴 BGM을 재생한다.
         AudioManager.get().playMenuBgm();
     }
 
-    void startGame() {
+    public void startGame() {
         removeActiveGame();
         GamePanel panel = new GamePanel();
         panel.setHomeCallback(this::showHome);
@@ -46,7 +57,7 @@ final class ScreenManager extends JPanel {
         panel.requestFocusInWindow();
     }
 
-    void startTutorial() {
+    public void startTutorial() {
         removeActiveGame();
         Game game = new Game();
         GamePanel panel = new GamePanel(game);
@@ -66,7 +77,7 @@ final class ScreenManager extends JPanel {
 
 
 
-    void showSettings() {
+    public void showSettings() {
         removeActiveGame();
         if (settingsPanel != null) remove(settingsPanel);
         settingsPanel = new SettingsPanel(this);
@@ -80,7 +91,7 @@ final class ScreenManager extends JPanel {
 
 
 
-    void showShop() {
+    public void showShop() {
         removeActiveGame();
         cards.show(this, SHOP);
         // 메뉴 BGM을 유지한다.
