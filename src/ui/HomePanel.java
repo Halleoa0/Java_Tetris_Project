@@ -2,7 +2,6 @@ package ui;
 
 import app.ScreenManager;
 import audio.AudioManager;
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
@@ -29,19 +28,19 @@ public final class HomePanel extends JPanel {
     private static final Font TITLE_FONT = MENU_FONT.deriveFont(40f);
     private static final Font BUTTON_FONT = MENU_FONT.deriveFont(24f);
 
-    private final List<BlockButton> buttons;
-    private BlockButton hoveredButton;
-    private BlockButton pressedButton;
+    private final List<TetrisBlockButton> buttons;
+    private TetrisBlockButton hoveredButton;
+    private TetrisBlockButton pressedButton;
 
     public HomePanel(ScreenManager screens) {
         setPreferredSize(new Dimension(1280, 720));
         setBackground(BACKGROUND);
         setOpaque(true);
         buttons = List.of(
-                new BlockButton("Play", new String[]{"##", "##"}, O_COLOR, 380, 270, screens::startGame),
-                new BlockButton("Tutorial", new String[]{"####"}, I_COLOR, 640, 285, screens::startTutorial),
-                new BlockButton("Shop", new String[]{"###", ".#."}, T_COLOR, 380, 475, screens::showShop),
-                new BlockButton("Settings", new String[]{"..#", "###"}, L_COLOR, 760, 425, screens::showSettings));
+                new TetrisBlockButton("Play", new String[]{"##", "##"}, O_COLOR, 380, 270, CELL_SIZE, screens::showModeSelect, true),
+                new TetrisBlockButton("Tutorial", new String[]{"####"}, I_COLOR, 640, 285, CELL_SIZE, screens::startTutorial, true),
+                new TetrisBlockButton("Shop", new String[]{"###", ".#."}, T_COLOR, 380, 475, CELL_SIZE, screens::showShop, true),
+                new TetrisBlockButton("Settings", new String[]{"..#", "###"}, L_COLOR, 760, 425, CELL_SIZE, screens::showSettings, true));
 
         MouseAdapter mouse = new MouseAdapter() {
             @Override public void mouseMoved(MouseEvent event) { updateHover(event.getX(), event.getY()); }
@@ -56,7 +55,7 @@ public final class HomePanel extends JPanel {
                 repaint();
             }
             @Override public void mouseReleased(MouseEvent event) {
-                BlockButton released = buttonAt(event.getX(), event.getY());
+                TetrisBlockButton released = buttonAt(event.getX(), event.getY());
                 if (pressedButton != null && pressedButton == released) {
                     AudioManager.get().playMenuSelect(); // 메뉴 선택 효과음을 재생한다.
                     pressedButton.action.run();
@@ -70,15 +69,15 @@ public final class HomePanel extends JPanel {
     }
 
     private void updateHover(int x, int y) {
-        BlockButton next = buttonAt(x, y);
+        TetrisBlockButton next = buttonAt(x, y);
         if (hoveredButton != next) {
             hoveredButton = next;
             repaint();
         }
     }
 
-    private BlockButton buttonAt(int x, int y) {
-        for (BlockButton button : buttons) if (button.contains(x, y)) return button;
+    private TetrisBlockButton buttonAt(int x, int y) {
+        for (TetrisBlockButton button : buttons) if (button.contains(x, y)) return button;
         return null;
     }
 
@@ -92,114 +91,9 @@ public final class HomePanel extends JPanel {
         FontMetrics titleMetrics = g.getFontMetrics();
         String title = "TETRIS";
         g.drawString(title, (getWidth() - titleMetrics.stringWidth(title)) / 2, 155);
-        for (BlockButton button : buttons) drawButton(g, button);
+        for (TetrisBlockButton button : buttons) button.draw(g, hoveredButton == button,
+                pressedButton == button, BUTTON_FONT, 24);
         g.dispose();
     }
-
-    private void drawButton(Graphics2D g, BlockButton button) {
-        boolean pressed = pressedButton == button && hoveredButton == button;
-        int offset = pressed ? 2 : 0;
-        Color face = pressed ? scale(button.color, 0.78f)
-                : hoveredButton == button ? brighten(button.color) : button.color;
-        int widestRow = button.widestRow();
-        int firstCell = button.firstCellInRow(widestRow);
-        int widestCells = button.occupiedCellsInRow(widestRow);
-
-        g.setColor(face);
-        for (int row = 0; row < button.rows.length; row++) {
-            for (int col = 0; col < button.rows[row].length(); col++) {
-                if (button.rows[row].charAt(col) == '#') {
-                    g.fillRect(button.x + col * CELL_SIZE + offset,
-                            button.y + row * CELL_SIZE + offset, CELL_SIZE, CELL_SIZE);
-                }
-            }
-        }
-
-        g.setColor(brighten(button.color));
-        g.setStroke(new BasicStroke(3));
-        for (int row = 0; row < button.rows.length; row++) {
-            for (int col = 0; col < button.rows[row].length(); col++) {
-                if (button.rows[row].charAt(col) != '#') continue;
-                int left = button.x + col * CELL_SIZE + offset;
-                int top = button.y + row * CELL_SIZE + offset;
-                if (!button.hasCell(row - 1, col)) g.drawLine(left, top + 1, left + CELL_SIZE, top + 1);
-                if (!button.hasCell(row + 1, col)) g.drawLine(left, top + CELL_SIZE - 1, left + CELL_SIZE, top + CELL_SIZE - 1);
-                if (!button.hasCell(row, col - 1)) g.drawLine(left + 1, top, left + 1, top + CELL_SIZE);
-                if (!button.hasCell(row, col + 1)) g.drawLine(left + CELL_SIZE - 1, top, left + CELL_SIZE - 1, top + CELL_SIZE);
-            }
-        }
-
-        g.setColor(Color.BLACK);
-        g.setFont(BUTTON_FONT);
-        FontMetrics metrics = g.getFontMetrics();
-        String label = button.label;
-        int textX = button.x + firstCell * CELL_SIZE
-                + (widestCells * CELL_SIZE - metrics.stringWidth(label)) / 2 + offset;
-        int textY = button.y + widestRow * CELL_SIZE
-                + (CELL_SIZE - metrics.getHeight()) / 2 + metrics.getAscent() + offset
-                + ("Play".equals(label) ? 35 : 0);
-        g.drawString(label, textX, textY);
-    }
-
-    private Color brighten(Color color) { return mix(color, Color.WHITE, 0.28f); }
-
-    private Color scale(Color color, float factor) {
-        return new Color(Math.round(color.getRed() * factor), Math.round(color.getGreen() * factor),
-                Math.round(color.getBlue() * factor));
-    }
-
-    private Color mix(Color first, Color second, float amount) {
-        return new Color(Math.round(first.getRed() * (1 - amount) + second.getRed() * amount),
-                Math.round(first.getGreen() * (1 - amount) + second.getGreen() * amount),
-                Math.round(first.getBlue() * (1 - amount) + second.getBlue() * amount));
-    }
-
-    private static final class BlockButton {
-        private final String label;
-        private final String[] rows;
-        private final Color color;
-        private final int x;
-        private final int y;
-        private final Runnable action;
-
-        private BlockButton(String label, String[] rows, Color color, int x, int y, Runnable action) {
-            this.label = label;
-            this.rows = rows;
-            this.color = color;
-            this.x = x;
-            this.y = y;
-            this.action = action;
-        }
-
-        private boolean contains(int x, int y) {
-            int col = Math.floorDiv(x - this.x, CELL_SIZE);
-            int row = Math.floorDiv(y - this.y, CELL_SIZE);
-            return hasCell(row, col);
-        }
-
-        private boolean hasCell(int row, int col) {
-            return row >= 0 && row < rows.length && col >= 0 && col < rows[row].length()
-                    && rows[row].charAt(col) == '#';
-        }
-
-        private int widestRow() {
-            int widest = 0;
-            for (int row = 1; row < rows.length; row++) {
-                if (occupiedCellsInRow(row) > occupiedCellsInRow(widest)) widest = row;
-            }
-            return widest;
-        }
-
-        private int firstCellInRow(int row) {
-            return rows[row].indexOf('#');
-        }
-
-        private int occupiedCellsInRow(int row) {
-            int count = 0;
-            for (int col = 0; col < rows[row].length(); col++) {
-                if (rows[row].charAt(col) == '#') count++;
-            }
-            return count;
-        }
-    }
 }
+

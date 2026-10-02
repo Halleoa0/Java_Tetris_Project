@@ -10,6 +10,7 @@ import ui.GamePanel;
 import ui.HomePanel;
 import ui.SettingsPanel;
 import ui.ShopPanel;
+import ui.ModeSelectPanel;
 
 
 
@@ -18,6 +19,7 @@ public final class ScreenManager extends JPanel {
     private static final String HOME = "home";
     private static final String SETTINGS = "settings";
     private static final String SHOP = "shop";
+    private static final String MODE_SELECT = "modeSelect";
 
     private final CardLayout cards = new CardLayout();
     private final HomePanel homePanel;
@@ -30,6 +32,7 @@ public final class ScreenManager extends JPanel {
         setPreferredSize(new Dimension(1280, 720));
         homePanel = new HomePanel(this);
         add(homePanel, HOME);
+        add(new ModeSelectPanel(this), MODE_SELECT);
         // 설정 화면은 최신 설정을 반영하기 위해 동적으로 생성한다.
         shopPanel = new ShopPanel(this);
         add(shopPanel, SHOP);
@@ -41,6 +44,14 @@ public final class ScreenManager extends JPanel {
         cards.show(this, HOME);
         // 메뉴 BGM을 재생한다.
         AudioManager.get().playMenuBgm();
+    }
+
+    public void showModeSelect() {
+        removeActiveGame();
+        cards.show(this, MODE_SELECT);
+        AudioManager.get().playMenuBgm();
+        revalidate();
+        repaint();
     }
 
     public void startGame() {
@@ -108,3 +119,4 @@ public final class ScreenManager extends JPanel {
         }
     }
 }
+
