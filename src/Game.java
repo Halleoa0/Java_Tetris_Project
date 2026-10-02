@@ -35,6 +35,8 @@ final class Game {
     private boolean spawnVisible;
     private boolean initialHold;
     private int initialRotation;
+    private long spawnDelayElapsed;
+    private boolean spawnDelayed;
 
     Game() { this(null); }
 
@@ -61,9 +63,14 @@ final class Game {
 
     /** 유지 중인 키를 다음 미노의 IHS/IRS에 사용한다. 회전 방향은 -1, 0, 1. */
     void setInitialInputs(boolean hold, int rotationDirection) {
-        initialHold = hold;
-        initialRotation = Integer.signum(rotationDirection);
+        Settings settings = Settings.get();
+        initialHold = settings.ihs() && hold;
+        initialRotation = settings.irs() ? Integer.signum(rotationDirection) : 0;
+        //initialHold = hold;
+       // initialRotation = Integer.signum(rotationDirection);
     }
+
+    boolean isSpawnDelayed() { return spawnDelayed; }
 
     float calPPS() {
         pps = dropCount / timer;
@@ -76,7 +83,7 @@ final class Game {
         board.clear(); bag.clear(); queue.clear(); held = null;
         scoring.reset();
         scoring.level = Settings.get().startLevel(); gameOver = false; holdUsed = false;
-        lockElapsed = 0; lockResets = 0; gravityElapsed = 0;
+        lockElapsed = 0; lockResets = 0; gravityElapsed = 0; spawnDelayElapsed = 0; spawnDelayed = false;
         for (int i = 0; i < PREVIEW_COUNT + 1; i++) queue.addLast(nextPiece());
         spawnNext();
     }
@@ -134,7 +141,7 @@ final class Game {
 
     /** dx/dy만큼 이동한다. 충돌하면 false, 이동하면 true를 반환한다. */
     boolean move(int dx, int dy) {
-        if (gameOver || !board.canPlace(active, x + dx, y + dy, rotation)) return false;
+        if (gameOver || spawnDelayed || active == null || !board.canPlace(active, x + dx, y + dy, rotation)) return false;
         x += dx; y += dy; lastMoveWasRotation = false;
         for (GameListener listener : List.copyOf(listeners)) listener.onMove(dx, dy);
         afterPlayerMove(); return true;
@@ -143,7 +150,7 @@ final class Game {
     /** direction이 양수면 시계 방향, 음수면 반시계 방향으로 SRS 회전을 시도한다. */
     boolean rotate(int direction) {
         int rotationDirection = direction > 0 ? 1 : -1;
-        if (gameOver || active == Tetromino.Omino) {
+        if (gameOver || spawnDelayed || active == null || active == Tetromino.Omino) {
             notifyRotate(rotationDirection);
             return false;
         }
@@ -176,7 +183,7 @@ final class Game {
 
     /** 가능한 가장 아래까지 내린 뒤 고정한다. 낙하 거리에 따라 점수를 준다. */
     void hardDrop() {
-        if (gameOver) return;
+        if (gameOver || spawnDelayed || active == null) return;
         int distance = 0;
         while (board.canPlace(active, x, y + 1, rotation)) { y++; distance++; }
         scoring.onHardDrop(distance);
@@ -188,13 +195,13 @@ final class Game {
      * 실제 중력 속도를 기준으로 처리할 수 있도록 한 칸을 즉시 내림
      */
     void softDrop() {
-        if (gameOver) return;
+        if (gameOver || spawnDelayed || active == null) return;
         if (move(0, 1)) scoring.onSoftDrop(1);
     }
 
     /** 현재 블록을 Hold 칸과 바꾸며, 블록 하나당 한 번만 허용한다. */
     void hold() {
-        if (gameOver || holdUsed) return;
+        if (gameOver || spawnDelayed || holdUsed || active == null) return;
         if (held == null) gravityElapsed = 0;
         swapHeldPiece();
         holdUsed = true;
@@ -204,6 +211,16 @@ final class Game {
     /** 타이머가 전달한 경과 시간만큼 중력 낙하와 락 지연을 진행한다. */
     void tick(int elapsedMs) {
         if (gameOver || !gravityEnabled) return;
+
+        if (spawnDelayed) {
+            spawnDelayElapsed += elapsedMs;
+            if (spawnDelayElapsed >= Settings.get().spawnDelayMs()) {
+                spawnDelayed = false;
+                spawnDelayElapsed = 0;
+                spawnNext();
+            }
+            return;
+        }
 
         if (startCal) {
             timer += elapsedMs / 1000.0f;
@@ -256,7 +273,14 @@ final class Game {
         ScoreManager.Spin spinType = !spin ? ScoreManager.Spin.NONE
                 : (mini ? ScoreManager.Spin.MINI : ScoreManager.Spin.FULL);
         scoring.onLock(cleared, spinType, cleared > 0 && board.isEmpty());
-        spawnNext();
+        int delay = Settings.get().spawnDelayMs();
+        if(delay > 0) {
+            active = null;
+            spawnDelayed = true;
+            spawnDelayElapsed = 0;
+        } else {
+            spawnNext();
+        }
     }
 
     private void setGameOver() {

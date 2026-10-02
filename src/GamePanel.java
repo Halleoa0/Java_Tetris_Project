@@ -202,6 +202,10 @@ final class GamePanel extends JPanel {
     /** 일시정지 메뉴에서 RESTART를 골랐을 때 실행할 동작을 지정한다. null이면 기본 game.restart(). */
     void setPauseRestartCallback(Runnable callback) { this.pauseRestartCallback = callback; }
 
+    /** void setMenuCallback(Runnable menuCallback) {
+        this.menuCallback = menuCallback == null ? () -> { } : menuCallback;
+    } */
+
     void setHomeCallback(Runnable homeCallback) {
         this.homeCallback = homeCallback == null ? () -> { } : homeCallback;
     }
@@ -302,8 +306,8 @@ final class GamePanel extends JPanel {
     }
 
     private void updateInitialInputs() {
-        boolean cw = initialKeyAllowed(Settings.Action.ROTATE_CW, "rotateCW");
-        boolean ccw = initialKeyAllowed(Settings.Action.ROTATE_CCW, "rotateCCW");
+        boolean cw = Settings.get().irs() && initialKeyAllowed(Settings.Action.ROTATE_CW, "rotateCW");
+        boolean ccw = Settings.get().irs() && initialKeyAllowed(Settings.Action.ROTATE_CCW, "rotateCCW");
         int direction = cw && ccw ? lastInitialRotation : cw ? 1 : ccw ? -1 : 0;
         game.setInitialInputs(initialKeyAllowed(Settings.Action.HOLD, "hold"), direction);
     }

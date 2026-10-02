@@ -163,6 +163,9 @@ final class SettingsPanel extends JPanel {
         p.add(slider("DAS (첫 반복 지연, ms)", s::dasMs, s::setDasMs, 50, 400));
         p.add(slider("ARR (반복 간격, ms)", s::arrMs, s::setArrMs, 0, 120));
         p.add(slider("SDF (소프트 드롭 배율)", s::sdf, s::setSdf, 1, 40));
+        p.add(slider("스폰 딜레이 (ms)", s::spawnDelayMs, s::setSpawnDelayMs, 0, 1000));
+        p.add(check("IHS (스폰 시 홀드 입력)", s.ihs(), s::setIhs));
+        p.add(check("IRS (스폰 시 회전 입력)", s.irs(), s::setIrs));
         return p;
     }
 

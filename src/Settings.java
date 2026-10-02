@@ -85,6 +85,9 @@ final class Settings {
     private int dasMs = 180, arrMs = 55; // GamePanel.tickHeldKeys 의 기본값과 동일
     // SDF
     private int sdf = 20;
+    // 스폰 딜레이(ms)와 IHS/IRS 사용 여부
+    private int spawnDelayMs = 0;
+    private boolean ihs = true, irs = true;
     private boolean muteWhenUnfocused = true;
 
     // 사용자(프로필)별 키 세팅
@@ -147,6 +150,13 @@ final class Settings {
         return sdf;
     }
     void setSdf(int value) { sdf = Math.max(1, Math.min(40, value)); changed(); }
+
+    int spawnDelayMs() { return spawnDelayMs; }
+    void setSpawnDelayMs(int value) { spawnDelayMs = Math.max(0, Math.min(100, value)); changed(); }
+    boolean ihs() { return ihs; }
+    void setIhs(boolean value) { ihs = value; changed(); }
+    boolean irs() { return irs; }
+    void setIrs(boolean value) { irs = value; changed(); }
 
     int startLevel() { return difficulty.startLevel; }
 
@@ -279,6 +289,9 @@ final class Settings {
         p.setProperty("das", String.valueOf(dasMs));
         p.setProperty("arr", String.valueOf(arrMs));
         p.setProperty("sdf", String.valueOf(sdf));
+        p.setProperty("spawnDelayMs", String.valueOf(spawnDelayMs));
+        p.setProperty("ihs", String.valueOf(ihs));
+        p.setProperty("irs", String.valueOf(irs));
         p.setProperty("profile.current", currentProfile);
         p.setProperty("profile.names", String.join(",", profiles.keySet()));
         for (var e : profiles.entrySet())
@@ -312,6 +325,10 @@ final class Settings {
             dasMs = clamp(parseInt(p.getProperty("das"), 180), 50, 400);
             arrMs = clamp(parseInt(p.getProperty("arr"), 55), 0, 120);
             sdf = clamp(parseInt(p.getProperty("sdf"), 20), 1, 40);
+            spawnDelayMs = clamp(parseInt(p.getProperty("spawnDelayMs"), 0), 0, 100);
+            ihs = Boolean.parseBoolean(p.getProperty("ihs", "true"));
+            irs = Boolean.parseBoolean(p.getProperty("irs", "true"));
+
 
             String names = p.getProperty("profile.names", DEFAULT_PROFILE);
             profiles.clear();
