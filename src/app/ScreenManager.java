@@ -1,6 +1,8 @@
 package app;
 
 import audio.AudioManager;
+import battle.BattlePanel;
+import battle.BotBrain;
 import game.Game;
 import java.awt.CardLayout;
 import java.awt.Dimension;
@@ -22,6 +24,7 @@ public final class ScreenManager extends JPanel {
     private final CardLayout cards = new CardLayout();
     private final HomePanel homePanel;
     private GamePanel gamePanel;
+    private BattlePanel battlePanel; // CPU 대전 화면
     private SettingsPanel settingsPanel;
     private ShopPanel shopPanel;
 
@@ -98,13 +101,32 @@ public final class ScreenManager extends JPanel {
         AudioManager.get().playMenuBgm();
     }
 
+    /// 고른 난이도의 CPU와 대전을 시작한다.
+    public void startBattle(BotBrain.Difficulty difficulty) {
+        removeActiveGame();
+        BattlePanel panel = new BattlePanel(difficulty);
+        panel.setHomeCallback(this::showHome);
+        battlePanel = panel;
+        add(panel, "battle");
+        cards.show(this, "battle");
+        panel.start(); // 인게임 BGM도 여기서 재생한다.
+        revalidate();
+        repaint();
+        panel.requestFocusInWindow();
+    }
+
     private void removeActiveGame() {
         if (gamePanel != null) {
             gamePanel.stop();
             remove(gamePanel);
             gamePanel = null;
-            revalidate();
-            repaint();
         }
+        if (battlePanel != null) {
+            battlePanel.stop();
+            remove(battlePanel);
+            battlePanel = null;
+        }
+        revalidate();
+        repaint();
     }
 }

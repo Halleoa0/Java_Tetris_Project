@@ -29,5 +29,8 @@ public interface GameListener {
 
     /** 게임 오버 시 호출된다. */
     public default void onGameOver() { }
+
+    /** 대전 모드에서 상대방에게 공격 줄을 보낼 때 호출된다. */
+    public default void onAttackSent(int lines) { }
 }
 

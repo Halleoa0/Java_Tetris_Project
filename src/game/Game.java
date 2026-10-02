@@ -214,7 +214,7 @@ public final class Game {
 
     /** 타이머가 전달한 경과 시간만큼 중력 낙하와 락 지연을 진행한다. */
     public void tick(int elapsedMs) {
-        if (gameOver || !gravityEnabled) return;
+        if (gameOver) return;
 
         if (spawnDelayed) {
             spawnDelayElapsed += elapsedMs;
@@ -229,6 +229,8 @@ public final class Game {
         if (startCal) {
             timer += elapsedMs / 1000.0f;
         }
+        // 중력을 끈 게임(CPU 봇)도 스폰 딜레이와 PPS 계산용 시간은 위에서 흘러가야 한다.
+        if (!gravityEnabled) return;
         Settings settings = Settings.get();
         int gravity = settings.gravityMs(scoring.level);
         // SDF는 Down 키를 누르고 있는 동안 중력 간격을 줄여 빠르게 낙하시킴
@@ -267,16 +269,26 @@ public final class Game {
         }
 
         board.lock(active, x, y, rotation);
-        for (GameListener listener : List.copyOf(listeners)) listener.onLock(lockedType);
         int cleared = board.clearLines();
         if (cleared > 0)
             for (GameListener listener : List.copyOf(listeners)) listener.onLinesCleared(cleared);
+        // 줄 삭제를 먼저 알린 뒤 onLock을 알린다. (대전 모드에서 이번 블록이 줄을 지웠는지 알 수 있도록)
+        for (GameListener listener : List.copyOf(listeners)) listener.onLock(lockedType);
         if (entirelyInHiddenRows) { setGameOver(); return; }
         startCal = true; // pps 계산 시작
         dropCount++; // 드랍 수 + 1
         ScoreManager.Spin spinType = !spin ? ScoreManager.Spin.NONE
                 : (mini ? ScoreManager.Spin.MINI : ScoreManager.Spin.FULL);
-        scoring.onLock(cleared, spinType, cleared > 0 && board.isEmpty());
+        boolean allClear = cleared > 0 && board.isEmpty();
+        boolean b2b = scoring.backToBack; // 백투백은 이번 블록 전의 값이 필요해서 onLock 전에 저장 (onLock이 값을 바꿈)
+        scoring.onLock(cleared, spinType, allClear);
+
+        // 대전 모드: 상대에게 보낼 공격 줄 수를 계산해서 알린다.
+        // 콤보는 onLock 후의 값 = 화면에 보이는 "N Combo"와 같은 숫자
+        int attackLines = calculateAttackLines(cleared, spinType, b2b, allClear, scoring.combo);
+        if (attackLines > 0)
+            for (GameListener listener : List.copyOf(listeners)) listener.onAttackSent(attackLines);
+
         int delay = Settings.get().spawnDelayMs();
         if(delay > 0) {
             active = null;
@@ -285,6 +297,33 @@ public final class Game {
         } else {
             spawnNext();
         }
+    }
+
+    /// 대전 모드 공격 줄 수를 계산한다. (테트리스, T-스핀, 콤보, 퍼펙트 클리어 보너스 반영)
+    private int calculateAttackLines(int cleared, ScoreManager.Spin spin, boolean b2b, boolean allClear, int combo) {
+        int lines = 0;
+        if (spin != ScoreManager.Spin.NONE) {
+            if (cleared == 1) lines = 2;
+            else if (cleared == 2) lines = 4;
+            else if (cleared >= 3) lines = 6;
+            if (b2b && cleared > 0) lines += 1;
+        } else {
+            if (cleared == 2) lines = 1;
+            else if (cleared == 3) lines = 2;
+            else if (cleared == 4) {
+                lines = 4;
+                if (b2b) lines += 1;
+            }
+        }
+        if (allClear) lines += 10;
+        // 콤보 보너스는 2 Combo부터. (줄을 못 지우면 combo가 -1이 되므로 보너스 없음)
+        if (combo >= 2) {
+            if (combo <= 3) lines += 1;
+            else if (combo <= 5) lines += 2;
+            else if (combo <= 8) lines += 3;
+            else lines += 4;
+        }
+        return lines;
     }
 
     private void setGameOver() {

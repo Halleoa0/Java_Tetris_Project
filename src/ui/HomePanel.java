@@ -2,6 +2,7 @@ package ui;
 
 import app.ScreenManager;
 import audio.AudioManager;
+import battle.BotBrain;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -13,6 +14,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.util.List;
+import java.util.Locale;
 import javax.swing.JPanel;
 
 
@@ -25,11 +27,17 @@ public final class HomePanel extends JPanel {
     private static final Color O_COLOR = new Color(245, 210, 55);
     private static final Color T_COLOR = new Color(170, 85, 205);
     private static final Color L_COLOR = new Color(240, 145, 55);
+    private static final Color Z_COLOR = new Color(235, 55, 65);
+    private static final Color S_COLOR = new Color(85, 210, 110);
+    private static final Color BACK_COLOR = new Color(120, 120, 120);
     private static final Font MENU_FONT = MenuFonts.loadPressStart2P();
     private static final Font TITLE_FONT = MENU_FONT.deriveFont(40f);
     private static final Font BUTTON_FONT = MENU_FONT.deriveFont(24f);
+    private static final Font NOTE_FONT = MENU_FONT.deriveFont(16f);
 
     private final List<BlockButton> buttons;
+    private final List<BlockButton> difficultyButtons; // VS CPU를 누르면 나오는 난이도 선택 버튼들
+    private boolean choosingDifficulty = false;        // true면 난이도 선택 화면을 보여준다.
     private BlockButton hoveredButton;
     private BlockButton pressedButton;
 
@@ -38,10 +46,19 @@ public final class HomePanel extends JPanel {
         setBackground(BACKGROUND);
         setOpaque(true);
         buttons = List.of(
-                new BlockButton("Play", new String[]{"##", "##"}, O_COLOR, 380, 270, screens::startGame),
-                new BlockButton("Tutorial", new String[]{"####"}, I_COLOR, 640, 285, screens::startTutorial),
-                new BlockButton("Shop", new String[]{"###", ".#."}, T_COLOR, 380, 475, screens::showShop),
-                new BlockButton("Settings", new String[]{"..#", "###"}, L_COLOR, 760, 425, screens::showSettings));
+                new BlockButton("Play", new String[]{"##", "##"}, O_COLOR, 200, 260, screens::startGame),
+                new BlockButton("VS CPU", new String[]{".##", "##."}, Z_COLOR, 480, 260, () -> setChoosingDifficulty(true)),
+                new BlockButton("Tutorial", new String[]{"####"}, I_COLOR, 780, 275, screens::startTutorial),
+                new BlockButton("Shop", new String[]{"###", ".#."}, T_COLOR, 350, 465, screens::showShop),
+                new BlockButton("Settings", new String[]{"..#", "###"}, L_COLOR, 710, 415, screens::showSettings));
+
+        // 난이도 선택 화면: 가로로 긴 I 모양 버튼 4개와 BACK 버튼
+        difficultyButtons = List.of(
+                difficultyButton(BotBrain.Difficulty.EASY, S_COLOR, 195, screens),
+                difficultyButton(BotBrain.Difficulty.NORMAL, O_COLOR, 285, screens),
+                difficultyButton(BotBrain.Difficulty.HARD, L_COLOR, 375, screens),
+                difficultyButton(BotBrain.Difficulty.MASTER, Z_COLOR, 465, screens),
+                new BlockButton("Back", new String[]{"##"}, BACK_COLOR, 568, 570, () -> setChoosingDifficulty(false)));
 
         MouseAdapter mouse = new MouseAdapter() {
             @Override public void mouseMoved(MouseEvent event) { updateHover(event.getX(), event.getY()); }
@@ -69,6 +86,27 @@ public final class HomePanel extends JPanel {
         addMouseMotionListener(mouse);
     }
 
+    /// 난이도 버튼 하나를 만든다. 누르면 그 난이도로 배틀을 시작한다.
+    private BlockButton difficultyButton(BotBrain.Difficulty difficulty, Color color, int y, ScreenManager screens) {
+        return new BlockButton(difficulty.label, new String[]{"####"}, color, 496, y, () -> {
+            setChoosingDifficulty(false); // 배틀이 끝나고 메뉴로 돌아오면 첫 화면이 보이도록 되돌려 둔다.
+            screens.startBattle(difficulty);
+        });
+    }
+
+    /// 메인 메뉴와 난이도 선택 화면을 전환한다.
+    private void setChoosingDifficulty(boolean choosing) {
+        choosingDifficulty = choosing;
+        hoveredButton = null;
+        pressedButton = null;
+        repaint();
+    }
+
+    /// 지금 화면에 보이는 버튼 목록을 반환한다.
+    private List<BlockButton> currentButtons() {
+        return choosingDifficulty ? difficultyButtons : buttons;
+    }
+
     private void updateHover(int x, int y) {
         BlockButton next = buttonAt(x, y);
         if (hoveredButton != next) {
@@ -78,7 +116,7 @@ public final class HomePanel extends JPanel {
     }
 
     private BlockButton buttonAt(int x, int y) {
-        for (BlockButton button : buttons) if (button.contains(x, y)) return button;
+        for (BlockButton button : currentButtons()) if (button.contains(x, y)) return button;
         return null;
     }
 
@@ -90,10 +128,23 @@ public final class HomePanel extends JPanel {
         g.setColor(Color.WHITE);
         g.setFont(TITLE_FONT);
         FontMetrics titleMetrics = g.getFontMetrics();
-        String title = "TETRIS";
+        String title = choosingDifficulty ? "VS CPU" : "TETRIS";
         g.drawString(title, (getWidth() - titleMetrics.stringWidth(title)) / 2, 155);
-        for (BlockButton button : buttons) drawButton(g, button);
+        for (BlockButton button : currentButtons()) drawButton(g, button);
+        if (choosingDifficulty) drawDifficultyNotes(g);
         g.dispose();
+    }
+
+    /// 난이도 버튼 오른쪽에 PPS(1초에 놓는 블록 수)를 적는다.
+    private void drawDifficultyNotes(Graphics2D g) {
+        g.setFont(NOTE_FONT);
+        g.setColor(new Color(170, 170, 170));
+        BotBrain.Difficulty[] levels = BotBrain.Difficulty.values();
+        for (int i = 0; i < levels.length; i++) {
+            BlockButton button = difficultyButtons.get(i);
+            String note = String.format(Locale.ROOT, "%.2f PPS", levels[i].pps);
+            g.drawString(note, button.x + 4 * CELL_SIZE + 30, button.y + CELL_SIZE / 2 + 8);
+        }
     }
 
     private void drawButton(Graphics2D g, BlockButton button) {
@@ -137,7 +188,8 @@ public final class HomePanel extends JPanel {
                 + (widestCells * CELL_SIZE - metrics.stringWidth(label)) / 2 + offset;
         int textY = button.y + widestRow * CELL_SIZE
                 + (CELL_SIZE - metrics.getHeight()) / 2 + metrics.getAscent() + offset
-                + ("Play".equals(label) ? 35 : 0);
+                + ("Play".equals(label) ? 35 : 0)
+                + ("VS CPU".equals(label) ? 35 : 0);
         g.drawString(label, textX, textY);
     }
 
