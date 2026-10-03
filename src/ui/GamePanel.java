@@ -109,7 +109,12 @@ public final class GamePanel extends JPanel {
     public GamePanel() { this(new Game()); }
 
     public GamePanel(Game game) {
+        this(game, "테스트 플레이");
+    }
+
+    public GamePanel(Game game, String gameName) {
         this.game = game;
+        this.gameName = gameName;
         setLayout(null);
         setPreferredSize(new Dimension(1280, 720));
         setBackground(BACKGROUND);
@@ -197,9 +202,10 @@ public final class GamePanel extends JPanel {
 
         timer = new Timer(16, e -> {
             long now = System.nanoTime();
-            int elapsed = (int) Math.min(100, (now - lastTick) / 1_000_000L);
+            int clockElapsed = (int) Math.min(Integer.MAX_VALUE, (now - lastTick) / 1_000_000L);
+            int elapsed = Math.min(100, clockElapsed);
             lastTick = now;
-            game.tick(elapsed);
+            game.tick(clockElapsed);
             tickHeldKeys(elapsed);
             game.scoring.tick(elapsed);
             updateOverlayButtons();
@@ -502,7 +508,7 @@ public final class GamePanel extends JPanel {
             }
         }
 
-        if (!game.gameOver) {
+        if (!game.gameOver && game.active != null) {
             if (Settings.get().ghostPiece()) {
                 // 현재 블록을 아래로 복사 이동해 예상 착지 위치(고스트)를 먼저 그린다.
                 int ghostY = game.y;

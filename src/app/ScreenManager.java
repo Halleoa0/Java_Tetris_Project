@@ -55,8 +55,12 @@ public final class ScreenManager extends JPanel {
     }
 
     public void startGame() {
+        startGame(new Game(), "테스트 플레이");
+    }
+
+    public void startGame(Game game, String gameName) {
         removeActiveGame();
-        GamePanel panel = new GamePanel();
+        GamePanel panel = new GamePanel(game, gameName);
         panel.setHomeCallback(this::showHome);
         gamePanel = panel;
         add(panel, "game");

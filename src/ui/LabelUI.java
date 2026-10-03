@@ -119,7 +119,7 @@ public final class LabelUI {
         g.setColor(Color.WHITE);
         g.setFont(interMedium.deriveFont(16f));
         g.drawString("TIME", 783, 539);
-        int totalSeconds = (int) game.timer;
+        int totalSeconds = game.displayTimeSeconds();
         String timeText = String.format(Locale.ROOT, "%02d:%02d", totalSeconds / 60, totalSeconds % 60);
         g.setFont(interBlack.deriveFont(24f));
         g.drawString(timeText, 783, 539 + 28);

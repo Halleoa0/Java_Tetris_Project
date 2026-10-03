@@ -11,7 +11,7 @@ public final class GameModes {
                 new ClassicMode(),
 
                 // ULTRA mode
-                new ComingSoonMode("ULTRA", "2분 동안 최고 점수에 도전"),
+                new UltraMode(),
 
                 // 20L SPRINT mode
                 new ComingSoonMode("20L SPRINT", "20줄을 가장 빠르게 지우기"),

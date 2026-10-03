@@ -41,13 +41,27 @@ public final class Game {
     private int initialRotation;
     private long spawnDelayElapsed;
     private boolean spawnDelayed;
+    private final int timeLimitMs;
+    private int elapsedTimeMs;
 
     public Game() { this(null); }
 
+    public Game(int timeLimitMs) { this(null, timeLimitMs); }
+
     /** generator가 null이면 기존 7-bag 랜덤 생성을 사용한다. */
     public Game(PieceGenerator generator) {
+        this(generator, 0);
+    }
+
+    private Game(PieceGenerator generator, int timeLimitMs) {
         pieceGenerator = generator;
+        this.timeLimitMs = Math.max(0, timeLimitMs);
         restart();
+    }
+
+    /** 제한 시간이 있는 모드는 남은 초, 기본 모드는 경과 초를 표시한다. */
+    public int displayTimeSeconds() {
+        return timeLimitMs > 0 ? (timeLimitMs - elapsedTimeMs + 999) / 1000 : (int) timer;
     }
 
     /** 생성기는 다음 restart()부터 적용된다. null은 기본 7-bag 생성기를 뜻한다. */
@@ -83,6 +97,7 @@ public final class Game {
 
     /** 보드와 점수, 블록 대기열을 초기 상태로 되돌린다. */
     public void restart() {
+        elapsedTimeMs = 0;
         dropCount = 0; startCal = false; timer = 0.0f;
         board.clear(); bag.clear(); queue.clear(); held = null;
         scoring.reset();
@@ -205,7 +220,7 @@ public final class Game {
 
     /** 현재 블록을 Hold 칸과 바꾸며, 블록 하나당 한 번만 허용한다. */
     public void hold() {
-        if (gameOver || holdUsed) return;
+        if (gameOver || holdUsed || spawnDelayed || active == null) return;
         if (held == null) gravityElapsed = 0;
         swapHeldPiece();
         holdUsed = true;
@@ -214,7 +229,16 @@ public final class Game {
 
     /** 타이머가 전달한 경과 시간만큼 중력 낙하와 락 지연을 진행한다. */
     public void tick(int elapsedMs) {
-        if (gameOver || !gravityEnabled) return;
+        if (gameOver) return;
+        if (timeLimitMs > 0) {
+            elapsedTimeMs += Math.min(Math.max(0, elapsedMs), timeLimitMs - elapsedTimeMs);
+            if (elapsedTimeMs >= timeLimitMs) {
+                setGameOver();
+                return;
+            }
+        }
+        if (!gravityEnabled) return;
+        elapsedMs = Math.min(100, elapsedMs);
 
         if (spawnDelayed) {
             spawnDelayElapsed += elapsedMs;
