@@ -42,7 +42,7 @@ final class TetrisBlockButton {
     void draw(Graphics2D g, boolean hovered, boolean pressed, Font font, int fontSize) {
         int offset = pressed && hovered ? 2 : 0;
         Color base = enabled ? color : new Color(92, 92, 92);
-        Color face = pressed && hovered ? scale(base, .78f) : hovered && enabled ? mix(base, Color.WHITE, .28f) : base;
+        Color face = pressed && hovered ? scale(base, .45f) : hovered && enabled ? scale(base, .60f) : base;
         int widest = widestRow(), firstCell = rows[widest].indexOf('#'), count = occupiedCells(widest);
         g.setColor(face);
         for (int row = 0; row < rows.length; row++) for (int col = 0; col < rows[row].length(); col++)

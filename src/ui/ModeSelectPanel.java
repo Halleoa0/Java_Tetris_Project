@@ -20,6 +20,7 @@ public final class ModeSelectPanel extends JPanel {
     private static final Color BACKGROUND = new Color(41, 41, 41);
     private final ScreenManager screens;
     private final List<TetrisBlockButton> buttons = new ArrayList<>();
+    private final MenuNavigation navigation;
     private final Font menuFont = MenuFonts.loadPressStart2P();
     private final Font koreanFont = MenuFonts.loadKRBlack();
     private TetrisBlockButton hovered, pressed;
@@ -33,11 +34,13 @@ public final class ModeSelectPanel extends JPanel {
         Color[] colors={new Color(170,85,205),new Color(75,205,235),new Color(245,210,55),new Color(170,85,205),new Color(240,145,55)};
         layoutModes(shapes, colors);
         buttons.add(new TetrisBlockButton("BACK",new String[]{"####"},new Color(110,190,120),35,35,28,screens::showHome,true));
+        navigation = new MenuNavigation(this, buttons, this::updateDescription);
+        updateDescription();
         MouseAdapter mouse=new MouseAdapter(){
             @Override public void mouseMoved(MouseEvent e){updateHover(e.getX(),e.getY());}
             @Override public void mouseDragged(MouseEvent e){updateHover(e.getX(),e.getY());}
-            @Override public void mouseExited(MouseEvent e){hovered=null;description="";repaint();}
-            @Override public void mousePressed(MouseEvent e){pressed=buttonAt(e.getX(),e.getY());hovered=pressed;repaint();}
+            @Override public void mouseExited(MouseEvent e){hovered=null;updateDescription();repaint();}
+            @Override public void mousePressed(MouseEvent e){pressed=buttonAt(e.getX(),e.getY());hovered=pressed;navigation.useMouse(pressed);repaint();}
             @Override public void mouseReleased(MouseEvent e){TetrisBlockButton b=buttonAt(e.getX(),e.getY());if(pressed!=null&&pressed==b&&b.enabled){AudioManager.get().playMenuSelect();b.action.run();}pressed=null;updateHover(e.getX(),e.getY());}
         };
         addMouseListener(mouse);addMouseMotionListener(mouse);
@@ -71,7 +74,17 @@ public final class ModeSelectPanel extends JPanel {
         }
     }
     private TetrisBlockButton buttonAt(int x,int y){for(TetrisBlockButton b:buttons)if(b.contains(x,y))return b;return null;}
-    private void updateHover(int x,int y){TetrisBlockButton n=buttonAt(x,y);if(hovered!=n){hovered=n;description="";if(n!=null)for(GameMode m:modes)if(m.getName().equals(n.label)){description=m.getDescription();break;}repaint();}}
+    private void updateHover(int x,int y){hovered=buttonAt(x,y);navigation.useMouse(hovered);}
+    private void updateDescription() {
+        TetrisBlockButton button = navigation.highlightedButton(hovered);
+        description = "";
+        if (button != null) for (GameMode mode : modes) {
+            if (mode.getName().equals(button.label)) {
+                description = mode.getDescription();
+                break;
+            }
+        }
+    }
     @Override
     protected void paintComponent(Graphics graphics) {
         //1. 기본 패널 그리기
@@ -112,7 +125,7 @@ public final class ModeSelectPanel extends JPanel {
 
             b.draw(
                     g,
-                    hovered == b,
+                    navigation.highlightedButton(hovered) == b,
                     pressed == b,
                     menuFont,
                     size

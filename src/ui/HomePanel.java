@@ -7,11 +7,14 @@ import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.Font;
-import java.awt.FontMetrics;
+import java.awt.image.BufferedImage;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
+import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 
@@ -25,10 +28,12 @@ public final class HomePanel extends JPanel {
     private static final Color T_COLOR = new Color(170, 85, 205);
     private static final Color L_COLOR = new Color(240, 145, 55);
     private static final Font MENU_FONT = MenuFonts.loadPressStart2P();
-    private static final Font TITLE_FONT = MENU_FONT.deriveFont(40f);
+    private static final BufferedImage LOGO = loadImage("Images/Logo.png");
+    private static final BufferedImage CREDIT = loadImage("Images/Credit.png");
     private static final Font BUTTON_FONT = MENU_FONT.deriveFont(24f);
 
     private final List<TetrisBlockButton> buttons;
+    private final MenuNavigation navigation;
     private TetrisBlockButton hoveredButton;
     private TetrisBlockButton pressedButton;
 
@@ -42,6 +47,7 @@ public final class HomePanel extends JPanel {
                 new TetrisBlockButton("Shop", new String[]{"###", ".#."}, T_COLOR, 380, 475, CELL_SIZE, screens::showShop, true),
                 new TetrisBlockButton("Settings", new String[]{"..#", "###"}, L_COLOR, 760, 425, CELL_SIZE, screens::showSettings, true));
 
+        navigation = new MenuNavigation(this, buttons, () -> {});
         MouseAdapter mouse = new MouseAdapter() {
             @Override public void mouseMoved(MouseEvent event) { updateHover(event.getX(), event.getY()); }
             @Override public void mouseDragged(MouseEvent event) { updateHover(event.getX(), event.getY()); }
@@ -52,6 +58,7 @@ public final class HomePanel extends JPanel {
             @Override public void mousePressed(MouseEvent event) {
                 pressedButton = buttonAt(event.getX(), event.getY());
                 hoveredButton = pressedButton;
+                navigation.useMouse(pressedButton);
                 repaint();
             }
             @Override public void mouseReleased(MouseEvent event) {
@@ -68,8 +75,19 @@ public final class HomePanel extends JPanel {
         addMouseMotionListener(mouse);
     }
 
+    private static BufferedImage loadImage(String path) {
+        try {
+            BufferedImage image = ImageIO.read(Path.of(path).toFile());
+            if (image == null) throw new IOException("Unsupported image format");
+            return image;
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot load " + path, e);
+        }
+    }
+
     private void updateHover(int x, int y) {
         TetrisBlockButton next = buttonAt(x, y);
+        navigation.useMouse(next);
         if (hoveredButton != next) {
             hoveredButton = next;
             repaint();
@@ -86,13 +104,11 @@ public final class HomePanel extends JPanel {
         Graphics2D g = (Graphics2D) graphics.create();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-        g.setColor(Color.WHITE);
-        g.setFont(TITLE_FONT);
-        FontMetrics titleMetrics = g.getFontMetrics();
-        String title = "TETRIS";
-        g.drawString(title, (getWidth() - titleMetrics.stringWidth(title)) / 2, 155);
-        for (TetrisBlockButton button : buttons) button.draw(g, hoveredButton == button,
+        g.drawImage(LOGO, (getWidth() - LOGO.getWidth()) / 2,
+                135 - LOGO.getHeight() / 2, null);
+        for (TetrisBlockButton button : buttons) button.draw(g, navigation.highlightedButton(hoveredButton) == button,
                 pressedButton == button, BUTTON_FONT, 24);
+        g.drawImage(CREDIT, 20, getHeight() - CREDIT.getHeight() - 20, null);
         g.dispose();
     }
 }

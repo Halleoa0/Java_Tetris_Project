@@ -103,13 +103,13 @@ public final class GamePanel extends JPanel {
     private final JButton gameOverMenuButton = new JButton("메인화면");
 
     // 현재 진행 중 모드
-    private String gameName = "테스트 플레이";
+    private String gameName = "튜토리얼";
 
     // 키를 게임 동작에 연결하고 16ms 간격으로 게임 상태를 갱신한다.
     public GamePanel() { this(new Game()); }
 
     public GamePanel(Game game) {
-        this(game, "테스트 플레이");
+        this(game, "튜토리얼");
     }
 
     public GamePanel(Game game, String gameName) {

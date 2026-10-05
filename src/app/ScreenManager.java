@@ -55,7 +55,7 @@ public final class ScreenManager extends JPanel {
     }
 
     public void startGame() {
-        startGame(new Game(), "테스트 플레이");
+        startGame(new Game(), "클래식");
     }
 
     public void startGame(Game game, String gameName) {
