@@ -36,6 +36,9 @@ public interface GameListener {
     /** 라인 삭제로 레벨이 상승했을 때 호출된다. */
     public default void onLevelUp(int newLevel) { }
 
+    /** 스프린트처럼 목표를 달성해 게임이 끝났을 때 호출된다. (이때는 onGameOver가 호출되지 않는다) */
+    public default void onGoalReached() { }
+
     /** 게임 오버 시 호출된다. */
     public default void onGameOver() { }
 }
