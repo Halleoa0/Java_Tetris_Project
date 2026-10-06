@@ -4,6 +4,7 @@ import audio.AudioManager;
 import game.Game;
 import java.awt.CardLayout;
 import java.awt.Dimension;
+import java.util.function.Consumer;
 import javax.swing.JPanel;
 import tutorial.TutorialController;
 import ui.GamePanel;
@@ -55,7 +56,13 @@ public final class ScreenManager extends JPanel {
     }
 
     public void startGame() {
-        startGame(new Game(), "클래식");
+        startGame(game -> { });
+    }
+
+    public void startGame(Consumer<Game> setup) {
+        Game game = new Game();
+        setup.accept(game);
+        startGame(game, "클래식");
     }
 
     public void startGame(Game game, String gameName) {

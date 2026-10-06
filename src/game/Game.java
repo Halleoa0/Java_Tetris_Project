@@ -115,6 +115,11 @@ public final class Game {
 
     public boolean isSpawnDelayed() { return spawnDelayed; }
 
+    /** 보드를 한 칸 올리고 쓰레기 줄을 추가한다. 위쪽이 넘치면 게임오버 처리한다. */
+    public void addGarbageRow(int holeColumn) {
+        if (!board.pushGarbageRow(holeColumn)) setGameOver();
+    }
+
     public float calPPS() {
         pps = dropCount / timer;
         return pps;
@@ -131,6 +136,7 @@ public final class Game {
         scoring.level = Settings.get().startLevel(); gameOver = false; holdUsed = false;
         lockElapsed = 0; lockResets = 0; gravityElapsed = 0; spawnDelayElapsed = 0; spawnDelayed = false;
         for (int i = 0; i < PREVIEW_COUNT + 1; i++) queue.addLast(nextPiece());
+        for (GameListener listener : List.copyOf(listeners)) listener.onRestart();
         spawnNext();
     }
 
@@ -272,13 +278,14 @@ public final class Game {
         }
         if (!gravityEnabled) return;
         elapsedMs = Math.min(100, elapsedMs);
+        for (GameListener listener : List.copyOf(listeners)) listener.onTick(elapsedMs);
 
         if (spawnDelayed) {
             spawnDelayElapsed += elapsedMs;
             if (spawnDelayElapsed >= Settings.get().spawnDelayMs()) {
                 spawnDelayed = false;
                 spawnDelayElapsed = 0;
-                spawnNext();
+                spawnNextAfterLock();
             }
             return;
         }
@@ -341,8 +348,14 @@ public final class Game {
             spawnDelayed = true;
             spawnDelayElapsed = 0;
         } else {
-            spawnNext();
+            spawnNextAfterLock();
         }
+    }
+
+    private void spawnNextAfterLock() {
+        for (GameListener listener : List.copyOf(listeners)) listener.onBeforeSpawn();
+        if (gameOver) return;
+        spawnNext();
     }
 
     /** 목표 줄 수를 채워 끝낸다. 게임 오버와 달리 onGameOver 대신 onGoalReached가 호출된다. */

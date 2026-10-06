@@ -518,7 +518,10 @@ public final class GamePanel extends JPanel {
             for (int col = 0; col < Board.WIDTH; col++) {
                 int sx = BOARD_X + col * CELL, sy = BOARD_Y + (row - Board.HIDDEN_ROWS) * CELL;
                 Tetromino locked = game.board.get(col, row);
-                if (locked != null) drawCell(g, sx, sy, locked, false);
+                if (locked != null) {
+                    if (game.board.isGarbageCell(col, row)) drawGarbageCell(g, sx, sy);
+                    else drawCell(g, sx, sy, locked, false);
+                }
             }
         }
 
@@ -549,6 +552,13 @@ public final class GamePanel extends JPanel {
     private void drawCell(Graphics2D g, int x, int y, Tetromino type, boolean ghost) {
         int tile = ghost ? 7 : minoTileIndex(type);
         g.drawImage(minoTiles[tile], x, y, CELL, CELL, this);
+    }
+
+    private void drawGarbageCell(Graphics2D g, int x, int y) {
+        g.setColor(new Color(145, 145, 145));
+        g.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+        g.setColor(new Color(75, 75, 75));
+        g.drawRect(x, y, CELL - 1, CELL - 1);
     }
 
     private int minoTileIndex(Tetromino type) {
