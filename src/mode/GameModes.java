@@ -17,7 +17,7 @@ public final class GameModes {
                 new ComingSoonMode("20L SPRINT", "20줄을 가장 빠르게 지우기"),
 
                 // TOP-OUT RUN mode
-                new ComingSoonMode("TOP-OUT RUN", "계속 올라오는 줄을 버티며 최대한 오래 생존"),
+                new TopOutRunMode(),
 
                 // vs CPU mode
                 new ComingSoonMode("vs CPU", "CPU와 대결")
