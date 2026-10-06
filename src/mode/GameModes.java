@@ -14,7 +14,7 @@ public final class GameModes {
                 new UltraMode(),
 
                 // 20L SPRINT mode
-                new ComingSoonMode("20L SPRINT", "20줄을 가장 빠르게 지우기"),
+                new SprintMode(),
 
                 // TOP-OUT RUN mode
                 new ComingSoonMode("TOP-OUT RUN", "계속 올라오는 줄을 버티며 최대한 오래 생존"),
