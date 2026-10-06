@@ -38,7 +38,7 @@ public final class Board {
 
     /** 보드를 한 칸 위로 밀고, 아래에 구멍 하나가 있는 쓰레기 줄을 추가한다. */
     public boolean pushGarbageRow(int holeColumn) {
-        if (holeColumn < 0 || holeColumn >= WIDTH) throw new IllegalArgumentException("Invalid hole column: " + holeColumn);
+        if (holeColumn < 0 || holeColumn >= WIDTH) throw new IllegalArgumentException("홀의 열 번호가 범위를 벗어났습니다: " + holeColumn);
         for (Tetromino cell : cells[0]) if (cell != null) return false;
 
         for (int row = 0; row < STORED_ROWS - 1; row++) {
