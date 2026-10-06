@@ -10,7 +10,6 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.util.Locale;
 import java.util.Map;
-import settings.Records;
 
 
 
@@ -103,11 +102,7 @@ public final class LabelUI {
         g.setFont(interMedium.deriveFont(16f));
         g.drawString("LINES", 456, 539);
         g.setFont(interBlack.deriveFont(24f));
-        // 목표 줄 수가 있는 모드(스프린트)는 "지운 줄/목표"로 표시한다.
-        int target = game.targetLines();
-        String lineText = target > 0
-                ? String.format(Locale.ROOT, "%d/%d", Math.min(game.scoring.lines, target), target)
-                : String.format(Locale.ROOT, "%d", game.scoring.lines);
+        String lineText = String.format(Locale.ROOT, "%d", game.scoring.lines);
         FontMetrics metrics = g.getFontMetrics();
         g.drawString(lineText, 500 - metrics.stringWidth(lineText), 539 + 28);
     }
@@ -125,10 +120,7 @@ public final class LabelUI {
         g.setFont(interMedium.deriveFont(16f));
         g.drawString("TIME", 783, 539);
         int totalSeconds = game.displayTimeSeconds();
-        // 기록을 겨루는 스프린트는 1/100초까지 보여줌
-        String timeText = game.targetLines() > 0
-                ? Records.formatTime(game.elapsedTimeMs())
-                : String.format(Locale.ROOT, "%02d:%02d", totalSeconds / 60, totalSeconds % 60);
+        String timeText = String.format(Locale.ROOT, "%02d:%02d", totalSeconds / 60, totalSeconds % 60);
         g.setFont(interBlack.deriveFont(24f));
         g.drawString(timeText, 783, 539 + 28);
     }
