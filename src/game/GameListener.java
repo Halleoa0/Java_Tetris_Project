@@ -3,6 +3,15 @@ package game;
 
 /** Game에서 발생하는 동작 이벤트를 관찰한다. 필요한 이벤트만 구현하면 된다. */
 public interface GameListener {
+    /** 게임이 진행된 업데이트마다 경과 시간(ms)과 함께 호출된다. */
+    public default void onTick(long dtMs) { }
+
+    /** 블록 고정 처리가 끝난 뒤 다음 블록을 스폰하기 직전에 호출된다. */
+    public default void onBeforeSpawn() { }
+
+    /** 게임 상태가 재시작되었을 때 호출된다. */
+    public default void onRestart() { }
+
     /** 블록이 좌우로 이동했을 때 호출된다. */
     public default void onMove(int dx, int dy) { }
 
@@ -26,6 +35,9 @@ public interface GameListener {
 
     /** 라인 삭제로 레벨이 상승했을 때 호출된다. */
     public default void onLevelUp(int newLevel) { }
+
+    /** 스프린트처럼 목표를 달성해 게임이 끝났을 때 호출된다. (이때는 onGameOver가 호출되지 않는다) */
+    public default void onGoalReached() { }
 
     /** 게임 오버 시 호출된다. */
     public default void onGameOver() { }

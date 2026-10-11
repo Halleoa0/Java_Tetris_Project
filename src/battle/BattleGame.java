@@ -81,8 +81,9 @@ final class BattleGame {
                 // (방해 줄 때문에 다음 블록이 나올 자리가 막히면 다음 블록이 나올 때 게임 오버가 된다)
                 if (!lastPlayerClear && playerGarbage.hasPending()) {
                     int toInject = playerGarbage.popGarbage(4); // 한 번에 최대 4줄씩 안전하게 솟아오른다.
-                    if (toInject > 0) {
-                        playerGame.board.insertGarbage(toInject, playerGarbage.getHoleCol());
+                    // 한 줄씩 올린다. 맨 윗줄까지 차서 더 못 올리면 Game이 게임 오버(KO) 처리한다.
+                    for (int i = 0; i < toInject && !playerGame.gameOver; i++) {
+                        playerGame.addGarbageRow(playerGarbage.getHoleCol());
                     }
                 }
                 lastPlayerClear = false;
@@ -118,8 +119,9 @@ final class BattleGame {
                 // 줄을 지우지 못하고 블록이 고정되면 대기 중이던 방해 줄을 봇 보드에 주입한다.
                 if (!lastBotClear && botGarbage.hasPending()) {
                     int toInject = botGarbage.popGarbage(4);
-                    if (toInject > 0) {
-                        botGame.board.insertGarbage(toInject, botGarbage.getHoleCol());
+                    // 한 줄씩 올린다. 맨 윗줄까지 차서 더 못 올리면 Game이 게임 오버(KO) 처리한다.
+                    for (int i = 0; i < toInject && !botGame.gameOver; i++) {
+                        botGame.addGarbageRow(botGarbage.getHoleCol());
                     }
                 }
                 lastBotClear = false;

@@ -1,7 +1,7 @@
 package game;
 
-
-/** 튜토리얼에서 같은 종류의 블록을 반복 공급한다. */
+/// TUTORIAL 전용
+/// 튜토리얼에서 같은 종류의 블록을 반복 공급한다.
 public final class FixedPieceGenerator implements PieceGenerator {
     private final Tetromino piece;
 

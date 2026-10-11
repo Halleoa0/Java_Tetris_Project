@@ -454,7 +454,7 @@ public final class BattlePanel extends JPanel {
                 int sx = BOARD_X + col * CELL, sy = BOARD_Y + (row - Board.HIDDEN_ROWS) * CELL;
                 Tetromino locked = game.board.get(col, row);
                 if (locked == null) continue;
-                if (game.board.isGarbage(col, row)) drawTile(g, sx, sy, 7); // 방해 줄은 회색 타일(7)
+                if (game.board.isGarbageCell(col, row)) drawTile(g, sx, sy, 7); // 방해 줄은 회색 타일(7)
                 else drawTile(g, sx, sy, minoTileIndex(locked));
             }
         }

@@ -41,14 +41,53 @@ public final class Game {
     private int initialRotation;
     private long spawnDelayElapsed;
     private boolean spawnDelayed;
+    private final int timeLimitMs;
+    private int elapsedTimeMs;
+    // 스프린트: 목표 줄 수(0이면 해당 없음), 시작 카운트다운, 목표 달성 여부
+    private static final int COUNTDOWN_MS = 3000;
+    private final int targetLines;
+    private int countdownMs;
+    private boolean goalReached;
 
     public Game() { this(null); }
 
-    /** generator가 null이면 기존 7-bag 랜덤 생성을 사용한다. */
+    public Game(int timeLimitMs) { this(null, timeLimitMs, 0); }
+
+    /** 목표 줄 수를 가장 빨리 채우는 스프린트용 게임. 시작할 때 3초 카운트다운 */
+    public static Game sprint(int targetLines) { return new Game(null, 0, Math.max(1, targetLines)); }
+
+    /** generator가 null이면 기존 7-bag 랜덤 생성을 사용 */
     public Game(PieceGenerator generator) {
+        this(generator, 0, 0);
+    }
+
+    private Game(PieceGenerator generator, int timeLimitMs, int targetLines) {
         pieceGenerator = generator;
+        this.timeLimitMs = Math.max(0, timeLimitMs);
+        this.targetLines = Math.max(0, targetLines);
         restart();
     }
+
+    /** 제한 시간이 있는 모드는 남은 초, 기본 모드는 경과 초를 표시한다. */
+    public int displayTimeSeconds() {
+        if (targetLines > 0) return elapsedTimeMs / 1000;
+        return timeLimitMs > 0 ? (timeLimitMs - elapsedTimeMs + 999) / 1000 : (int) timer;
+    }
+
+    /** 목표 줄 수. 0이면 목표가 없는 모드. */
+    public int targetLines() { return targetLines; }
+
+    /** 목표를 달성해서 끝난 게임인지. (게임 오버와 구분하기 위함. 이때 gameOver도 true가 됨) */
+    public boolean goalReached() { return goalReached; }
+
+    /** 스프린트 경과 시간(ms). 카운트다운이 끝난 뒤부터 셈 */
+    public int elapsedTimeMs() { return elapsedTimeMs; }
+
+    /** 시작 카운트다운 중인지. 이 동안은 조작·중력·시간이 모두 멈춤 */
+    public boolean isCountingDown() { return countdownMs > 0; }
+
+    /** 화면에 보여줄 카운트다운 숫자(3, 2, 1). 카운트다운이 아니면 0. */
+    public int countdownSeconds() { return (countdownMs + 999) / 1000; }
 
     /** 생성기는 다음 restart()부터 적용된다. null은 기본 7-bag 생성기를 뜻한다. */
     public void setPieceGenerator(PieceGenerator generator) { pieceGenerator = generator; }
@@ -76,6 +115,11 @@ public final class Game {
 
     public boolean isSpawnDelayed() { return spawnDelayed; }
 
+    /** 보드를 한 칸 올리고 쓰레기 줄을 추가한다. 위쪽이 넘치면 게임오버 처리한다. */
+    public void addGarbageRow(int holeColumn) {
+        if (!board.pushGarbageRow(holeColumn)) setGameOver();
+    }
+
     public float calPPS() {
         pps = dropCount / timer;
         return pps;
@@ -83,12 +127,16 @@ public final class Game {
 
     /** 보드와 점수, 블록 대기열을 초기 상태로 되돌린다. */
     public void restart() {
+        elapsedTimeMs = 0;
+        goalReached = false;
+        countdownMs = targetLines > 0 ? COUNTDOWN_MS : 0;
         dropCount = 0; startCal = false; timer = 0.0f;
         board.clear(); bag.clear(); queue.clear(); held = null;
         scoring.reset();
         scoring.level = Settings.get().startLevel(); gameOver = false; holdUsed = false;
         lockElapsed = 0; lockResets = 0; gravityElapsed = 0; spawnDelayElapsed = 0; spawnDelayed = false;
         for (int i = 0; i < PREVIEW_COUNT + 1; i++) queue.addLast(nextPiece());
+        for (GameListener listener : List.copyOf(listeners)) listener.onRestart();
         spawnNext();
     }
 
@@ -103,6 +151,7 @@ public final class Game {
         return bag.removeFirst();
     }
 
+    /// pieceGenerator이 null 이라면 Tutorial이 아니기 때문에 7beg 시스템을 사용. 아니라면 T미노만 나오는 Tutorial 시스템
     private Tetromino nextPiece() { return pieceGenerator == null ? drawPiece() : pieceGenerator.next(); }
 
     /** 화면에 보여줄 다음 블록 목록을 반환한다. */
@@ -154,6 +203,7 @@ public final class Game {
     /** direction이 양수면 시계 방향, 음수면 반시계 방향으로 SRS 회전을 시도한다. */
     public boolean rotate(int direction) {
         int rotationDirection = direction > 0 ? 1 : -1;
+        if (countdownMs > 0) return false;
         if (gameOver || spawnDelayed || active == null || active == Tetromino.Omino) {
             notifyRotate(rotationDirection);
             return false;
@@ -187,7 +237,7 @@ public final class Game {
 
     /** 가능한 가장 아래까지 내린 뒤 고정한다. 낙하 거리에 따라 점수를 준다. */
     public void hardDrop() {
-        if (gameOver) return;
+        if (gameOver || countdownMs > 0) return;
         int distance = 0;
         while (board.canPlace(active, x, y + 1, rotation)) { y++; distance++; }
         scoring.onHardDrop(distance);
@@ -205,7 +255,7 @@ public final class Game {
 
     /** 현재 블록을 Hold 칸과 바꾸며, 블록 하나당 한 번만 허용한다. */
     public void hold() {
-        if (gameOver || holdUsed) return;
+        if (gameOver || holdUsed || spawnDelayed || active == null) return;
         if (held == null) gravityElapsed = 0;
         swapHeldPiece();
         holdUsed = true;
@@ -215,13 +265,27 @@ public final class Game {
     /** 타이머가 전달한 경과 시간만큼 중력 낙하와 락 지연을 진행한다. */
     public void tick(int elapsedMs) {
         if (gameOver) return;
+        if (countdownMs > 0) {   // 스프린트 시작 카운트다운: 끝날 때까지 시간과 중력이 멈춘다.
+            countdownMs = Math.max(0, countdownMs - elapsedMs);
+            return;
+        }
+        if (targetLines > 0) elapsedTimeMs += Math.max(0, elapsedMs);
+        if (timeLimitMs > 0) {
+            elapsedTimeMs += Math.min(Math.max(0, elapsedMs), timeLimitMs - elapsedTimeMs);
+            if (elapsedTimeMs >= timeLimitMs) {
+                setGameOver();
+                return;
+            }
+        }
+        elapsedMs = Math.min(100, elapsedMs);
+        for (GameListener listener : List.copyOf(listeners)) listener.onTick(elapsedMs);
 
         if (spawnDelayed) {
             spawnDelayElapsed += elapsedMs;
             if (spawnDelayElapsed >= Settings.get().spawnDelayMs()) {
                 spawnDelayed = false;
                 spawnDelayElapsed = 0;
-                spawnNext();
+                spawnNextAfterLock();
             }
             return;
         }
@@ -289,13 +353,14 @@ public final class Game {
         if (attackLines > 0)
             for (GameListener listener : List.copyOf(listeners)) listener.onAttackSent(attackLines);
 
+        if (targetLines > 0 && scoring.lines >= targetLines) { setGoalReached(); return; }
         int delay = Settings.get().spawnDelayMs();
         if(delay > 0) {
             active = null;
             spawnDelayed = true;
             spawnDelayElapsed = 0;
         } else {
-            spawnNext();
+            spawnNextAfterLock();
         }
     }
 
@@ -324,6 +389,20 @@ public final class Game {
             else lines += 4;
         }
         return lines;
+    }
+
+    private void spawnNextAfterLock() {
+        for (GameListener listener : List.copyOf(listeners)) listener.onBeforeSpawn();
+        if (gameOver) return;
+        spawnNext();
+    }
+
+    /** 목표 줄 수를 채워 끝낸다. 게임 오버와 달리 onGameOver 대신 onGoalReached가 호출된다. */
+    private void setGoalReached() {
+        if (gameOver) return;
+        goalReached = true;
+        gameOver = true;
+        for (GameListener listener : List.copyOf(listeners)) listener.onGoalReached();
     }
 
     private void setGameOver() {
