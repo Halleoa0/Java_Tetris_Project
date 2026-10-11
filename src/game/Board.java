@@ -2,13 +2,17 @@ package game;
 
 import java.util.Arrays;
 
+/// Board 클래스 : 화면에 그리는 보드 크기와 블록을 관리.
 public final class Board {
 
-    // 기존 좌표/바닥은 유지하고 위쪽 8줄(-8..-1)까지 저장한다.
+    // 가로 10, 높이 22칸, 생성 위치 2칸 위
     public static final int WIDTH = 10, HEIGHT = 22, HIDDEN_ROWS = 2;
+    // 22칸을 넘어 30칸까지 저장 - 블록이 22칸 이상으로도 쌓일 수도 있어서 사용 (MIN_ROW : 22칸 넘어 추가 8칸까지 저장)
     public static final int STORED_ROWS = 30, MIN_ROW = HEIGHT - STORED_ROWS;
+    // MIN_ROW를 쓰는 이유 : y가 위에서부터 0인데 우리가 실제로 쓰는 공간은 -8부터이기 떄문이다. (즉, y를 8부터 쓰기 위해 MIN_ROW를 뺀다)
+    // [결과] -8 ~ 21 를 0 ~ 29 로 쓰게 된다.
 
-    // 논리 좌표 y=-8..21을 배열의 행 0..29에 대응시킨다.
+    // cells는 현재 보드의 블록을 저장하는 배열, garbageCells는 현재 보드에 존재하는 쓰레기 줄 (아래에 깔리는 회색 블록)
     private final Tetromino[][] cells = new Tetromino[STORED_ROWS][WIDTH];
     private final boolean[][] garbageCells = new boolean[STORED_ROWS][WIDTH];
 
@@ -18,8 +22,8 @@ public final class Board {
         // cell : 미노를 이루는 한 칸. 반복문을 미노의 한 칸들이 놓일 수 있는지 검사.
         for (int[] cell : type.cells(rotation)) {
             int px = x + cell[0], py = y + cell[1]; // px, py : 놓일 위치에서 상대 좌표 (예 : I미노는 놓일 위치에서 {0,1}, {1,1}, {2,1}, {3,1}를 검사)
-            if (px < 0 || px >= WIDTH || py < MIN_ROW || py >= HEIGHT) return false;
-            if (cells[py - MIN_ROW][px] != null) return false;
+            if (px < 0 || px >= WIDTH || py < MIN_ROW || py >= HEIGHT) return false; // 생성될 블록이 상하좌우를 벗어나면 false
+            if (cells[py - MIN_ROW][px] != null) return false; // 생성될 블록 위치에 블록이 있다면 false
         }
         return true; // 위의 false 조건들을 다 통과했다면 true, 즉 놓을 수 있음.
     }
@@ -39,18 +43,20 @@ public final class Board {
     /** 보드를 한 칸 위로 밀고, 아래에 구멍 하나가 있는 쓰레기 줄을 추가한다. */
     public boolean pushGarbageRow(int holeColumn) {
         if (holeColumn < 0 || holeColumn >= WIDTH) throw new IllegalArgumentException("홀의 열 번호가 범위를 벗어났습니다: " + holeColumn);
-        for (Tetromino cell : cells[0]) if (cell != null) return false;
+        for (Tetromino cell : cells[0]) if (cell != null) return false; // 보드에 쓰레기 줄로 다 찼다면 안 올림
 
+        // 아래의 행을 복사하고 그 위로 덮어 쓴다. (즉, 한 칸씩 올린다)
         for (int row = 0; row < STORED_ROWS - 1; row++) {
             cells[row] = Arrays.copyOf(cells[row + 1], WIDTH);
             garbageCells[row] = Arrays.copyOf(garbageCells[row + 1], WIDTH);
         }
+
         int bottom = STORED_ROWS - 1;
-        Arrays.fill(cells[bottom], Tetromino.Imino);
-        Arrays.fill(garbageCells[bottom], true);
-        cells[bottom][holeColumn] = null;
-        garbageCells[bottom][holeColumn] = false;
-        return true;
+        Arrays.fill(cells[bottom], Tetromino.Imino);    // 쓰레기 줄을 Imino로 올림 (Imino? cell로 저장하기 위해서 type 필요)
+        Arrays.fill(garbageCells[bottom], true);    // 맨 아랫줄을 쓰레기 줄로 추가
+        cells[bottom][holeColumn] = null;               // 구멍 한 칸은 null
+        garbageCells[bottom][holeColumn] = false;       // 구멍 한 칸은 쓰레기 줄이 아님을 알림
+        return true;                                    // 쓰레기 줄이 잘 올라옴 (안 올라왔다면 죽었으니 패배 처리)
     }
 
     /// 미노로 꽉 채워진 한 줄을 지움. 추가로 지워진 줄의 윗줄들을 아래로 내림. (한 줄 사라졌으니까 내려야 됨)
@@ -71,18 +77,19 @@ public final class Board {
         return cleared; // 지운 라인 수
     }
 
-    // x, y값에 블록이 존재하는지 확인
+    // x, y값에 블록이 존재하는지 확인 - true/false 검사 (T-spin을 위해서 제작됨)
     public boolean occupied(int x, int y) { return y >= MIN_ROW && y < HEIGHT && cells[y - MIN_ROW][x] != null; }
+    // x, y값에 블록이 존재하는지 확인 - 타입을 검사 (얘가 GamePanel에게 미노 타입을 주고 GamePanel에선 미노 색상을 찍어냄)
     public Tetromino get(int x, int y) { return cells[y - MIN_ROW][x]; }
     public boolean isGarbageCell(int x, int y) { return y >= MIN_ROW && y < HEIGHT && garbageCells[y - MIN_ROW][x]; }
 
-    // 보드가 완전히 비었는지 (퍼펙트 클리어 판정용)
+    /// 보드가 완전히 비었는지 (퍼펙트 클리어 판정용)
     public boolean isEmpty() {
         for (Tetromino[] row : cells ) for (Tetromino c : row) if (c != null) return false;
         return true;
     }
 
-    // 보드에 있는 미노 다 지우기
+    /// 보드에 있는 미노 다 지우기
     public void clear() {
         for (Tetromino[] row : cells) Arrays.fill(row, null);
         for (boolean[] row : garbageCells) Arrays.fill(row, false);

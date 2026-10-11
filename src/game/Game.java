@@ -151,6 +151,7 @@ public final class Game {
         return bag.removeFirst();
     }
 
+    /// pieceGenerator이 null 이라면 Tutorial이 아니기 때문에 7beg 시스템을 사용. 아니라면 T미노만 나오는 Tutorial 시스템
     private Tetromino nextPiece() { return pieceGenerator == null ? drawPiece() : pieceGenerator.next(); }
 
     /** 화면에 보여줄 다음 블록 목록을 반환한다. */

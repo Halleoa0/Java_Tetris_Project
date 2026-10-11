@@ -3,6 +3,7 @@ package mode;
 import app.ScreenManager;
 import game.Game;
 
+/// 2분동안 최고 점수를 쌓기.
 public final class UltraMode implements GameMode {
     private static final int TIME_LIMIT_MS = 120_000;
 

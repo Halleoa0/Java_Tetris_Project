@@ -1,12 +1,15 @@
 package mode;
 
 import app.ScreenManager;
+import game.Game;
 
 public final class ClassicMode implements GameMode {
     @Override public String getName() { return "CLASSIC"; }
     @Override public String getDescription() { return "기본 테트리스"; }
     @Override public boolean isAvailable() { return true; }
-    @Override public void start(ScreenManager screens) { screens.startGame(); }
+    @Override public void start(ScreenManager screens) {
+        screens.startGame(new Game(), "클래식");
+    }
 
 
 }
