@@ -86,6 +86,13 @@ public final class BattlePanel extends JPanel {
     private int pauseSelection = 0;
     private boolean ignoreSpaceUntilRelease = false;
 
+    // 블록을 쌓으면 이전 입력이 무시되는 오류가 있어서 버퍼링을 사용.
+    private int bufferedHorizontal; // 놓기 전, 좌우 이동 값을 저장 (-1좌, 0안함, 1우)
+    private int bufferedRotation; // 놓기 전, 회전 방향 (-1반시계, 1시계) - IRS
+    private boolean bufferedHold; // 놓기 전, 홀드를 눌렀는지 확인 - IHS
+    private boolean bufferedSoftDrop; // 소프트 드롭 버퍼링
+    private boolean bufferedHardDrop; // 하드 드롭 버퍼링
+
     // 마우스로 누를 수 있는 글씨들. 화면에 그릴 때 글씨가 있는 사각형을 기억해 두고, 클릭하면 그 안인지 확인한다.
     private final Rectangle[] pauseOptionBounds = new Rectangle[PAUSE_OPTIONS.length]; // 일시정지 메뉴 항목들
     private Rectangle resultNextBounds; // 결과 상자의 "NEXT ROUND" 또는 "REMATCH"
@@ -126,6 +133,8 @@ public final class BattlePanel extends JPanel {
                 battle.playerGame.scoring.tick(elapsed); // 점수 글씨(T-SPIN, COMBO)가 사라지는 시간
                 battle.botGame.scoring.tick(elapsed);
             }
+            // 게임 안 하면 버퍼링 삭제
+            if (battle.getState() != BattleGame.State.PLAYING) clearBufferedSpawnInputs();
             repaint();
         });
 
@@ -145,6 +154,8 @@ public final class BattlePanel extends JPanel {
 
         // 플레이어 동작에 맞춰 효과음을 재생한다.
         battle.playerGame.addListener(new GameListener() {
+            @Override public void onRestart() { clearBufferedSpawnInputs(); }
+            @Override public void onSpawn() { applyBufferedSpawnInputs(); }
             @Override public void onMove(int dx, int dy) { AudioManager.get().playMove(); }
             @Override public void onRotate(int d) { AudioManager.get().playRotate(); }
             @Override public void onSoftDrop() { AudioManager.get().playSoftDrop(); }
@@ -199,10 +210,12 @@ public final class BattlePanel extends JPanel {
             case 0 -> setPaused(false); // 계속하기
             case 1 -> { // 라운드 다시 시작
                 setPaused(false);
+                clearBufferedSpawnInputs(); // 게임 다시 시작하니까 버파 입력 초기화
                 battle.startRound();
             }
             case 2 -> { // 매치 다시 시작
                 setPaused(false);
+                clearBufferedSpawnInputs();
                 battle.startMatch();
             }
             case 3 -> { // 메인 메뉴로 나가기
@@ -216,6 +229,7 @@ public final class BattlePanel extends JPanel {
     /// 재시작 키(R)로 지금 라운드를 다시 시작한다.
     private void quickRestart() {
         AudioManager.get().playMenuSelect();
+        clearBufferedSpawnInputs();
         battle.startRound();
     }
 
@@ -316,12 +330,58 @@ public final class BattlePanel extends JPanel {
                 }
                 if (paused) {
                     if (action == Settings.Action.HARD_DROP) confirmPauseSelection(); // 일시정지 중 스페이스 = 메뉴 선택
-                } else if (battle.getState() == BattleGame.State.PLAYING && !battle.playerGame.isSpawnDelayed()) {
-                    run.run(); // 스폰 딜레이 중(다음 블록이 아직 안 나옴)에는 조작하지 않음
+                } else if (battle.getState() == BattleGame.State.PLAYING) {
+                    if (battle.playerGame.isSpawnDelayed()) bufferSpawnInput(action);
+                    else run.run();
                     repaint();
                 }
             }
         });
+    }
+
+    /// 입력을 버퍼링. 쌓고 나면 다시 키를 입력해야 하는 문제를 해결
+    private void bufferSpawnInput(Settings.Action action) {
+        switch (action) {
+            case MOVE_LEFT -> bufferedHorizontal = -1;
+            case MOVE_RIGHT -> bufferedHorizontal = 1;
+            case ROTATE_CW -> bufferedRotation = 1;
+            case ROTATE_CCW -> bufferedRotation = -1;
+            case HOLD -> bufferedHold = true;
+            case SOFT_DROP -> bufferedSoftDrop = true;
+            case HARD_DROP -> bufferedHardDrop = true;
+            default -> { }
+        }
+    }
+
+    /// 스폰 대기가 끝나(블록 쌓을 수 있을 때) 버퍼에 저장됐던 입력을 가져옴
+    private void applyBufferedSpawnInputs() {
+        if (battle.getState() != BattleGame.State.PLAYING
+                || battle.playerGame.active == null || battle.playerGame.gameOver) {
+            clearBufferedSpawnInputs();
+            return;
+        }
+
+        int horizontal = bufferedHorizontal;
+        int rotation = bufferedRotation;
+        boolean hold = bufferedHold;
+        boolean softDrop = bufferedSoftDrop;
+        boolean hardDrop = bufferedHardDrop;
+        clearBufferedSpawnInputs();
+
+        if (hold) battle.playerGame.hold();
+        if (rotation != 0) battle.playerGame.rotate(rotation);
+        if (horizontal != 0) battle.playerGame.move(horizontal, 0);
+        if (softDrop) battle.playerGame.softDrop();
+        if (hardDrop) battle.playerGame.hardDrop();
+    }
+
+    /// 버퍼링 초기화 (게임 다시 시작, 멈췄을 떄 등에 적용)
+    private void clearBufferedSpawnInputs() {
+        bufferedHorizontal = 0;
+        bufferedRotation = 0;
+        bufferedHold = false;
+        bufferedSoftDrop = false;
+        bufferedHardDrop = false;
     }
 
     private void bindPauseNavigation(String key, int direction) {
@@ -563,7 +623,7 @@ public final class BattlePanel extends JPanel {
     }
 
     /// 결과 상자. GamePanel의 GAME OVER 상자와 같은 모양(어두운 둥근 상자 + 흰 글씨)이다.
-    /// nextText : 누를 수 있는 글씨 (다음 라운드 또는 다시 대결). 옆에 "[M] MENU"도 같이 그린다.
+    /// nextText : 누를 수 있는 글씨 (다음 라운드 또는 다시 대결). 옆에 "(M) MENU"도 같이 그린다.
     private void drawResultBox(Graphics2D g, String title, String line1, String nextText) {
         int w = 440, h = 130, x = (WIDTH - w) / 2, y = (HEIGHT - h) / 2;
         g.setColor(new Color(12, 16, 25, 220));

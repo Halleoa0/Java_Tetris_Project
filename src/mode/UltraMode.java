@@ -11,6 +11,6 @@ public final class UltraMode implements GameMode {
     @Override public String getDescription() { return "2분 동안 최고 점수에 도전"; }
     @Override public boolean isAvailable() { return true; }
     @Override public void start(ScreenManager screens) {
-        screens.startGame(new Game(TIME_LIMIT_MS), "울트라");
+        screens.startGame(new Game(TIME_LIMIT_MS, 3_000), "울트라");
     }
 }

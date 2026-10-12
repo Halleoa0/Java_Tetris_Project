@@ -7,7 +7,7 @@ import game.GameListener;
 import java.util.Random;
 
 public final class TopOutRunMode implements GameMode {
-    @Override public String getName() { return "TOP-OUT RUN"; }
+    @Override public String getName() { return "탑-아웃 런"; }
 
     @Override public String getDescription() { return "계속 올라오는 줄을 버티며 최대한 오래 생존"; }
 

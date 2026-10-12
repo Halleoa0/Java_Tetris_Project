@@ -9,6 +9,9 @@ public interface GameListener {
     /** 블록 고정 처리가 끝난 뒤 다음 블록을 스폰하기 직전에 호출된다. */
     public default void onBeforeSpawn() { }
 
+    /** 새 블록이 생성되어 조작할 수 있게 된 직후 호출된다. */
+    public default void onSpawn() { }
+
     /** 게임 상태가 재시작되었을 때 호출된다. */
     public default void onRestart() { }
 

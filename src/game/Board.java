@@ -9,7 +9,7 @@ public final class Board {
     public static final int WIDTH = 10, HEIGHT = 22, HIDDEN_ROWS = 2;
     // 22칸을 넘어 30칸까지 저장 - 블록이 22칸 이상으로도 쌓일 수도 있어서 사용 (MIN_ROW : 22칸 넘어 추가 8칸까지 저장)
     public static final int STORED_ROWS = 30, MIN_ROW = HEIGHT - STORED_ROWS;
-    // MIN_ROW를 쓰는 이유 : y가 위에서부터 0인데 우리가 실제로 쓰는 공간은 -8부터이기 떄문이다. (즉, y를 8부터 쓰기 위해 MIN_ROW를 뺀다)
+    // MIN_ROW를 쓰는 이유 : y가 위에서부터 0인데 우리가 실제로 쓰는 공간은 -8부터이기 떄문이다. (즉, y를 0부터 쓰기 위해 MIN_ROW를 뺀다 => 8 - (-8) = 0)
     // [결과] -8 ~ 21 를 0 ~ 29 로 쓰게 된다.
 
     // cells는 현재 보드의 블록을 저장하는 배열, garbageCells는 현재 보드에 존재하는 쓰레기 줄 (아래에 깔리는 회색 블록)
@@ -137,7 +137,7 @@ public final class Board {
     }
 
     /// 가로 바뀜 횟수. 한 줄씩 왼쪽에서 오른쪽으로 보면서 "찬 칸 <-> 빈 칸"이 바뀌는 횟수를 모두 더한 값.
-    /// 예) [■■■□□■■■■■] => 2번 바뀜 / [■□■□■□■■■■] => 6번 바뀜
+    // 예) [■■■□□■■■■■] => 2번 바뀜 / [■□■□■□■■■■] => 6번 바뀜
     /// 숫자가 작을수록 줄이 깔끔하게 채워져 있다는 뜻. (양쪽 벽은 찬 칸으로 침)
     public int rowTransitions() {
         int count = 0;

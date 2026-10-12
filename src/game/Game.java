@@ -11,60 +11,76 @@ import settings.Settings;
 
 public final class Game {
 
-    /** 화면에 미리 표시할 다음 블록 수. */
+    // NEXT 블록 개수
     public static final int PREVIEW_COUNT = 4;
+
+    // 락 딜레이 최대 15ms
     private static final int MAX_LOCK_RESETS = 15;
+
     public final Board board = new Board();
     private final Random random = new Random();
+
     // bag은 7종 블록을 섞어 담고, queue는 다음 블록의 순서를 보관한다.
+    // Deque<T>는 양쪽에서 넣고 꺼내는 FIFO, LIFO 자류구조이다.
+    // 우리는 앞쪽에서 블록을 빼고, 뒷쪽에서 블록을 넣기 위해 사용한다.
     private final Deque<Tetromino> bag = new ArrayDeque<>(), queue = new ArrayDeque<>();
 
-    // 현재 블록과 Hold 블록의 상태. x, y는 블록의 기준 격자 원점이다.
-    public Tetromino active, held;
-    public int x, y, rotation;
+    public Tetromino active, held; // 현재 블록, Hold 블록
+    public int x, y, rotation; // x, y는 격자 원점 (블록을 격자 이미지 안에 정확히 넣기 위함)
     public int dropCount = 0; // 쌓은 블록 수
     public float pps, timer = 0.0f; // Pieces Per Second - 초당 쌓은 블록
-    public boolean startCal = false;
-
+    public boolean startCal = false; // pps를 계산하기 위한 bool타입 변수 (블록을 처음 놓는 순간 계산 시작)
 
     public final ScoreManager scoring = new ScoreManager();
+    // 게임이 끝났는가? / 홀드를 사용헀는가?(홀드 여러번 불가) / 놓기 전에 회전을 했는가?(T-spin 전용)
     public boolean gameOver, holdUsed, lastMoveWasRotation;
 
-    private int lastKickIndex;
-    private long lockElapsed;
-    private int lockResets;
-    private final List<GameListener> listeners = new ArrayList<>();
-    private PieceGenerator pieceGenerator;
-    private boolean gravityEnabled = true;
-    private boolean spawnVisible;
-    private boolean initialHold;
-    private int initialRotation;
-    private long spawnDelayElapsed;
-    private boolean spawnDelayed;
-    private final int timeLimitMs;
-    private int elapsedTimeMs;
-    // 스프린트: 목표 줄 수(0이면 해당 없음), 시작 카운트다운, 목표 달성 여부
-    private static final int COUNTDOWN_MS = 3000;
-    private final int targetLines;
-    private int countdownMs;
-    private boolean goalReached;
+    // SRS에선 wall-kick(벽에서 회전 가능) 시스템이 있는데 벽에서 회전에 따라 mini T-spin이 결정된다.
+    private int lastKickIndex; // 벽에 붙어서 mini T-spin 회전할 때 사용 (맞는 인덱스여야 mini로 인정)
+    private long lockElapsed; // 블록이 바닥(쁠록)에 얼마나 닿았는지. (일정 시간 지나면 강제 쌓기)
+    private int lockResets; // 락 딜레이 초기화 횟수 (특정 횟수 벗어나면 초기화 안 되고 강제 쌓기)
+    private final List<GameListener> listeners = new ArrayList<>(); // 이벤트 처리지만 안 쓰이는 듯.
+    private PieceGenerator pieceGenerator; // 다음 블록 만드는 생성기
+    private boolean gravityEnabled = true; // 중력 on / off
+    private boolean initialHold; // IHS 를 위해 사용
+    private int initialRotation; // IRS 를 위해 사용
+    private long spawnDelayElapsed; // 스폰 딜레이 설정 값 (쌓고 다음 블록 생성 시간)
+    private boolean spawnDelayed; // 스폰 딜레이 켜져있나?
 
+    // 게임 시작 전, 3초 시간
+    private static final int COUNTDOWN_MS = 3000;
+    private final int countdownDurationMs;
+    private int countdownMs; // 3, 2, 1 카운트 다운
+
+    private int elapsedTimeMs; // 현재 게임 시간
+    private final int timeLimitMs; // 제한 시간
+
+    private final int targetLines; // 지울 줄 목표
+    private boolean goalReached; // 목표 성공 ?
+
+    /// 다른 생성자와 겹칠 수도 있어서 명시적 생성자 선언
     public Game() { this(null); }
 
-    public Game(int timeLimitMs) { this(null, timeLimitMs, 0); }
+    /// Sprint 모드 시작
+    public Game(int timeLimitMs) { this(null, timeLimitMs, 0, 0); }
+
+    /** 시간 제한과 시작 전 카운트다운이 있는 게임. */
+    public Game(int timeLimitMs, int countdownMs) { this(null, timeLimitMs, 0, countdownMs); }
 
     /** 목표 줄 수를 가장 빨리 채우는 스프린트용 게임. 시작할 때 3초 카운트다운 */
-    public static Game sprint(int targetLines) { return new Game(null, 0, Math.max(1, targetLines)); }
+    public static Game sprint(int targetLines) { return new Game(null, 0, Math.max(1, targetLines), COUNTDOWN_MS); }
 
-    /** generator가 null이면 기존 7-bag 랜덤 생성을 사용 */
+    /// 매개변수가 NULL 이면 7-beg 시스템 사용 (튜토리얼에서는 생성 시스템이 달라 null이 아님)
     public Game(PieceGenerator generator) {
-        this(generator, 0, 0);
+        this(generator, 0, 0, 0);
     }
 
-    private Game(PieceGenerator generator, int timeLimitMs, int targetLines) {
+    /// 제한 시간, 목표 줄이 포함된 모드
+    private Game(PieceGenerator generator, int timeLimitMs, int targetLines, int countdownMs) {
         pieceGenerator = generator;
         this.timeLimitMs = Math.max(0, timeLimitMs);
         this.targetLines = Math.max(0, targetLines);
+        this.countdownDurationMs = Math.max(0, countdownMs);
         restart();
     }
 
@@ -95,14 +111,12 @@ public final class Game {
     public void addListener(GameListener listener) { if (listener != null) listeners.add(listener); }
     public void removeListener(GameListener listener) { listeners.remove(listener); }
 
+    /// 중력 켜고 끄기
     public void setGravityEnabled(boolean enabled) {
         gravityEnabled = enabled;
         gravityElapsed = 0;
         lockElapsed = 0;
     }
-
-    /** 다음 블록을 화면에 보이는 행에서 시작할지 설정한다. 다음 스폰/재시작부터 적용된다. */
-    public void setSpawnVisible(boolean visible) { spawnVisible = visible; }
 
     /** 유지 중인 키를 다음 미노의 IHS/IRS에 사용한다. 회전 방향은 -1, 0, 1. */
     public void setInitialInputs(boolean hold, int rotationDirection) {
@@ -129,7 +143,7 @@ public final class Game {
     public void restart() {
         elapsedTimeMs = 0;
         goalReached = false;
-        countdownMs = targetLines > 0 ? COUNTDOWN_MS : 0;
+        countdownMs = countdownDurationMs;
         dropCount = 0; startCal = false; timer = 0.0f;
         board.clear(); bag.clear(); queue.clear(); held = null;
         scoring.reset();
@@ -170,6 +184,7 @@ public final class Game {
             holdUsed = true;
         }
         enterPiece();
+        for (GameListener listener : List.copyOf(listeners)) listener.onSpawn();
     }
 
     private Tetromino takeNextPiece() {
@@ -185,7 +200,7 @@ public final class Game {
     }
 
     private void enterPiece() {
-        x = 3; y = spawnVisible ? Board.HIDDEN_ROWS : -1; rotation = 0;
+        x = 3; y = 0; rotation = 0;
         lastMoveWasRotation = false; lockElapsed = 0; lockResets = 0;
         // IRS가 스폰 충돌을 해소할 수 있으므로 최종 위치에서 게임오버를 판정한다.
         if (initialRotation != 0) rotate(initialRotation);
@@ -237,7 +252,7 @@ public final class Game {
 
     /** 가능한 가장 아래까지 내린 뒤 고정한다. 낙하 거리에 따라 점수를 준다. */
     public void hardDrop() {
-        if (gameOver || countdownMs > 0) return;
+        if (gameOver || spawnDelayed || active == null || countdownMs > 0) return;
         int distance = 0;
         while (board.canPlace(active, x, y + 1, rotation)) { y++; distance++; }
         scoring.onHardDrop(distance);

@@ -31,7 +31,7 @@ public final class ModeSelectPanel extends JPanel {
         this.screens = screens;
         setPreferredSize(new Dimension(1280,720)); setBackground(BACKGROUND); setOpaque(true);
         String[][] shapes={{"###",".#."},{"####"},{"###","..#"},{"###","#.."},{"##","##"}};
-        Color[] colors={new Color(170,85,205),new Color(75,205,235),new Color(245,210,55),new Color(170,85,205),new Color(240,145,55)};
+        Color[] colors={new Color(170,85,205),new Color(75,205,235),new Color(240,145,55),new Color(70, 95, 255),new Color(245,210,55)};
         layoutModes(shapes, colors);
         buttons.add(new TetrisBlockButton("BACK",new String[]{"####"},new Color(110,190,120),35,35,28,screens::showHome,true));
         navigation = new MenuNavigation(this, buttons, this::updateDescription);
