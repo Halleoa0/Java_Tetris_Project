@@ -11,6 +11,7 @@ import tutorial.TutorialController;
 import ui.GamePanel;
 import ui.HomePanel;
 import ui.SettingsPanel;
+import ui.RecordsPanel;
 import ui.ShopPanel;
 import ui.ModeSelectPanel;
 import ui.CpuSelectPanel;
@@ -22,6 +23,7 @@ public final class ScreenManager extends JPanel {
     private static final String HOME = "home";
     private static final String SETTINGS = "settings";
     private static final String SHOP = "shop";
+    private static final String RECORDS = "records";
     private static final String MODE_SELECT = "modeSelect";
     private static final String CPU_SELECT = "cpuSelect"; // vs CPU 난이도 선택 화면
 
@@ -31,7 +33,8 @@ public final class ScreenManager extends JPanel {
     private SettingsPanel settingsPanel; // 설정 화면 -> SETTINGS
     private GamePanel gamePanel; // 실제 게임을 하기 위한 화면
     private BattlePanel battlePanel; // CPU 대전 화면 (내 보드 + CPU 보드)
-    private ShopPanel shopPanel; // 상점 화면 - 아직 미구현
+    private ShopPanel shopPanel; // 상점 화면 (코인/구매 상태가 바뀌므로 열 때마다 새로 만듦)
+    private RecordsPanel recordsPanel; // 플레이어별 최고 기록 화면 (열 때마다 새로 만듦)
 
     /// 생성자. 1280x720 사이즈, 게임 시작 시 HOME을 보여준다. (settingsPanel은 최신 정보를 동적으로 보여주기 위해서 뺌)
     public ScreenManager() {
@@ -40,7 +43,6 @@ public final class ScreenManager extends JPanel {
         add(new HomePanel(this), HOME);
         add(new ModeSelectPanel(this), MODE_SELECT);
         add(new CpuSelectPanel(this), CPU_SELECT);
-        add(new ShopPanel(this), SHOP);
         showHome();
     }
 
@@ -120,8 +122,25 @@ public final class ScreenManager extends JPanel {
     /// 상점을 띄운다.
     public void showShop() {
         removeActiveGame();
+        if (shopPanel != null) remove(shopPanel);
+        shopPanel = new ShopPanel(this);
+        add(shopPanel, SHOP);
         cards.show(this, SHOP);
         AudioManager.get().playMenuBgm();
+        refreshDisplay();
+        shopPanel.requestFocusInWindow();
+    }
+
+    /// 플레이어별 최고 기록 화면을 띄운다.
+    public void showRecords() {
+        removeActiveGame();
+        if (recordsPanel != null) remove(recordsPanel);
+        recordsPanel = new RecordsPanel(this);
+        add(recordsPanel, RECORDS);
+        cards.show(this, RECORDS);
+        AudioManager.get().playMenuBgm();
+        refreshDisplay();
+        recordsPanel.requestFocusInWindow();
     }
 
     /// 고른 난이도의 CPU와 대전을 시작한다. (CpuSelectPanel에서 호출)

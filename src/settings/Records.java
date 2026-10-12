@@ -51,6 +51,63 @@ public final class Records {
         return true;
     }
 
+    // ===== 점수 기록 (Classic / Ultra / Top-Out Run) =====
+
+    /** 모드 화면 이름(GamePanel에 넘기는 이름) -> 점수 기록 키. 점수 기록이 없는 모드는 null. */
+    public static String scoreKeyForGameName(String gameName) {
+        if (gameName == null) return null;
+        switch (gameName) {
+            case "클래식": return "classic";
+            case "울트라": return "ultra";
+            case "탑-아웃 런": return "topout";
+            default: return null;
+        }
+    }
+
+    private static String scoreKey(String profile, String mode) { return "score." + profile + "." + mode; }
+
+    /** 현재 사용자의 최고 점수. 기록이 없으면 -1. */
+    public synchronized int bestScore(String mode) { return bestScore(Settings.get().currentProfile(), mode); }
+
+    /** 지정한 사용자의 최고 점수. 기록이 없으면 -1. */
+    public synchronized int bestScore(String profile, String mode) {
+        try {
+            int v = Integer.parseInt(props.getProperty(scoreKey(profile, mode), "").trim());
+            return v > 0 ? v : -1;
+        } catch (NumberFormatException e) { return -1; }
+    }
+
+    /** 점수를 제출. 최고 점수면 저장하고 true. */
+    public synchronized boolean submitScore(String mode, int score) {
+        if (mode == null || score <= 0) return false;
+        if (score <= bestScore(mode)) return false;
+        props.setProperty(scoreKey(Settings.get().currentProfile(), mode), String.valueOf(score));
+        save();
+        return true;
+    }
+
+    /** 지정한 사용자의 스프린트 최고 시간(ms). 없으면 -1. */
+    public synchronized int bestTimeMs(String profile, String mode) {
+        try {
+            int ms = Integer.parseInt(props.getProperty("time." + profile + "." + mode, "").trim());
+            return ms > 0 ? ms : -1;
+        } catch (NumberFormatException e) { return -1; }
+    }
+
+    // ===== vs CPU 매치 승리 수 (난이도별) =====
+
+    public synchronized int cpuWins(String profile, String difficulty) {
+        try { return Math.max(0, Integer.parseInt(props.getProperty("cpuwin." + profile + "." + difficulty, "0").trim())); }
+        catch (NumberFormatException e) { return 0; }
+    }
+
+    public synchronized void addCpuWin(String difficulty) {
+        String p = Settings.get().currentProfile();
+        props.setProperty("cpuwin." + p + "." + difficulty, String.valueOf(cpuWins(p, difficulty) + 1));
+        save();
+    }
+
+
     /** 1234567 ms -> "20:34.56" (분:초.1/100초). 1/100초 아래는 버린다. */
     public static String formatTime(int ms) {
         int total = Math.max(0, ms);

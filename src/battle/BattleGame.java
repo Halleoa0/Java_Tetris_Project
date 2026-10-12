@@ -46,7 +46,10 @@ final class BattleGame {
     private boolean lastPlayerClear = false;
     private boolean lastBotClear = false;
 
+    private final BotBrain.Difficulty difficulty;  // 승리 기록(난이도별)에 사용
+
     BattleGame(BotBrain.Difficulty difficulty) {
+        this.difficulty = difficulty;
         this.botBrain = new BotBrain(difficulty);
         this.botController = new BotController(botGame, botBrain);
         this.botGame.setGravityEnabled(false); // CPU 봇은 BotController가 직접 하드 드롭하므로 중력이 필요 없다.
@@ -247,6 +250,7 @@ final class BattleGame {
         if (playerWins >= 2) {
             matchWinner = Winner.PLAYER;
             state = State.MATCH_OVER;
+            settings.Records.get().addCpuWin(difficulty.name());
         } else if (botWins >= 2) {
             matchWinner = Winner.BOT;
             state = State.MATCH_OVER;

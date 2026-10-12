@@ -97,6 +97,7 @@ public final class GamePanel extends JPanel {
     private final JButton gameOverRestartButton = new JButton("다시 시작");
     private final JButton gameOverMenuButton = new JButton("메인화면");
 
+    private final shop.ToastOverlay toast = new shop.ToastOverlay(); // 미션 달성 알림
     // 현재 진행 중 모드
     private String gameName = "튜토리얼";
 
@@ -151,6 +152,10 @@ public final class GamePanel extends JPanel {
         bindUnfiltered("M", "menu", () -> { if (paused || game.gameOver) homeCallback.run(); });
         configureOverlayButtons();
 
+        // 위클리 미션 진행도 기록(튜토리얼 제외) + 달성 알림
+        if (!"튜토리얼".equals(gameName)) game.addListener(new shop.MissionTracker(game));
+        toast.attach();
+
         // 게임 동작에 맞춰 효과음을 재생한다.
         game.addListener(new GameListener() {
             @Override public void onMove(int dx, int dy) {
@@ -192,6 +197,9 @@ public final class GamePanel extends JPanel {
                 AudioManager.get().playTutorialClear();
             }
             @Override public void onGameOver() {
+                // 점수 모드(클래식/울트라/탑-아웃 런)면 프로필별 최고 점수로 저장
+                String scoreKey = Records.scoreKeyForGameName(GamePanel.this.gameName);
+                if (scoreKey != null) Records.get().submitScore(scoreKey, game.scoring.score);
                 AudioManager.get().playGameOver();
             }
         });
@@ -282,6 +290,7 @@ public final class GamePanel extends JPanel {
 
     /** 화면에서 제거될 때 주기적인 게임 업데이트를 멈춘다. */
     public void stop() {
+        toast.detach();
         timer.stop();
         clearHeldKeys();
     }
@@ -424,6 +433,7 @@ public final class GamePanel extends JPanel {
     /// 실제로 그리기
     @Override protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
+        shop.ThemeManager.paintBackground((Graphics2D) graphics, getWidth(), getHeight()); // 상점에서 장착한 배경화면
         graphics.drawImage(matrixImage, MATRIX_X, MATRIX_Y, MATRIX_W, MATRIX_H, this);
         graphics.drawImage(guideImage, 40, 545, this);
         Graphics2D g = (Graphics2D) graphics.create();
@@ -438,6 +448,7 @@ public final class GamePanel extends JPanel {
         labelUI.drawTimeLabel(g);
         labelUI.drawScoreLabel(g);
         if (game.gameOver) drawGameOver(g);
+        toast.draw(g, getWidth(), sansKRBlack);
         if (overlayRenderer != null) overlayRenderer.accept(g);
         if (paused) drawPauseOverlay(g);
         g.dispose();
@@ -475,6 +486,7 @@ public final class GamePanel extends JPanel {
                 }
             }
 
+            shop.ThemeManager.applyMinoSkin(tiles, this::minoTileIndex); // 상점에서 장착한 미노 스킨
             return tiles;
 
         } catch (IOException e) {

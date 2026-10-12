@@ -5,11 +5,16 @@ import game.Board;
 import game.Game;
 import game.GameListener;
 import java.util.Random;
+import settings.Records;
 
 public final class TopOutRunMode implements GameMode {
-    @Override public String getName() { return "탑-아웃 런"; }
+    @Override public String getName() { return "TOP OUT RUN"; }
 
-    @Override public String getDescription() { return "계속 올라오는 줄을 버티며 최대한 오래 생존"; }
+    @Override public String getDescription() {
+        int best = Records.get().bestScore("topout");
+        String text = "계속 올라오는 줄을 버티며 최대한 오래 생존";
+        return best > 0 ? text + "  |  BEST " + String.format("%,d", best) : text;
+    }
 
     @Override public boolean isAvailable() { return true; }
 

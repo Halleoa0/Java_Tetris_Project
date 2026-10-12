@@ -97,6 +97,7 @@ public final class BattlePanel extends JPanel {
     private final Rectangle[] pauseOptionBounds = new Rectangle[PAUSE_OPTIONS.length]; // 일시정지 메뉴 항목들
     private Rectangle resultNextBounds; // 결과 상자의 "NEXT ROUND" 또는 "REMATCH"
     private Rectangle resultMenuBounds; // 결과 상자의 "MENU"
+    private final shop.ToastOverlay toast = new shop.ToastOverlay(); // 미션 달성 알림
     private Point mouse;                // 지금 마우스 위치 (마우스를 올린 글씨를 밝게 그리는 데 씀)
 
     public BattlePanel(BotBrain.Difficulty difficulty) {
@@ -119,6 +120,10 @@ public final class BattlePanel extends JPanel {
 
         bindKeys();
         bindMouse();
+
+        // 위클리 미션 진행도 기록 + 달성 알림
+        battle.playerGame.addListener(new shop.MissionTracker(battle.playerGame));
+        toast.attach();
 
         // 16ms 간격으로 게임 상태를 갱신한다. (GamePanel과 같은 방식)
         this.gameLoopTimer = new Timer(16, e -> {
@@ -182,6 +187,7 @@ public final class BattlePanel extends JPanel {
 
     /// 게임을 정지하고 리소스를 정리한다.
     public void stop() {
+        toast.detach();
         gameLoopTimer.stop();
         battle.stop();
     }
@@ -418,6 +424,7 @@ public final class BattlePanel extends JPanel {
         super.paintComponent(g1);
         Graphics2D g = (Graphics2D) g1.create();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        shop.ThemeManager.paintBackground(g, getWidth(), getHeight()); // 상점에서 장착한 배경화면
 
         // 왼쪽: 플레이어 1 / 오른쪽: CPU (그리는 방법이 같아서 drawSide 하나로 그림)
         drawSide(g, P1_MATRIX_X, playerLabelUI, battle.playerGame, battle.playerGarbage, battle.getPlayerTotalAttack());
@@ -434,6 +441,7 @@ public final class BattlePanel extends JPanel {
         } else if (paused) {
             drawPauseOverlay(g); // GamePanel과 같은 일시정지 화면
         }
+        toast.draw(g, getWidth(), sansKRBlack);
 
         g.dispose();
     }
@@ -715,6 +723,7 @@ public final class BattlePanel extends JPanel {
                 }
             }
 
+            shop.ThemeManager.applyMinoSkin(tiles, this::minoTileIndex); // 상점에서 장착한 미노 스킨
             return tiles;
         } catch (IOException e) {
             throw new IllegalStateException("Failed to load mino image: " + path, e);

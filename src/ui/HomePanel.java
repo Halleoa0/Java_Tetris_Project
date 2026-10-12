@@ -42,10 +42,12 @@ public final class HomePanel extends JPanel {
         setBackground(BACKGROUND);
         setOpaque(true);
         buttons = List.of(
-                new TetrisBlockButton("Play", new String[]{"##", "##"}, O_COLOR, 380, 270, CELL_SIZE, screens::showModeSelect, true),
-                new TetrisBlockButton("Tutorial", new String[]{"####"}, I_COLOR, 640, 285, CELL_SIZE, screens::startTutorial, true),
-                new TetrisBlockButton("Shop", new String[]{"###", ".#."}, T_COLOR, 380, 475, CELL_SIZE, screens::showShop, true),
-                new TetrisBlockButton("Settings", new String[]{"..#", "###"}, L_COLOR, 760, 425, CELL_SIZE, screens::showSettings, true));
+                new TetrisBlockButton("Play", new String[]{"##", "##"}, O_COLOR, 300, 270, CELL_SIZE, screens::showModeSelect, true),
+                new TetrisBlockButton("Tutorial", new String[]{"####"}, I_COLOR, 500, 285, CELL_SIZE, screens::startTutorial, true),
+                new TetrisBlockButton("Shop", new String[]{"###", ".#."}, T_COLOR, 350, 475, CELL_SIZE, screens::showShop, true),
+                new TetrisBlockButton("Settings", new String[]{"..#", "###"}, L_COLOR, 650, 475, CELL_SIZE, screens::showSettings, true),
+                new TetrisBlockButton("Best", new String[]{".##", "##."}, new Color(85, 210, 110), 820, 280, CELL_SIZE, screens::showRecords, true));
+
 
         navigation = new MenuNavigation(this, buttons, () -> {});
         MouseAdapter mouse = new MouseAdapter() {
