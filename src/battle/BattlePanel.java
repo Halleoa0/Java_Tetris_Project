@@ -24,9 +24,12 @@ import java.awt.font.TextAttribute;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import javax.swing.AbstractAction;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
@@ -93,6 +96,15 @@ public final class BattlePanel extends JPanel {
     private boolean bufferedSoftDrop; // 소프트 드롭 버퍼링
     private boolean bufferedHardDrop; // 하드 드롭 버퍼링
 
+    // 키를 누르고 있는 상태 (GamePanel과 같은 방식). OS 키 반복 대신 직접 DAS/ARR로 반복 입력을 넣는다.
+    private final Set<String> heldKeys = new HashSet<>();               // 지금 누르고 있는 이동 키 (좌, 우, 소프트 드롭)
+    private final Set<String> pressedMoveKeys = new HashSet<>();        // 눌린 좌우 키 (반대 키로 바로 넘기기 위함)
+    private final Set<String> repeatingKeys = new HashSet<>();          // DAS가 지나 ARR 반복 중인 키
+    private final Map<String, Integer> heldKeyElapsed = new HashMap<>(); // 키별로 누른 뒤 흐른 시간(ms)
+    private final Map<String, Runnable> heldKeyActions = new HashMap<>(); // 키별로 실행할 동작
+    private final Set<Settings.Action> initialKeys = new HashSet<>();   // 누르고 있는 회전/홀드 키 (IRS/IHS)
+    private int lastInitialRotation = 1;                                // 회전 키 두 개를 같이 누르면 마지막에 누른 방향
+
     // 마우스로 누를 수 있는 글씨들. 화면에 그릴 때 글씨가 있는 사각형을 기억해 두고, 클릭하면 그 안인지 확인한다.
     private final Rectangle[] pauseOptionBounds = new Rectangle[PAUSE_OPTIONS.length]; // 일시정지 메뉴 항목들
     private Rectangle resultNextBounds; // 결과 상자의 "NEXT ROUND" 또는 "REMATCH"
@@ -135,11 +147,15 @@ public final class BattlePanel extends JPanel {
                 battle.tick(elapsed);
                 battle.playerGame.tick(elapsed);
                 battle.botGame.tick(elapsed);
+                if (battle.getState() == BattleGame.State.PLAYING) tickHeldKeys(elapsed); // DAS/ARR 반복 입력
                 battle.playerGame.scoring.tick(elapsed); // 점수 글씨(T-SPIN, COMBO)가 사라지는 시간
                 battle.botGame.scoring.tick(elapsed);
             }
-            // 게임 안 하면 버퍼링 삭제
-            if (battle.getState() != BattleGame.State.PLAYING) clearBufferedSpawnInputs();
+            // 게임 안 하면 버퍼링, 누르고 있던 키 삭제
+            if (battle.getState() != BattleGame.State.PLAYING) {
+                clearBufferedSpawnInputs();
+                if (!heldKeys.isEmpty() || !initialKeys.isEmpty()) clearHeldKeys();
+            }
             repaint();
         });
 
@@ -151,6 +167,7 @@ public final class BattlePanel extends JPanel {
             @Override public void focusLost(FocusEvent e) {
                 AudioManager.get().setWindowActive(false);
                 ignoreSpaceUntilRelease = false;
+                clearHeldKeys(); // 창을 벗어나면 키를 뗀 것을 못 받으므로 누르고 있던 키를 지움
                 if (battle.getState() == BattleGame.State.PLAYING && !paused) {
                     setPaused(true);
                 }
@@ -198,6 +215,7 @@ public final class BattlePanel extends JPanel {
         if (paused && battle.getState() != BattleGame.State.PLAYING) return;
 
         this.paused = paused;
+        clearHeldKeys(); // GamePanel처럼 일시정지를 켜고 끌 때 누르고 있던 키를 지움
         if (paused) {
             pauseSelection = 0;
             battle.pause();
@@ -241,13 +259,18 @@ public final class BattlePanel extends JPanel {
 
     /// 키 입력을 액션에 연결한다.
     private void bindKeys() {
-        bind(Settings.Action.MOVE_LEFT,  () -> battle.playerGame.move(-1, 0));
-        bind(Settings.Action.MOVE_RIGHT, () -> battle.playerGame.move(1, 0));
-        bind(Settings.Action.SOFT_DROP,  () -> battle.playerGame.softDrop());
-        bind(Settings.Action.ROTATE_CW,  () -> battle.playerGame.rotate(1));
-        bind(Settings.Action.ROTATE_CCW, () -> battle.playerGame.rotate(-1));
+        // 좌우 이동, 소프트 드롭 : 누르고 있으면 DAS/ARR(소프트 드롭은 SDF)로 반복 (GamePanel의 bindHeld)
+        bindHeld(Settings.Action.MOVE_LEFT,  () -> battle.playerGame.move(-1, 0));
+        bindHeld(Settings.Action.MOVE_RIGHT, () -> battle.playerGame.move(1, 0));
+        bindHeld(Settings.Action.SOFT_DROP,  () -> {
+            battle.playerGame.setSoftDropHeld(true);
+            battle.playerGame.softDrop();
+        });
+        // 회전, 홀드 : 누르고 있어도 한 번만 실행하고, 누르고 있는 상태는 다음 블록의 IRS/IHS에 사용 (GamePanel의 bindInitial)
+        bindInitial(Settings.Action.ROTATE_CW,  () -> battle.playerGame.rotate(1));
+        bindInitial(Settings.Action.ROTATE_CCW, () -> battle.playerGame.rotate(-1));
+        bindInitial(Settings.Action.HOLD,       () -> battle.playerGame.hold());
         bind(Settings.Action.HARD_DROP,  () -> battle.playerGame.hardDrop());
-        bind(Settings.Action.HOLD,       () -> battle.playerGame.hold());
         bind(Settings.Action.RESTART,    this::quickRestart);
 
         // 하드드롭 후 스페이스 뗌 감지 //
@@ -374,6 +397,11 @@ public final class BattlePanel extends JPanel {
         boolean hardDrop = bufferedHardDrop;
         clearBufferedSpawnInputs();
 
+        // 키를 아직 누르고 있으면 Game이 IHS/IRS로 이미 처리했으므로 버퍼는 건너뜀 (두 번 홀드/회전 방지)
+        if (Settings.get().ihs() && initialKeys.contains(Settings.Action.HOLD)) hold = false;
+        if (Settings.get().irs() && (initialKeys.contains(Settings.Action.ROTATE_CW)
+                || initialKeys.contains(Settings.Action.ROTATE_CCW))) rotation = 0;
+
         if (hold) battle.playerGame.hold();
         if (rotation != 0) battle.playerGame.rotate(rotation);
         if (horizontal != 0) battle.playerGame.move(horizontal, 0);
@@ -388,6 +416,136 @@ public final class BattlePanel extends JPanel {
         bufferedHold = false;
         bufferedSoftDrop = false;
         bufferedHardDrop = false;
+    }
+
+
+    /// 이 아래의 키 유지 입력(DAS/ARR, SDF, IRS/IHS) 코드는 GamePanel과 같습니다.
+    /// (대전에서는 라운드 진행 중일 때만 입력을 받고, 스폰 대기 중 입력은 위의 버퍼에도 저장하는 것만 다름)
+
+
+    /// 회전, 홀드 키. 처음 눌렀을 때 한 번만 실행하고 누르고 있는 동안의 OS 반복 입력은 무시한다.
+    private void bindInitial(Settings.Action action, Runnable run) {
+        String pressedName = action.name() + "InitialPressed";
+        String releasedName = action.name() + "InitialReleased";
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().pressed(action), pressedName);
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().released(action), releasedName);
+        getActionMap().put(pressedName, new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) {
+                if (paused || battle.getState() != BattleGame.State.PLAYING) return;
+                if (!initialKeys.add(action)) return; // 이미 누르고 있던 키 (OS 반복 입력)
+                if (action == Settings.Action.ROTATE_CW) lastInitialRotation = 1;
+                else if (action == Settings.Action.ROTATE_CCW) lastInitialRotation = -1;
+                updateInitialInputs();
+                if (battle.playerGame.isSpawnDelayed()) bufferSpawnInput(action);
+                else run.run();
+                repaint();
+            }
+        });
+        getActionMap().put(releasedName, new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) {
+                initialKeys.remove(action);
+                updateInitialInputs();
+            }
+        });
+    }
+
+    /// 누르고 있는 회전/홀드 키를 Game에 알려서 다음 블록이 나올 때 IRS/IHS로 쓰게 한다.
+    private void updateInitialInputs() {
+        boolean cw = Settings.get().irs() && initialKeys.contains(Settings.Action.ROTATE_CW);
+        boolean ccw = Settings.get().irs() && initialKeys.contains(Settings.Action.ROTATE_CCW);
+        int direction = cw && ccw ? lastInitialRotation : cw ? 1 : ccw ? -1 : 0;
+        battle.playerGame.setInitialInputs(initialKeys.contains(Settings.Action.HOLD), direction);
+    }
+
+    /// 좌우 이동, 소프트 드롭 키. 누를 때 한 번 실행하고, 누르고 있으면 tickHeldKeys가 반복한다.
+    private void bindHeld(Settings.Action action, Runnable run) {
+        String key = action.name();
+        String pressedName = key + "HeldPressed";
+        String releasedName = key + "HeldReleased";
+        heldKeyActions.put(key, run);
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().pressed(action), pressedName);
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().released(action), releasedName);
+        getActionMap().put(pressedName, new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) {
+                if (paused || battle.getState() != BattleGame.State.PLAYING) return;
+                if (battle.playerGame.isSpawnDelayed() && !heldKeys.contains(key)) bufferSpawnInput(action);
+                if (action == Settings.Action.MOVE_LEFT || action == Settings.Action.MOVE_RIGHT)
+                    pressedMoveKeys.add(key);
+                if (!oppositeMoveHeld(action)) activateHeldKey(key);
+            }
+        });
+        getActionMap().put(releasedName, new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) { releaseHeldKey(key); }
+        });
+    }
+
+    private void activateHeldKey(String key) {
+        if (!heldKeys.add(key)) return; // 이미 누르고 있던 키 (OS 반복 입력은 무시하고 DAS/ARR로 반복)
+        heldKeyElapsed.put(key, 0);
+        repeatingKeys.remove(key);
+        heldKeyActions.get(key).run();
+        repaint();
+    }
+
+    private boolean oppositeMoveHeld(Settings.Action action) {
+        return (action == Settings.Action.MOVE_LEFT && heldKeys.contains(Settings.Action.MOVE_RIGHT.name()))
+                || (action == Settings.Action.MOVE_RIGHT && heldKeys.contains(Settings.Action.MOVE_LEFT.name()));
+    }
+
+    /// 누르고 있는 키를 DAS(처음 기다리는 시간) 뒤 ARR(반복 간격)마다 다시 실행한다.
+    private void tickHeldKeys(int elapsedMs) {
+        for (String key : heldKeys) {
+            int elapsed = heldKeyElapsed.getOrDefault(key, 0) + elapsedMs;
+            boolean softDrop = key.equals(Settings.Action.SOFT_DROP.name());
+
+            if (!repeatingKeys.contains(key)) {
+                int das = Settings.get().dasMs();
+                if (elapsed < das) {
+                    heldKeyElapsed.put(key, elapsed);
+                    continue;
+                }
+                elapsed -= das;
+                repeatingKeys.add(key);
+                if (!softDrop) heldKeyActions.get(key).run();
+            }
+
+            // 소프트 드롭은 Game.tick()의 SDF가 낙하 속도를 담당하므로 여기서 반복하지 않음
+            if (!softDrop) {
+                int arr = Settings.get().arrMs();
+                if (arr == 0) {
+                    for (int i = 0; i < Board.WIDTH; i++) heldKeyActions.get(key).run();
+                    elapsed = 0;
+                } else {
+                    int repeats = Math.min(Board.WIDTH, elapsed / arr);
+                    for (int i = 0; i < repeats; i++) heldKeyActions.get(key).run();
+                    elapsed %= arr;
+                }
+            }
+            heldKeyElapsed.put(key, elapsed);
+        }
+    }
+
+    private void releaseHeldKey(String key) {
+        boolean wasHeld = heldKeys.remove(key);
+        repeatingKeys.remove(key);
+        heldKeyElapsed.remove(key);
+        if (key.equals(Settings.Action.SOFT_DROP.name())) battle.playerGame.setSoftDropHeld(false);
+        pressedMoveKeys.remove(key);
+        // 반대 키가 이미 눌려 있으면 OS 반복 입력을 기다리지 않고 즉시 전환한다.
+        String opposite = key.equals(Settings.Action.MOVE_LEFT.name()) ? Settings.Action.MOVE_RIGHT.name()
+                : key.equals(Settings.Action.MOVE_RIGHT.name()) ? Settings.Action.MOVE_LEFT.name() : null;
+        if (wasHeld && opposite != null && pressedMoveKeys.contains(opposite)) activateHeldKey(opposite);
+    }
+
+    /// 누르고 있던 키를 모두 뗀 상태로 만든다. (일시정지, 창 벗어남, 라운드 끝)
+    private void clearHeldKeys() {
+        heldKeys.clear();
+        pressedMoveKeys.clear();
+        repeatingKeys.clear();
+        heldKeyElapsed.clear();
+        battle.playerGame.setSoftDropHeld(false);
+        initialKeys.clear();
+        battle.playerGame.setInitialInputs(false, 0);
     }
 
     private void bindPauseNavigation(String key, int direction) {
