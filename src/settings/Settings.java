@@ -213,7 +213,7 @@ public final class Settings {
 
     //예약 키(일시정지/메뉴)는 바인딩 불가//
     public static boolean isReserved(int keyCode) {
-        return keyCode == KeyEvent.VK_ESCAPE || keyCode == KeyEvent.VK_ENTER || keyCode == KeyEvent.VK_M
+        return keyCode == KeyEvent.VK_ESCAPE || keyCode == KeyEvent.VK_M
                 || keyCode == KeyEvent.VK_UNDEFINED;
     }
 

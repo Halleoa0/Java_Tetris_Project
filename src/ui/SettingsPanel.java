@@ -18,6 +18,8 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import java.util.Map;
+import java.awt.event.ActionEvent;
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -25,6 +27,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.KeyStroke;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -58,7 +61,16 @@ public final class SettingsPanel extends JPanel {
 
     public SettingsPanel(ScreenManager screens) {
         this.screens = screens;
+        setFocusable(true);
         build();
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed ESCAPE"), "settings.back");
+        getActionMap().put("settings.back", new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent event) {
+                AudioManager.get().playMenuSelect();
+                cancelKeyWait();
+                screens.showHome();
+            }
+        });
     }
 
     private void build() {
@@ -244,7 +256,7 @@ public final class SettingsPanel extends JPanel {
         JButton reset = button("현재 사용자 키 초기화");
         reset.addActionListener(e -> { s.resetKeys(); refreshKeyButtons(); });
         p.add(reset);
-        JLabel hint = new JLabel("※ ESC / ENTER / M 은 일시정지·메뉴용이라 지정할 수 없어요. 이미 사용되고 있는 키는 서로 교환됩니다.");
+        JLabel hint = new JLabel("※ ESC / M are reserved for pause and menu actions. Keys already in use swap with each other.");
         hint.setForeground(SUB);
         hint.setFont(font.deriveFont(12f));
         p.add(hint);

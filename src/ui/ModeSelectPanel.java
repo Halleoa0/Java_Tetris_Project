@@ -34,7 +34,7 @@ public final class ModeSelectPanel extends JPanel {
         Color[] colors={new Color(170,85,205),new Color(75,205,235),new Color(240,145,55),new Color(70, 95, 255),new Color(245,210,55)};
         layoutModes(shapes, colors);
         buttons.add(new TetrisBlockButton("BACK",new String[]{"####"},new Color(110,190,120),35,35,28,screens::showHome,true));
-        navigation = new MenuNavigation(this, buttons, this::updateDescription);
+        navigation = new MenuNavigation(this, buttons, this::updateDescription, screens::showHome);
         updateDescription();
         MouseAdapter mouse=new MouseAdapter(){
             @Override public void mouseMoved(MouseEvent e){updateHover(e.getX(),e.getY());}

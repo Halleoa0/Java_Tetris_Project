@@ -19,6 +19,10 @@ final class MenuNavigation {
     private boolean spaceHeld;
 
     MenuNavigation(JPanel panel, List<TetrisBlockButton> buttons, Runnable changed) {
+        this(panel, buttons, changed, null);
+    }
+
+    MenuNavigation(JPanel panel, List<TetrisBlockButton> buttons, Runnable changed, Runnable back) {
         this.panel = panel;
         this.buttons = buttons;
         this.changed = changed;
@@ -27,6 +31,10 @@ final class MenuNavigation {
         bind("DOWN", () -> move(0, 1));
         bind("LEFT", () -> move(-1, 0));
         bind("RIGHT", () -> move(1, 0));
+        if (back != null) bind("pressed ESCAPE", () -> {
+            AudioManager.get().playMenuSelect();
+            back.run();
+        });
         bind("pressed SPACE", () -> {
             spaceHeld = true;
             keyboard = true;

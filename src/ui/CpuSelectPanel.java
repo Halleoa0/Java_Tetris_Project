@@ -48,7 +48,7 @@ public final class CpuSelectPanel extends JPanel {
         // 모드 선택 화면과 같은 위치, 같은 모양의 BACK 버튼 (누르면 모드 선택으로 돌아감)
         buttons.add(new TetrisBlockButton("BACK", new String[]{"####"}, new Color(110, 190, 120), 35, 35, 28, screens::showModeSelect, true));
 
-        navigation = new MenuNavigation(this, buttons, () -> {});
+        navigation = new MenuNavigation(this, buttons, () -> {}, screens::showModeSelect);
         MouseAdapter mouse = new MouseAdapter() {
             @Override public void mouseMoved(MouseEvent event) { updateHover(event.getX(), event.getY()); }
             @Override public void mouseDragged(MouseEvent event) { updateHover(event.getX(), event.getY()); }

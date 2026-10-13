@@ -261,12 +261,10 @@ public final class BattlePanel extends JPanel {
         bindPauseNavigation("DOWN", 1);
 
         // ESC : 일시정지 켜기/끄기 (라운드가 끝난 화면에서는 setPaused가 알아서 무시함)
-        bindUnfiltered("ESCAPE", "escapeAction", () -> setPaused(!paused));
-
-        // ENTER : 일시정지 메뉴 선택 / 다음 라운드 / 다시 대결
-        bindUnfiltered("ENTER", "enterAction", () -> {
-            if (paused) confirmPauseSelection();
-            else confirmResult();
+        bindUnfiltered("ESCAPE", "escapeAction", () -> {
+            if (paused) setPaused(false);
+            else if (battle.getState() == BattleGame.State.PLAYING) setPaused(true);
+            else goHome();
         });
 
         // M : 메인 메뉴로. GamePanel처럼 일시정지 중이거나 라운드가 끝났을 때만 (게임 중 실수로 누르는 것 방지)
@@ -340,6 +338,8 @@ public final class BattlePanel extends JPanel {
                     if (battle.playerGame.isSpawnDelayed()) bufferSpawnInput(action);
                     else run.run();
                     repaint();
+                } else if (action == Settings.Action.HARD_DROP) {
+                    confirmResult();
                 }
             }
         });
@@ -620,14 +620,14 @@ public final class BattlePanel extends JPanel {
             case TIME_OUT -> "TIME UP - MORE ATTACK / SCORE WINS";
             default -> "";
         };
-        drawResultBox(g, title, reason, "[ENTER] NEXT ROUND");
+        drawResultBox(g, title, reason, "[SPACE] NEXT ROUND");
     }
 
     /// 매치(3판 2선승) 종료 화면
     private void drawMatchOver(Graphics2D g) {
         String title = battle.getMatchWinner() == BattleGame.Winner.PLAYER ? "YOU WIN!" : "CPU WINS!";
         String score = "FINAL " + battle.getPlayerWins() + " : " + battle.getBotWins();
-        drawResultBox(g, title, score, "[ENTER] REMATCH");
+        drawResultBox(g, title, score, "[SPACE] REMATCH");
     }
 
     /// 결과 상자. GamePanel의 GAME OVER 상자와 같은 모양(어두운 둥근 상자 + 흰 글씨)이다.

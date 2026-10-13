@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
@@ -64,6 +65,7 @@ public final class GamePanel extends JPanel {
     private final Image pauseGuideImage;
     private final Image gameNamePanelImage;
 
+    private int gameOverSelection;
     private final LabelUI labelUI;
     private final BufferedImage[] minoTiles;
 
@@ -102,9 +104,6 @@ public final class GamePanel extends JPanel {
     private String gameName = "튜토리얼";
 
     // 스프린트 결과 (목표 달성 순간에 정해지고, 결과 화면에서 그림)
-    private int resultTimeMs, resultBestMs;
-    private boolean resultNewRecord;
-
     // 키를 게임 동작에 연결하고 16ms 간격으로 게임 상태를 갱신한다.
     public GamePanel() { this(new Game()); }
 
@@ -146,9 +145,14 @@ public final class GamePanel extends JPanel {
         });
         bindPauseNavigation("UP", -1);
         bindPauseNavigation("DOWN", 1);
+        bindGameOverNavigation("LEFT", -1);
+        bindGameOverNavigation("RIGHT", 1);
 
-        bindUnfiltered("ESCAPE", "pauseToggle", () -> { if (!paused) setPaused(true); });
-        bindUnfiltered("ENTER", "pauseConfirm", () -> { if (paused) confirmPauseSelection(); });
+        bindUnfiltered("ESCAPE", "pauseToggle", () -> {
+            if (paused) setPaused(false);
+            else if (game.gameOver) homeCallback.run();
+            else setPaused(true);
+        });
         bindUnfiltered("M", "menu", () -> { if (paused || game.gameOver) homeCallback.run(); });
         configureOverlayButtons();
 
@@ -191,17 +195,13 @@ public final class GamePanel extends JPanel {
             @Override public void onGoalReached() {
                 // 걸린 시간을 최고 기록과 비교해 저장. (기록 이름은 목표 줄 수별로 따로)
                 String mode = Records.sprintKey(game.targetLines());
-                resultTimeMs = game.elapsedTimeMs();
-                resultNewRecord = Records.get().submitTime(mode, resultTimeMs);
-                resultBestMs = Records.get().bestTimeMs(mode);
+                Records.get().submitTime(mode, game.elapsedTimeMs());
                 AudioManager.get().playTutorialClear();
             }
             @Override public void onGameOver() {
                 if ("TOP OUT RUN".equals(GamePanel.this.gameName)) {
-                    resultTimeMs = game.elapsedTimeMs();
-                    resultNewRecord = Records.get().submitTime("topout", resultTimeMs);
-                    resultBestMs = Records.get().bestTimeMs("topout");
-                } else {
+                    Records.get().submitTime("topout", game.elapsedTimeMs());
+                } else if (game.targetLines() <= 0) {
                     String scoreKey = Records.scoreKeyForGameName(GamePanel.this.gameName);
                     if (scoreKey != null) Records.get().submitScore(scoreKey, game.scoring.score);
                 }
@@ -226,7 +226,7 @@ public final class GamePanel extends JPanel {
             int elapsed = Math.min(100, clockElapsed);
             lastTick = now;
             game.tick(clockElapsed);
-            tickHeldKeys(elapsed);
+            tickHeldKeys(Math.min(1_000, clockElapsed));
             game.scoring.tick(elapsed);
             updateOverlayButtons();
             repaint();
@@ -267,11 +267,23 @@ public final class GamePanel extends JPanel {
     }
 
     private void configureOverlayButtons() {
-        gameOverRestartButton.setBounds(548, 414, 108, 30);
-        gameOverMenuButton.setBounds(662, 414, 96, 30);
+        gameOverRestartButton.setBounds(BOARD_X + 10, BOARD_Y + 361, 108, 34);
+        gameOverMenuButton.setBounds(BOARD_X + 126, BOARD_Y + 361, 108, 34);
+        for (JButton button : new JButton[] { gameOverRestartButton, gameOverMenuButton }) {
+            button.setFont(sansKRBlack.deriveFont(13f));
+            button.setBackground(PANEL);
+            button.setForeground(Color.WHITE);
+            button.setOpaque(true);
+            button.setFocusPainted(false);
+            button.setBorderPainted(true);
+            button.setFocusable(false);
+        }
+        updateGameOverButtonStyle();
         gameOverRestartButton.addActionListener(event -> {
             AudioManager.get().playMenuSelect();
             game.restart();
+            gameOverSelection = 0;
+            updateGameOverButtonStyle();
             AudioManager.get().startGameBgm(); // 인게임 BGM을 무작위로 재생한다.
             updateOverlayButtons();
             repaint();
@@ -290,6 +302,28 @@ public final class GamePanel extends JPanel {
     private void updateOverlayButtons() {
         gameOverRestartButton.setVisible(game.gameOver && !paused);
         gameOverMenuButton.setVisible(game.gameOver && !paused);
+    }
+
+    private void updateGameOverButtonStyle() {
+        JButton[] buttons = { gameOverRestartButton, gameOverMenuButton };
+        for (int i = 0; i < buttons.length; i++) {
+            boolean selected = i == gameOverSelection;
+            buttons[i].setBorder(BorderFactory.createLineBorder(
+                    selected ? new Color(255, 220, 110) : new Color(100, 110, 130), selected ? 2 : 1));
+            buttons[i].setBackground(selected ? new Color(55, 68, 91) : PANEL);
+        }
+    }
+
+    private void selectGameOverOption(int direction) {
+        gameOverSelection = Math.floorMod(gameOverSelection + direction, 2);
+        updateGameOverButtonStyle();
+        AudioManager.get().playMenuSelect();
+        repaint();
+    }
+
+    private void confirmGameOverSelection() {
+        if (gameOverSelection == 0) gameOverRestartButton.doClick(0);
+        else gameOverMenuButton.doClick(0);
     }
 
 
@@ -311,7 +345,8 @@ public final class GamePanel extends JPanel {
                     if (ignoreSpaceUntilRelease) return;
                     ignoreSpaceUntilRelease = true;
                 }
-                if (paused) handlePauseInput(action);
+                if (game.gameOver && action == Settings.Action.HARD_DROP) confirmGameOverSelection();
+                else if (paused) handlePauseInput(action);
                 else if (inputFilter == null || inputFilter.allow(name)) run.run();
                 repaint();
             }
@@ -398,21 +433,33 @@ public final class GamePanel extends JPanel {
     private void tickHeldKeys(int elapsedMs) {
         for (String key : heldKeys) {
             int elapsed = heldKeyElapsed.getOrDefault(key, 0) + elapsedMs;
-            int delay = repeatingKeys.contains(key) ? Math.max(1, Settings.get().arrMs())
-                    : Settings.get().dasMs();
-            if (elapsed >= delay) {
-                elapsed -= delay;
+            boolean softDrop = key.equals(Settings.Action.SOFT_DROP.name());
+
+            if (!repeatingKeys.contains(key)) {
+                int das = Settings.get().dasMs();
+                if (elapsed < das) {
+                    heldKeyElapsed.put(key, elapsed);
+                    continue;
+                }
+                elapsed -= das;
                 repeatingKeys.add(key);
-                // 소프트 드롭은 Game.tick()의 SDF가 실제 낙하 속도를 담당
-                // 여기서 ARR 반복까지 적용하면 SDF와 중복되어 속도가 달라짐
-                if (!key.equals(Settings.Action.SOFT_DROP.name())) {
-                    heldKeyActions.get(key).run();
+                if (!softDrop) heldKeyActions.get(key).run();
+            }
+
+            if (!softDrop) {
+                int arr = Settings.get().arrMs();
+                if (arr == 0) {
+                    for (int i = 0; i < Board.WIDTH; i++) heldKeyActions.get(key).run();
+                    elapsed = 0;
+                } else {
+                    int repeats = Math.min(Board.WIDTH, elapsed / arr);
+                    for (int i = 0; i < repeats; i++) heldKeyActions.get(key).run();
+                    elapsed %= arr;
                 }
             }
             heldKeyElapsed.put(key, elapsed);
         }
     }
-
     private void releaseHeldKey(String key) {
         boolean wasHeld = heldKeys.remove(key);
         repeatingKeys.remove(key);
@@ -621,30 +668,49 @@ public final class GamePanel extends JPanel {
 
     // 게임 오버 시
     private void drawGameOver(Graphics2D g) {
-        if (game.goalReached()) { drawGoalResult(g); return; }
-        int x = BOARD_X - 7, y = BOARD_Y + 230;
-        if ("TOP OUT RUN".equals(gameName)) {
-            int boxX = x + 15, boxY = y, boxW = 250, boxH = 142;
-            int centerX = boxX + boxW / 2;
-            g.setColor(new Color(12, 16, 25, 220));
-            g.fillRoundRect(boxX, boxY, boxW, boxH, 12, 12);
-            g.setColor(Color.WHITE);
-            g.setFont(interBlack.deriveFont(22f));
-            String title = "GAME OVER";
-            g.drawString(title, centerX - g.getFontMetrics().stringWidth(title) / 2, boxY + 32);
-            g.setFont(interBlack.deriveFont(18f));
-            String time = Records.formatTime(resultTimeMs);
-            g.drawString(time, centerX - g.getFontMetrics().stringWidth(time) / 2, boxY + 70);
-            g.setFont(interBlack.deriveFont(13f));
-            String best = (resultNewRecord ? "BEST " : "RECORD ") + Records.formatTime(resultBestMs);
-            g.drawString(best, centerX - g.getFontMetrics().stringWidth(best) / 2, boxY + 105);
-            return;
+        int boxX = BOARD_X + 5, boxY = BOARD_Y + 136, boxW = 240, boxH = 300;
+        int centerX = boxX + boxW / 2;
+        g.setColor(new Color(12, 16, 25, 238));
+        g.fillRoundRect(boxX, boxY, boxW, boxH, 16, 16);
+        g.setColor(new Color(115, 135, 170));
+        g.drawRoundRect(boxX, boxY, boxW, boxH, 16, 16);
+
+        g.setColor(Color.WHITE);
+        g.setFont(interBlack.deriveFont(24f));
+        drawCentered(g, "GAME OVER", centerX, boxY + 42);
+
+        boolean timedMode = game.targetLines() > 0 || "TOP OUT RUN".equals(gameName);
+        String currentValue;
+        String bestValue;
+        if (timedMode) {
+            String mode = game.targetLines() > 0 ? Records.sprintKey(game.targetLines()) : "topout";
+            currentValue = Records.formatTime(game.elapsedTimeMs());
+            int bestMs = Records.get().bestTimeMs(mode);
+            bestValue = bestMs > 0 ? Records.formatTime(bestMs) : "-";
+        } else {
+            String mode = Records.scoreKeyForGameName(gameName);
+            currentValue = String.format("%,d", game.scoring.score);
+            int bestScore = mode == null ? -1 : Records.get().bestScore(mode);
+            bestValue = bestScore > 0 ? String.format("%,d", bestScore) : "-";
         }
-        g.setColor(new Color(12, 16, 25, 220)); g.fillRoundRect(x + 15, y, 250, 112, 12, 12);
-        g.setColor(Color.WHITE); g.setFont(interBlack.deriveFont(24f));
-        FontMetrics fm = g.getFontMetrics(); String text = "GAME OVER";
-        g.drawString(text, x + (280 - fm.stringWidth(text))/2, y + 39);
-        g.setFont(interBlack.deriveFont(14f));
+
+        g.setColor(new Color(190, 200, 220));
+        g.setFont(sansKRBlack.deriveFont(14f));
+        drawCentered(g, "이번 기록", centerX, boxY + 88);
+        g.setColor(Color.WHITE);
+        g.setFont(interBlack.deriveFont(23f));
+        drawCentered(g, currentValue, centerX, boxY + 120);
+
+        g.setColor(new Color(190, 200, 220));
+        g.setFont(sansKRBlack.deriveFont(14f));
+        drawCentered(g, "BEST 기록", centerX, boxY + 165);
+        g.setColor(new Color(255, 220, 110));
+        g.setFont(interBlack.deriveFont(21f));
+        drawCentered(g, bestValue, centerX, boxY + 198);
+    }
+
+    private void drawCentered(Graphics2D g, String text, int centerX, int baselineY) {
+        g.drawString(text, centerX - g.getFontMetrics().stringWidth(text) / 2, baselineY);
     }
 
     /** 스프린트 시작 전 3, 2, 1 카운트다운. 보드를 살짝 어둡게 덮고 가운데에 숫자를 보여준다. */
@@ -664,26 +730,6 @@ public final class GamePanel extends JPanel {
     }
 
     /** 스프린트 목표 달성 결과: 걸린 시간과 최고 기록 (아래 버튼은 게임 오버 때와 같은 자리). */
-    private void drawGoalResult(Graphics2D g) {
-        int boxX = BOARD_X + 8, boxY = BOARD_Y + 186, boxW = 250, boxH = 156;   // 아래쪽 끝은 게임 오버 상자와 같다
-        int centerX = boxX + boxW / 2;
-        g.setColor(new Color(12, 16, 25, 235));
-        g.fillRoundRect(boxX, boxY, boxW, boxH, 12, 12);
-        g.setFont(interBlack.deriveFont(24f));
-        g.setColor(new Color(110, 190, 120));
-        String title = "CLEAR!";
-        g.drawString(title, centerX - g.getFontMetrics().stringWidth(title) / 2, boxY + 36);
-        g.setFont(interBlack.deriveFont(32f));
-        g.setColor(Color.WHITE);
-        String time = Records.formatTime(resultTimeMs);
-        g.drawString(time, centerX - g.getFontMetrics().stringWidth(time) / 2, boxY + 80);
-        g.setFont(interBlack.deriveFont(14f));
-        String best;
-        if (resultNewRecord) { g.setColor(new Color(255, 239, 137)); best = "NEW RECORD!"; }
-        else { g.setColor(new Color(190, 190, 190)); best = "BEST " + Records.formatTime(resultBestMs); }
-        g.drawString(best, centerX - g.getFontMetrics().stringWidth(best) / 2, boxY + 104);
-    }
-
     private void drawPauseOverlay(Graphics2D g) {
         g.setColor(new Color(0, 0, 0, 255));
         g.fillRect(0, 0, getWidth(), getHeight());
@@ -725,6 +771,20 @@ public final class GamePanel extends JPanel {
                 } else if (gameplayAction != null) {
                     gameplayAction.actionPerformed(e);
                 }
+            }
+        });
+    }
+
+    private void bindGameOverNavigation(String key, int direction) {
+        KeyStroke stroke = KeyStroke.getKeyStroke("pressed " + key);
+        Object gameplayBinding = getInputMap(WHEN_IN_FOCUSED_WINDOW).get(stroke);
+        Action gameplayAction = gameplayBinding == null ? null : getActionMap().get(gameplayBinding);
+        String bindingName = "gameOver" + key;
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(stroke, bindingName);
+        getActionMap().put(bindingName, new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) {
+                if (game.gameOver && !paused) selectGameOverOption(direction);
+                else if (gameplayAction != null) gameplayAction.actionPerformed(e);
             }
         });
     }
