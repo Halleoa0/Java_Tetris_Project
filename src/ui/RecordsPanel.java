@@ -30,7 +30,7 @@ public final class RecordsPanel extends JPanel {
 
     private static final int TABLE_X = 90, HEADER_Y = 140, ROW_Y = 190, ROW_H = 62, VISIBLE_ROWS = 8;
     // 열: 이름, 클래식, 울트라, 스프린트 20L, 탑-아웃 런, vs CPU 승리
-    private static final String[] HEADERS = {"PLAYER", "CLASSIC", "ULTRA", "SPRINT 20L", "TOP-OUT", "vs CPU 승리"};
+    private static final String[] HEADERS = {"PLAYER", "CLASSIC", "ULTRA", "SPRINT 20L", "TOP-OUT TIME", "vs CPU 승리"};
     private static final int[] COL_X = {0, 210, 370, 530, 720, 890};
     private static final int TABLE_W = 1100;
 
@@ -126,7 +126,8 @@ public final class RecordsPanel extends JPanel {
             cell(g, 2, y, score(rec.bestScore(name, "ultra")));
             int ms = rec.bestTimeMs(name, Records.sprintKey(20));
             cell(g, 3, y, ms > 0 ? Records.formatTime(ms) : "-");
-            cell(g, 4, y, score(rec.bestScore(name, "topout")));
+            int topOutMs = rec.bestTimeMs(name, "topout");
+            cell(g, 4, y, topOutMs > 0 ? Records.formatTime(topOutMs) : "-");
 
             StringBuilder wins = new StringBuilder();
             for (BotBrain.Difficulty d : levels) {

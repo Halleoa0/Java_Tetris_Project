@@ -197,9 +197,14 @@ public final class GamePanel extends JPanel {
                 AudioManager.get().playTutorialClear();
             }
             @Override public void onGameOver() {
-                // 점수 모드(클래식/울트라/탑-아웃 런)면 프로필별 최고 점수로 저장
-                String scoreKey = Records.scoreKeyForGameName(GamePanel.this.gameName);
-                if (scoreKey != null) Records.get().submitScore(scoreKey, game.scoring.score);
+                if ("TOP OUT RUN".equals(GamePanel.this.gameName)) {
+                    resultTimeMs = game.elapsedTimeMs();
+                    resultNewRecord = Records.get().submitTime("topout", resultTimeMs);
+                    resultBestMs = Records.get().bestTimeMs("topout");
+                } else {
+                    String scoreKey = Records.scoreKeyForGameName(GamePanel.this.gameName);
+                    if (scoreKey != null) Records.get().submitScore(scoreKey, game.scoring.score);
+                }
                 AudioManager.get().playGameOver();
             }
         });
@@ -618,6 +623,23 @@ public final class GamePanel extends JPanel {
     private void drawGameOver(Graphics2D g) {
         if (game.goalReached()) { drawGoalResult(g); return; }
         int x = BOARD_X - 7, y = BOARD_Y + 230;
+        if ("TOP OUT RUN".equals(gameName)) {
+            int boxX = x + 15, boxY = y, boxW = 250, boxH = 142;
+            int centerX = boxX + boxW / 2;
+            g.setColor(new Color(12, 16, 25, 220));
+            g.fillRoundRect(boxX, boxY, boxW, boxH, 12, 12);
+            g.setColor(Color.WHITE);
+            g.setFont(interBlack.deriveFont(22f));
+            String title = "GAME OVER";
+            g.drawString(title, centerX - g.getFontMetrics().stringWidth(title) / 2, boxY + 32);
+            g.setFont(interBlack.deriveFont(18f));
+            String time = Records.formatTime(resultTimeMs);
+            g.drawString(time, centerX - g.getFontMetrics().stringWidth(time) / 2, boxY + 70);
+            g.setFont(interBlack.deriveFont(13f));
+            String best = (resultNewRecord ? "BEST " : "RECORD ") + Records.formatTime(resultBestMs);
+            g.drawString(best, centerX - g.getFontMetrics().stringWidth(best) / 2, boxY + 105);
+            return;
+        }
         g.setColor(new Color(12, 16, 25, 220)); g.fillRoundRect(x + 15, y, 250, 112, 12, 12);
         g.setColor(Color.WHITE); g.setFont(interBlack.deriveFont(24f));
         FontMetrics fm = g.getFontMetrics(); String text = "GAME OVER";

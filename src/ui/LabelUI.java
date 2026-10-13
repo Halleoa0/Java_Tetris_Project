@@ -126,7 +126,7 @@ public final class LabelUI {
         g.drawString("TIME", 783, 539);
         int totalSeconds = game.displayTimeSeconds();
         // 기록을 겨루는 스프린트는 1/100초까지 보여줌
-        String timeText = game.targetLines() > 0
+        String timeText = game.targetLines() > 0 || "TOP OUT RUN".equals(gameName)
                 ? Records.formatTime(game.elapsedTimeMs())
                 : String.format(Locale.ROOT, "%02d:%02d", totalSeconds / 60, totalSeconds % 60);
         g.setFont(interBlack.deriveFont(24f));

@@ -61,10 +61,10 @@ public final class Game {
     /// 다른 생성자와 겹칠 수도 있어서 명시적 생성자 선언
     public Game() { this(null); }
 
-    /// Sprint 모드 시작
-    public Game(int timeLimitMs) { this(null, timeLimitMs, 0, 0); }
+    /// 탑 아웃 런
+    public Game(int countdownMs) { this(null, 0, 0, countdownMs); }
 
-    /** 시간 제한과 시작 전 카운트다운이 있는 게임. */
+    /// 울트라
     public Game(int timeLimitMs, int countdownMs) { this(null, timeLimitMs, 0, countdownMs); }
 
     /** 목표 줄 수를 가장 빨리 채우는 스프린트용 게임. 시작할 때 3초 카운트다운 */
@@ -86,7 +86,7 @@ public final class Game {
 
     /** 제한 시간이 있는 모드는 남은 초, 기본 모드는 경과 초를 표시한다. */
     public int displayTimeSeconds() {
-        if (targetLines > 0) return elapsedTimeMs / 1000;
+        if (targetLines > 0 || (countdownDurationMs > 0 && timeLimitMs == 0)) return elapsedTimeMs / 1000;
         return timeLimitMs > 0 ? (timeLimitMs - elapsedTimeMs + 999) / 1000 : (int) timer;
     }
 
@@ -145,13 +145,13 @@ public final class Game {
         goalReached = false;
         countdownMs = countdownDurationMs;
         dropCount = 0; startCal = false; timer = 0.0f;
-        board.clear(); bag.clear(); queue.clear(); held = null;
+        board.clear(); bag.clear(); queue.clear(); active = null; held = null;
         scoring.reset();
         scoring.level = Settings.get().startLevel(); gameOver = false; holdUsed = false;
         lockElapsed = 0; lockResets = 0; gravityElapsed = 0; spawnDelayElapsed = 0; spawnDelayed = false;
         for (int i = 0; i < PREVIEW_COUNT + 1; i++) queue.addLast(nextPiece());
         for (GameListener listener : List.copyOf(listeners)) listener.onRestart();
-        spawnNext();
+        if (countdownMs == 0) spawnNext();
     }
 
     /// 테트리스의 7-beg 시스템을 위한 함수로, 7개의 미노가 균등하게 나오게 하기 위함이다.
@@ -282,9 +282,12 @@ public final class Game {
         if (gameOver) return;
         if (countdownMs > 0) {   // 스프린트 시작 카운트다운: 끝날 때까지 시간과 중력이 멈춘다.
             countdownMs = Math.max(0, countdownMs - elapsedMs);
+            if (countdownMs == 0) spawnNext();
             return;
         }
-        if (targetLines > 0) elapsedTimeMs += Math.max(0, elapsedMs);
+        if (targetLines > 0 || (countdownDurationMs > 0 && timeLimitMs == 0)) {
+            elapsedTimeMs += Math.max(0, elapsedMs);
+        }
         if (timeLimitMs > 0) {
             elapsedTimeMs += Math.min(Math.max(0, elapsedMs), timeLimitMs - elapsedTimeMs);
             if (elapsedTimeMs >= timeLimitMs) {
