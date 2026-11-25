@@ -30,13 +30,13 @@ public final class ScreenManager extends JPanel {
     // Home, Game, Settings 등 패널들을 Card에 넣어서 관리. 여러 패널들 중 하나를 골라 보여주는 식
     private final CardLayout cards = new CardLayout();
 
-    private SettingsPanel settingsPanel; // 설정 화면 -> SETTINGS
+    private SettingsPanel settingsPanel; // 설정 화면 (열 때마다 새로 만듦)
     private GamePanel gamePanel; // 실제 게임을 하기 위한 화면
     private BattlePanel battlePanel; // CPU 대전 화면 (내 보드 + CPU 보드)
     private ShopPanel shopPanel; // 상점 화면 (코인/구매 상태가 바뀌므로 열 때마다 새로 만듦)
     private RecordsPanel recordsPanel; // 플레이어별 최고 기록 화면 (열 때마다 새로 만듦)
 
-    /// 생성자. 1280x720 사이즈, 게임 시작 시 HOME을 보여준다. (settingsPanel은 최신 정보를 동적으로 보여주기 위해서 뺌)
+    /// 생성자. 1280x720 사이즈, 게임 시작 시 HOME을 보여준다. (settings/shop/recordsPanel은 최신 정보를 동적으로 보여주기 위해서 뺌)
     public ScreenManager() {
         setLayout(cards);
         setPreferredSize(new Dimension(1280, 720));
@@ -71,7 +71,7 @@ public final class ScreenManager extends JPanel {
     }
 
 
-    /// 게임을 시작합니다. game은 상태와 규칙을, gameName은 현재 모드를 띄울 텍스트입니다.
+    /// 게임 시작. game은 상태와 규칙을, gameName은 현재 모드를 띄울 텍스트.
     /// 울트라 : new Game(TIME_LIMIT_MS) - 제한시간 규칙
     /// 스프린트 : Game.sprint(20) - 20줄 지우기 규칙
     public void startGame(Game game, String gameName) {
@@ -84,7 +84,7 @@ public final class ScreenManager extends JPanel {
 
         AudioManager.get().startGameBgm();               // 브금 재생
         refreshDisplay();                                // 화면 새로고침
-        panel.requestFocusInWindow();                    // 창 포커스 잡기
+        panel.requestFocusInWindow();                    // 창 포커스 잡기(이 패널로 키보드 입력 받음)
     }
 
     /// 튜토리얼을 시작

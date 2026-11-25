@@ -256,7 +256,7 @@ public final class SettingsPanel extends JPanel {
         JButton reset = button("현재 사용자 키 초기화");
         reset.addActionListener(e -> { s.resetKeys(); refreshKeyButtons(); });
         p.add(reset);
-        JLabel hint = new JLabel("※ ESC / M are reserved for pause and menu actions. Keys already in use swap with each other.");
+        JLabel hint = new JLabel("※ ESC / M 는 일시정지와 메뉴 동작 키로 지정되어 있음. 이미 사용중인 키는 서로 스왑됨.");
         hint.setForeground(SUB);
         hint.setFont(font.deriveFont(12f));
         p.add(hint);

@@ -19,13 +19,13 @@ public final class TopOutRunMode implements GameMode {
     @Override public boolean isAvailable() { return true; }
 
     @Override public void start(ScreenManager screens) {
-        Game game = new Game(3_000);
+        Game game = new Game(3000);
         game.addListener(new RiseListener(game));
         screens.startGame(game, getName());
     }
 
     private static final class RiseListener implements GameListener {
-        private static final long RISE_INTERVAL_MS = 10_000L;
+        private static final long RISE_INTERVAL_MS = 10000L;
 
         private final Game game;
         private final Random random = new Random();

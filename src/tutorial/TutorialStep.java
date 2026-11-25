@@ -40,7 +40,7 @@ public final class TutorialStep {
 
     public static TutorialStep rotate() {
         return new TutorialStep(
-                "↑ 또는 X 키로 시계 방향, Z 키로 반시계 방향 회전을 해보세요.",
+                "X 키로 시계 방향, Z 키로 반시계 방향 회전을 해보세요.",
                 Set.of("rotateCW", "rotateCCW"), false, true, new FixedPieceGenerator(Tetromino.Tmino),
                 Goal.ROTATE_BOTH_DIRECTIONS);
     }
