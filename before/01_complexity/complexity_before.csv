@@ -1,0 +1,662 @@
+Complexity metrics,수, 25 11월 2026 23:54:24 KST
+Method,CogC,ev(G),iv(G),v(G)
+actionPerformed(ActionEvent),1,n/a,n/a,n/a
+app.Main.main(String[]),0,1,1,1
+app.ScreenManager.ScreenManager(),0,1,1,1
+app.ScreenManager.refreshDisplay(),0,1,1,1
+app.ScreenManager.removeActiveGame(),2,1,3,3
+app.ScreenManager.showCpuSelect(),0,1,1,1
+app.ScreenManager.showHome(),0,1,1,1
+app.ScreenManager.showModeSelect(),0,1,1,1
+app.ScreenManager.showRecords(),1,1,2,2
+app.ScreenManager.showSettings(),1,1,2,2
+app.ScreenManager.showShop(),1,1,2,2
+app.ScreenManager.startBattle(Difficulty),0,1,1,1
+"app.ScreenManager.startGame(Game, String)",0,1,1,1
+app.ScreenManager.startTutorial(),0,1,1,1
+audio.AudioManager.AudioManager(),3,1,3,3
+"audio.AudioManager.applyVolumeToClip(Clip, float)",2,2,2,3
+audio.AudioManager.calculateBgmGain(),1,1,1,2
+audio.AudioManager.canOutputMusic(),2,1,3,3
+audio.AudioManager.canOutputSounds(),2,1,3,3
+audio.AudioManager.chooseRandomGameBgm(),4,3,4,5
+audio.AudioManager.get(),0,1,1,1
+audio.AudioManager.loadBgm(String),8,2,5,6
+"audio.AudioManager.loadClip(String, String)",3,2,2,4
+audio.AudioManager.onBgmFinished(),3,1,3,3
+audio.AudioManager.pauseBgm(),2,1,3,3
+"audio.AudioManager.playBgmInternal(String, boolean)",6,3,6,8
+audio.AudioManager.playGameOver(),0,1,1,1
+audio.AudioManager.playHardDrop(),0,1,1,1
+audio.AudioManager.playHold(),0,1,1,1
+audio.AudioManager.playLevelUpDelayed(),1,1,2,2
+audio.AudioManager.playLineClear(int),2,1,3,3
+audio.AudioManager.playLock(),0,1,1,1
+audio.AudioManager.playMenuBgm(),0,1,1,1
+audio.AudioManager.playMenuSelect(),0,1,1,1
+audio.AudioManager.playMove(),0,1,1,1
+audio.AudioManager.playRotate(),0,1,1,1
+audio.AudioManager.playSoftDrop(),0,1,1,1
+audio.AudioManager.playSound(String),2,3,1,3
+"audio.AudioManager.playSoundWithInterval(String, int)",1,2,1,2
+audio.AudioManager.playTutorialBgm(),0,1,1,1
+audio.AudioManager.playTutorialClear(),0,1,1,1
+audio.AudioManager.refreshVolume(),12,1,7,7
+audio.AudioManager.resumeBgm(),2,1,3,3
+audio.AudioManager.setWindowActive(boolean),0,1,1,1
+audio.AudioManager.startGameBgm(),0,1,1,1
+audio.AudioManager.stopBgm(),1,1,2,2
+battle.BattleGame.BattleGame(Difficulty),0,1,1,1
+battle.BattleGame.finishRound(),3,1,2,3
+battle.BattleGame.getBotTotalAttack(),0,1,1,1
+battle.BattleGame.getBotWins(),0,1,1,1
+battle.BattleGame.getCurrentRound(),0,1,1,1
+battle.BattleGame.getMatchWinner(),0,1,1,1
+battle.BattleGame.getPlayerTotalAttack(),0,1,1,1
+battle.BattleGame.getPlayerWins(),0,1,1,1
+battle.BattleGame.getRoundTimer(),0,1,1,1
+battle.BattleGame.getRoundWinner(),0,1,1,1
+battle.BattleGame.getState(),0,1,1,1
+battle.BattleGame.getWinReason(),0,1,1,1
+battle.BattleGame.isHurryUp(),1,1,1,2
+battle.BattleGame.nextRound(),1,1,2,2
+battle.BattleGame.onBotKnockedOut(),0,1,1,1
+battle.BattleGame.onPlayerKnockedOut(),0,1,1,1
+battle.BattleGame.onTargetScoreReached(Winner),2,1,1,2
+battle.BattleGame.onTimeOut(),8,1,5,6
+battle.BattleGame.pause(),0,1,1,1
+battle.BattleGame.resume(),1,1,2,2
+battle.BattleGame.setupGameListeners(),26,1,13,15
+battle.BattleGame.startMatch(),0,1,1,1
+battle.BattleGame.startRound(),0,1,1,1
+battle.BattleGame.stop(),0,1,1,1
+battle.BattleGame.tick(int),4,4,4,5
+battle.BattlePanel.BattlePanel(Difficulty),14,1,8,8
+battle.BattlePanel.activateHeldKey(String),1,2,1,2
+battle.BattlePanel.applyBufferedSpawnInputs(),12,2,12,14
+"battle.BattlePanel.bind(Action, Runnable)",16,3,6,8
+"battle.BattlePanel.bindHeld(Action, Runnable)",11,2,6,8
+"battle.BattlePanel.bindInitial(Action, Runnable)",11,3,3,7
+battle.BattlePanel.bindKeys(),7,2,4,5
+battle.BattlePanel.bindMouse(),15,3,7,10
+"battle.BattlePanel.bindPauseNavigation(String, int)",4,1,4,4
+"battle.BattlePanel.bindUnfiltered(String, String, Runnable)",0,1,1,1
+battle.BattlePanel.bufferSpawnInput(Action),1,1,1,8
+battle.BattlePanel.clearBufferedSpawnInputs(),0,1,1,1
+battle.BattlePanel.clearHeldKeys(),0,1,1,1
+battle.BattlePanel.confirmPauseSelection(),1,1,5,5
+battle.BattlePanel.confirmResult(),3,3,3,3
+"battle.BattlePanel.drawAttackLabel(Graphics2D, int)",0,1,1,1
+"battle.BattlePanel.drawBoard(Graphics2D, Game)",17,4,6,9
+battle.BattlePanel.drawCenterInfo(Graphics2D),2,1,2,2
+"battle.BattlePanel.drawCenterLabel(Graphics2D, String, String, int, Color)",0,1,1,1
+"battle.BattlePanel.drawCentered(Graphics2D, String, int)",0,1,1,1
+"battle.BattlePanel.drawClickableText(Graphics2D, String, int, int)",2,1,2,3
+"battle.BattlePanel.drawGarbageBar(Graphics2D, int, int, int)",3,1,2,3
+battle.BattlePanel.drawMatchOver(Graphics2D),1,1,1,2
+"battle.BattlePanel.drawMatrixPreviews(Graphics2D, Game)",2,1,3,3
+battle.BattlePanel.drawPauseOverlay(Graphics2D),5,1,2,4
+"battle.BattlePanel.drawPiece(Graphics2D, Tetromino, int, int, int, boolean)",6,3,3,5
+"battle.BattlePanel.drawPreviewPiece(Graphics2D, Tetromino, int, int, int, int, int)",2,1,3,3
+"battle.BattlePanel.drawResultBox(Graphics2D, String, String, String)",0,1,1,1
+battle.BattlePanel.drawRoundOver(Graphics2D),4,1,3,6
+"battle.BattlePanel.drawSide(Graphics2D, int, LabelUI, Game, GarbageQueue, int)",0,1,1,1
+"battle.BattlePanel.drawTile(Graphics2D, int, int, int)",0,1,1,1
+battle.BattlePanel.goHome(),0,1,1,1
+battle.BattlePanel.loadImage(String),1,1,1,2
+battle.BattlePanel.loadMinoTiles(String),7,2,5,7
+battle.BattlePanel.minoTileIndex(Tetromino),1,1,1,8
+battle.BattlePanel.oppositeMoveHeld(Action),3,1,4,4
+battle.BattlePanel.paintComponent(Graphics),3,1,4,4
+battle.BattlePanel.pauseOptionAt(Point),4,3,3,4
+battle.BattlePanel.quickRestart(),0,1,1,1
+battle.BattlePanel.releaseHeldKey(String),6,1,7,7
+battle.BattlePanel.setHomeCallback(Runnable),1,1,1,2
+battle.BattlePanel.setPaused(boolean),5,3,3,5
+battle.BattlePanel.start(),0,1,1,1
+battle.BattlePanel.stop(),0,1,1,1
+battle.BattlePanel.tickHeldKeys(int),23,4,9,9
+"battle.BattlePanel.tint(BufferedImage, Color)",6,1,3,4
+battle.BattlePanel.updateInitialInputs(),9,1,3,7
+battle.BotBrain.BotBrain(Difficulty),0,1,1,1
+"battle.BotBrain.Difficulty.Difficulty(String, float, double)",0,1,1,1
+battle.BotBrain.Difficulty.msPerPiece(),0,1,1,1
+battle.BotBrain.Difficulty.stepDelayMs(),0,1,1,1
+"battle.BotBrain.Plan.Plan(boolean, int, int, double)",0,1,1,1
+"battle.BotBrain.bestPlanFor(Board, Tetromino, int, boolean)",14,6,4,9
+"battle.BotBrain.evaluate(Board, Tetromino, int, int, int)",3,1,2,5
+battle.BotBrain.findBestPlan(Game),5,1,3,4
+battle.BotBrain.getDifficulty(),0,1,1,1
+battle.BotBrain.maxHeight(Board),1,1,2,2
+"battle.BotController.BotController(Game, BotBrain)",0,1,1,1
+battle.BotController.drop(),0,1,1,1
+battle.BotController.onTick(),15,5,11,12
+battle.BotController.reset(),0,1,1,1
+battle.BotController.start(),0,1,1,1
+battle.BotController.stop(),0,1,1,1
+battle.GarbageQueue.addGarbage(int),0,1,1,1
+battle.GarbageQueue.cancel(int),0,1,1,1
+battle.GarbageQueue.clear(),0,1,1,1
+battle.GarbageQueue.getHoleCol(),0,1,1,1
+battle.GarbageQueue.getPendingCount(),0,1,1,1
+battle.GarbageQueue.hasPending(),0,1,1,1
+battle.GarbageQueue.popGarbage(int),0,1,1,1
+focusGained(FocusEvent),0,n/a,n/a,n/a
+focusLost(FocusEvent),0,n/a,n/a,n/a
+"game.Board.canPlace(Tetromino, int, int, int)",6,4,1,7
+game.Board.clear(),2,1,3,3
+game.Board.clearLines(),14,4,5,7
+game.Board.columnHeight(int),3,3,1,3
+game.Board.columnTransitions(),8,1,1,5
+game.Board.copy(),1,1,2,2
+"game.Board.get(int, int)",0,1,1,1
+game.Board.holeCount(),7,1,1,5
+game.Board.isEmpty(),6,4,1,4
+"game.Board.isGarbageCell(int, int)",1,1,1,3
+"game.Board.lock(Tetromino, int, int, int)",4,1,1,6
+"game.Board.occupied(int, int)",1,1,1,3
+game.Board.pushGarbageRow(int),6,4,2,6
+game.Board.rowTransitions(),8,1,1,5
+game.Board.totalHeight(),1,1,2,2
+game.FixedPieceGenerator.FixedPieceGenerator(Tetromino),0,1,1,1
+game.FixedPieceGenerator.next(),0,1,1,1
+game.Game.Game(),0,1,1,1
+game.Game.Game(PieceGenerator),0,1,1,1
+"game.Game.Game(PieceGenerator, int, int, int)",0,1,1,1
+game.Game.Game(int),0,1,1,1
+"game.Game.Game(int, int)",0,1,1,1
+game.Game.addGarbageRow(int),1,1,2,2
+game.Game.addListener(GameListener),1,1,2,2
+game.Game.afterPlayerMove(),2,1,1,3
+game.Game.calPPS(),0,1,1,1
+"game.Game.calculateAttackLines(int, Spin, boolean, boolean, int)",23,1,1,16
+game.Game.countdownSeconds(),0,1,1,1
+game.Game.displayTimeSeconds(),4,2,1,5
+game.Game.drawPiece(),1,1,2,2
+game.Game.elapsedTimeMs(),0,1,1,1
+game.Game.enterPiece(),2,1,3,3
+game.Game.goalReached(),0,1,1,1
+game.Game.hardDrop(),3,2,1,6
+game.Game.hold(),3,2,1,6
+"game.Game.isCornerOccupied(int, int)",1,1,5,5
+game.Game.isCountingDown(),0,1,1,1
+game.Game.isMiniTSpin(),5,2,2,7
+game.Game.isSpawnDelayed(),0,1,1,1
+game.Game.isTSpin(),3,1,2,3
+"game.Game.kickTests(Tetromino, int, int)",4,2,16,16
+game.Game.kicks(int...),1,1,1,2
+game.Game.lockPiece(),21,5,13,18
+"game.Game.move(int, int)",3,2,5,6
+game.Game.nextPiece(),1,1,2,2
+game.Game.notifyRotate(int),1,1,2,2
+game.Game.preview(),0,1,1,1
+game.Game.removeListener(GameListener),0,1,1,1
+game.Game.restart(),3,1,4,4
+game.Game.rotate(int),8,5,4,10
+game.Game.setGameOver(),2,2,2,3
+game.Game.setGoalReached(),2,2,2,3
+game.Game.setGravityEnabled(boolean),0,1,1,1
+"game.Game.setInitialInputs(boolean, int)",2,1,3,3
+game.Game.setPieceGenerator(PieceGenerator),0,1,1,1
+game.Game.setSoftDropHeld(boolean),1,1,1,2
+game.Game.softDrop(),2,2,2,3
+game.Game.spawnNext(),2,1,3,3
+game.Game.spawnNextAfterLock(),2,2,2,3
+game.Game.sprint(int),0,1,1,1
+game.Game.swapHeldPiece(),1,1,2,2
+game.Game.takeNextPiece(),0,1,1,1
+game.Game.targetLines(),0,1,1,1
+game.Game.tick(int),24,9,13,19
+game.GameListener.onAttackSent(int),0,1,1,1
+game.GameListener.onBeforeSpawn(),0,1,1,1
+game.GameListener.onGameOver(),0,1,1,1
+game.GameListener.onGoalReached(),0,1,1,1
+game.GameListener.onHardDrop(),0,1,1,1
+game.GameListener.onHold(),0,1,1,1
+game.GameListener.onLevelUp(int),0,1,1,1
+game.GameListener.onLinesCleared(int),0,1,1,1
+game.GameListener.onLock(Tetromino),0,1,1,1
+"game.GameListener.onMove(int, int)",0,1,1,1
+game.GameListener.onRestart(),0,1,1,1
+game.GameListener.onRotate(int),0,1,1,1
+game.GameListener.onSoftDrop(),0,1,1,1
+game.GameListener.onSpawn(),0,1,1,1
+game.GameListener.onTick(long),0,1,1,1
+game.ScoreManager.clearLineTracking(),0,1,1,1
+"game.ScoreManager.label(int, Spin, boolean, boolean)",9,2,6,12
+game.ScoreManager.labelAlpha(),1,2,1,2
+game.ScoreManager.onHardDrop(int),1,1,1,2
+"game.ScoreManager.onLock(int, Spin, boolean)",22,1,4,15
+game.ScoreManager.onSoftDrop(int),1,1,1,2
+game.ScoreManager.reset(),0,1,1,1
+game.ScoreManager.tick(int),2,2,1,3
+game.Tetromino.Tetromino(int[][][]),0,1,1,1
+game.Tetromino.cells(int),0,1,1,1
+keyPressed(KeyEvent),3,n/a,n/a,n/a
+mode.ClassicMode.getDescription(),1,1,2,2
+mode.ClassicMode.getName(),0,1,1,1
+mode.ClassicMode.isAvailable(),0,1,1,1
+mode.ClassicMode.start(ScreenManager),0,1,1,1
+"mode.ComingSoonMode.ComingSoonMode(String, String)",0,1,1,1
+mode.ComingSoonMode.getDescription(),0,1,1,1
+mode.ComingSoonMode.getName(),0,1,1,1
+mode.ComingSoonMode.isAvailable(),0,1,1,1
+mode.ComingSoonMode.start(ScreenManager),0,1,1,1
+mode.GameModes.GameModes(),0,1,1,1
+mode.GameModes.all(),0,1,1,1
+mode.SprintMode.getDescription(),1,1,2,2
+mode.SprintMode.getName(),0,1,1,1
+mode.SprintMode.isAvailable(),0,1,1,1
+mode.SprintMode.start(ScreenManager),0,1,1,1
+mode.TopOutRunMode.RiseListener.RiseListener(Game),0,1,1,1
+mode.TopOutRunMode.RiseListener.onBeforeSpawn(),2,1,2,3
+mode.TopOutRunMode.RiseListener.onRestart(),0,1,1,1
+mode.TopOutRunMode.RiseListener.onTick(long),1,1,1,2
+mode.TopOutRunMode.getDescription(),1,1,2,2
+mode.TopOutRunMode.getName(),0,1,1,1
+mode.TopOutRunMode.isAvailable(),0,1,1,1
+mode.TopOutRunMode.start(ScreenManager),0,1,1,1
+mode.UltraMode.getDescription(),1,1,2,2
+mode.UltraMode.getName(),0,1,1,1
+mode.UltraMode.isAvailable(),0,1,1,1
+mode.UltraMode.start(ScreenManager),0,1,1,1
+mode.VsCpuMode.getDescription(),0,1,1,1
+mode.VsCpuMode.getName(),0,1,1,1
+mode.VsCpuMode.isAvailable(),0,1,1,1
+mode.VsCpuMode.start(ScreenManager),0,1,1,1
+mouseDragged(MouseEvent),0,n/a,n/a,n/a
+mouseExited(MouseEvent),0,n/a,n/a,n/a
+mouseMoved(MouseEvent),0,n/a,n/a,n/a
+mousePressed(MouseEvent),0,n/a,n/a,n/a
+mouseReleased(MouseEvent),2,n/a,n/a,n/a
+mouseWheelMoved(MouseWheelEvent),0,n/a,n/a,n/a
+onAttackSent(int),2,n/a,n/a,n/a
+onGameOver(),4,n/a,n/a,n/a
+onGoalReached(),0,n/a,n/a,n/a
+onHardDrop(),0,n/a,n/a,n/a
+onHold(),0,n/a,n/a,n/a
+onLevelUp(int),0,n/a,n/a,n/a
+onLinesCleared(int),0,n/a,n/a,n/a
+onLock(Tetromino),2,n/a,n/a,n/a
+"onMove(int, int)",0,n/a,n/a,n/a
+onRestart(),0,n/a,n/a,n/a
+onRotate(int),0,n/a,n/a,n/a
+onSoftDrop(),0,n/a,n/a,n/a
+onSpawn(),0,n/a,n/a,n/a
+paintComponent(Graphics),1,n/a,n/a,n/a
+settings.Records.Records(),0,1,1,1
+settings.Records.addCpuWin(String),0,1,1,1
+settings.Records.bestScore(String),0,1,1,1
+"settings.Records.bestScore(String, String)",2,1,1,3
+settings.Records.bestTimeMs(String),2,1,1,3
+"settings.Records.bestTimeMs(String, String)",2,1,1,3
+"settings.Records.cpuWins(String, String)",1,1,1,2
+settings.Records.formatTime(int),0,1,1,1
+settings.Records.get(),0,1,1,1
+settings.Records.key(String),0,1,1,1
+settings.Records.load(),2,2,2,3
+settings.Records.save(),1,1,2,2
+"settings.Records.scoreKey(String, String)",0,1,1,1
+settings.Records.scoreKeyForGameName(String),2,5,1,5
+settings.Records.sprintKey(int),0,1,1,1
+"settings.Records.submitScore(String, int)",3,3,1,4
+"settings.Records.submitTime(String, int)",3,3,1,4
+"settings.Settings.Action.Action(String, int)",0,1,1,1
+"settings.Settings.ColorMode.ColorMode(String, int[])",0,1,1,1
+"settings.Settings.Difficulty.Difficulty(String, double, int)",0,1,1,1
+settings.Settings.Settings(),0,1,1,1
+settings.Settings.addListener(Runnable),1,1,2,2
+settings.Settings.arrMs(),0,1,1,1
+settings.Settings.bgmGain(),1,1,1,2
+settings.Settings.bgmVolume(),0,1,1,1
+settings.Settings.changed(),2,2,2,3
+"settings.Settings.clamp(int, int, int)",0,1,1,1
+settings.Settings.colorMode(),0,1,1,1
+settings.Settings.createProfile(String),3,2,5,6
+settings.Settings.currentProfile(),0,1,1,1
+settings.Settings.dasMs(),0,1,1,1
+settings.Settings.defaultKeys(),1,1,2,2
+settings.Settings.deleteProfile(String),3,2,3,4
+settings.Settings.difficulty(),0,1,1,1
+settings.Settings.get(),0,1,1,1
+settings.Settings.ghostPiece(),0,1,1,1
+settings.Settings.gravityMs(int),0,1,1,1
+settings.Settings.ihs(),0,1,1,1
+settings.Settings.irs(),0,1,1,1
+settings.Settings.isReserved(int),1,1,1,3
+settings.Settings.keyOf(Action),0,1,1,1
+settings.Settings.keyText(Action),0,1,1,1
+settings.Settings.load(),9,4,6,8
+settings.Settings.lockDelayMs(int),0,1,1,1
+settings.Settings.masterVolume(),0,1,1,1
+settings.Settings.minoColor(Tetromino),0,1,1,1
+settings.Settings.muteWhenUnfocused(),0,1,1,1
+settings.Settings.muted(),0,1,1,1
+"settings.Settings.parseEnum(Class<E>, String, E)",2,1,2,3
+"settings.Settings.parseInt(String, int)",2,1,2,3
+settings.Settings.pressed(Action),0,1,1,1
+settings.Settings.profileNames(),0,1,1,1
+settings.Settings.released(Action),0,1,1,1
+settings.Settings.removeListener(Runnable),0,1,1,1
+settings.Settings.resetAllExceptKeys(),0,1,1,1
+settings.Settings.resetKeys(),0,1,1,1
+settings.Settings.save(),4,1,4,4
+settings.Settings.sdf(),0,1,1,1
+settings.Settings.setArrMs(int),0,1,1,1
+settings.Settings.setBgmVolume(int),0,1,1,1
+settings.Settings.setColorMode(ColorMode),0,1,1,1
+settings.Settings.setDasMs(int),0,1,1,1
+settings.Settings.setDifficulty(Difficulty),0,1,1,1
+settings.Settings.setGhostPiece(boolean),0,1,1,1
+settings.Settings.setIhs(boolean),0,1,1,1
+settings.Settings.setIrs(boolean),0,1,1,1
+"settings.Settings.setKey(Action, int)",5,4,4,5
+settings.Settings.setMasterVolume(int),0,1,1,1
+settings.Settings.setMuteWhenUnfocused(boolean),0,1,1,1
+settings.Settings.setMuted(boolean),0,1,1,1
+settings.Settings.setSdf(int),0,1,1,1
+settings.Settings.setSfxVolume(int),0,1,1,1
+settings.Settings.setShowGrid(boolean),0,1,1,1
+settings.Settings.setSpawnDelayMs(int),0,1,1,1
+settings.Settings.sfxGain(),1,1,1,2
+settings.Settings.sfxVolume(),0,1,1,1
+settings.Settings.showGrid(),0,1,1,1
+settings.Settings.softDropGravityMs(int),0,1,1,1
+settings.Settings.spawnDelayMs(),0,1,1,1
+settings.Settings.startLevel(),0,1,1,1
+settings.Settings.switchProfile(String),1,2,1,2
+settings.Settings.toDecibel(float),1,1,2,2
+shop.Mission.Metric.Metric(boolean),0,1,1,1
+"shop.Mission.Mission(String, Metric, int)",0,1,1,1
+shop.MissionTracker.MissionTracker(Game),0,1,1,1
+shop.MissionTracker.checkPeaks(),0,1,1,1
+shop.MissionTracker.onBeforeSpawn(),0,1,1,1
+shop.MissionTracker.onGameOver(),0,1,1,1
+shop.MissionTracker.onGoalReached(),0,1,1,1
+shop.MissionTracker.onHardDrop(),0,1,1,1
+shop.MissionTracker.onLinesCleared(int),1,1,2,2
+shop.MissionTracker.onLock(Tetromino),0,1,1,1
+shop.PlayerData.PlayerData(),0,1,1,1
+shop.PlayerData.addCoins(int),0,1,1,1
+shop.PlayerData.addToastListener(Toast),0,1,1,1
+shop.PlayerData.buy(ShopItem),3,2,3,4
+shop.PlayerData.coins(),0,1,1,1
+shop.PlayerData.ensureWeek(),2,2,2,3
+shop.PlayerData.equip(ShopItem),2,2,1,3
+shop.PlayerData.equipped(Type),2,1,2,3
+shop.PlayerData.get(),0,1,1,1
+"shop.PlayerData.getInt(String, int)",1,1,1,2
+shop.PlayerData.isDone(Mission),0,1,1,1
+shop.PlayerData.k(String),0,1,1,1
+shop.PlayerData.load(),2,2,2,3
+shop.PlayerData.owns(ShopItem),4,4,2,4
+shop.PlayerData.p(),0,1,1,1
+shop.PlayerData.progress(Mission),0,1,1,1
+"shop.PlayerData.record(Metric, int)",13,5,7,10
+shop.PlayerData.removeToastListener(Toast),0,1,1,1
+shop.PlayerData.save(),1,1,2,2
+shop.PlayerData.toast(String),1,1,2,2
+shop.PlayerData.weeklyStatus(),3,1,2,3
+"shop.ShopItem.ShopItem(String, Type, int, Color[])",0,1,1,1
+"shop.ShopItem.byName(String, Type)",2,2,1,3
+shop.ShopItem.defaultOf(Type),1,1,1,2
+shop.ShopItem.isFree(),0,1,1,1
+shop.ThemeManager.ThemeManager(),0,1,1,1
+"shop.ThemeManager.applyMinoSkin(BufferedImage[], ToIntFunction<Tetromino>)",3,3,2,4
+shop.ThemeManager.background(ShopItem),0,1,1,1
+"shop.ThemeManager.paintBackground(Graphics2D, int, int)",1,2,1,2
+"shop.ThemeManager.paintPreview(Graphics2D, ShopItem, int, int, int, int)",2,1,2,2
+shop.ThemeManager.previewTiles(ShopItem),4,1,3,4
+shop.ThemeManager.render(ShopItem),29,1,16,18
+"shop.ThemeManager.tint(BufferedImage, Color)",6,1,3,4
+"shop.ToastOverlay.Entry.Entry(String, long)",0,1,1,1
+shop.ToastOverlay.attach(),0,1,1,1
+shop.ToastOverlay.detach(),0,1,1,1
+"shop.ToastOverlay.draw(Graphics2D, int, Font)",3,1,2,3
+shop.ToastOverlay.show(String),0,1,1,1
+shop.WeeklyMissions.WeeklyMissions(),0,1,1,1
+shop.WeeklyMissions.current(),0,1,1,1
+shop.WeeklyMissions.currentWeekId(),0,1,1,1
+shop.WeeklyMissions.forWeek(int),10,5,3,6
+"tutorial.TutorialController.TutorialController(Game, GamePanel)",0,1,1,1
+tutorial.TutorialController.applyCurrentStep(),0,1,1,1
+tutorial.TutorialController.checkStepCompletion(),4,1,3,3
+tutorial.TutorialController.finish(),0,1,1,1
+tutorial.TutorialController.onGameOver(),2,1,2,3
+tutorial.TutorialController.onLinesCleared(int),2,1,2,3
+"tutorial.TutorialController.onMove(int, int)",2,1,2,3
+tutorial.TutorialController.onRotate(int),2,1,2,3
+tutorial.TutorialController.setCompletionCallback(Runnable),1,1,1,2
+tutorial.TutorialController.start(),1,1,2,2
+tutorial.TutorialOverlayRenderer.TutorialOverlayRenderer(Font),0,1,1,1
+tutorial.TutorialOverlayRenderer.accept(Graphics2D),1,1,1,2
+"tutorial.TutorialOverlayRenderer.drawWrappedMessage(Graphics2D, String, int, int, int)",9,1,6,7
+tutorial.TutorialOverlayRenderer.showComplete(),0,1,1,1
+"tutorial.TutorialOverlayRenderer.showStep(int, int, String)",0,1,1,1
+"tutorial.TutorialStep.TutorialStep(String, Set<String>, boolean, boolean, PieceGenerator, Goal)",0,1,1,1
+tutorial.TutorialStep.clearLine(),0,1,1,1
+tutorial.TutorialStep.isComplete(),3,1,1,6
+tutorial.TutorialStep.move(),0,1,1,1
+tutorial.TutorialStep.onLinesCleared(int),2,1,1,3
+"tutorial.TutorialStep.onMove(int, int)",4,2,1,5
+tutorial.TutorialStep.onRotate(int),3,2,1,4
+tutorial.TutorialStep.rotate(),0,1,1,1
+ui.CpuSelectPanel.CpuSelectPanel(ScreenManager),4,1,3,4
+"ui.CpuSelectPanel.buttonAt(int, int)",3,3,2,3
+ui.CpuSelectPanel.drawDifficultyNotes(Graphics2D),1,1,2,2
+ui.CpuSelectPanel.paintComponent(Graphics),3,1,2,3
+"ui.CpuSelectPanel.updateHover(int, int)",1,1,2,2
+ui.GamePanel.GamePanel(),0,1,1,1
+ui.GamePanel.GamePanel(Game),0,1,1,1
+"ui.GamePanel.GamePanel(Game, String)",17,1,9,10
+ui.GamePanel.activateHeldKey(String),1,2,1,2
+"ui.GamePanel.bind(Action, String, Runnable)",11,3,5,8
+"ui.GamePanel.bindGameOverNavigation(String, int)",5,1,4,5
+"ui.GamePanel.bindHeld(Action, Runnable)",10,1,4,5
+"ui.GamePanel.bindInitial(Action, String, Runnable)",9,1,5,7
+"ui.GamePanel.bindPauseNavigation(String, int)",4,1,4,4
+"ui.GamePanel.bindUnfiltered(String, String, Runnable)",0,1,1,1
+ui.GamePanel.clearHeldKeys(),0,1,1,1
+ui.GamePanel.configureOverlayButtons(),1,1,2,2
+ui.GamePanel.confirmGameOverSelection(),2,1,2,2
+ui.GamePanel.confirmPauseSelection(),4,1,5,5
+ui.GamePanel.drawBoard(Graphics2D),18,1,7,9
+"ui.GamePanel.drawCell(Graphics2D, int, int, Tetromino, boolean)",1,1,2,2
+"ui.GamePanel.drawCentered(Graphics2D, String, int, int)",0,1,1,1
+ui.GamePanel.drawCountdown(Graphics2D),0,1,1,1
+ui.GamePanel.drawGameOver(Graphics2D),11,1,7,7
+"ui.GamePanel.drawGarbageCell(Graphics2D, int, int)",0,1,1,1
+ui.GamePanel.drawMatrixPreviews(Graphics2D),2,1,3,3
+"ui.GamePanel.drawMiniCell(Graphics2D, int, int, int, Tetromino)",0,1,1,1
+ui.GamePanel.drawPauseOverlay(Graphics2D),5,1,2,4
+"ui.GamePanel.drawPiece(Graphics2D, Tetromino, int, int, int, boolean)",4,3,2,4
+"ui.GamePanel.drawPreviewPiece(Graphics2D, Tetromino, int, int, int, int, int)",2,1,3,3
+ui.GamePanel.handlePauseInput(Action),1,1,2,2
+"ui.GamePanel.initialKeyAllowed(Action, String)",2,1,3,3
+ui.GamePanel.loadImage(String),1,1,1,2
+ui.GamePanel.loadMinoTiles(String),7,2,5,7
+ui.GamePanel.minoTileIndex(Tetromino),1,1,1,8
+ui.GamePanel.oppositeMoveHeld(Action),3,1,4,4
+ui.GamePanel.paintComponent(Graphics),4,1,5,5
+ui.GamePanel.releaseHeldKey(String),6,1,7,7
+ui.GamePanel.selectGameOverOption(int),0,1,1,1
+ui.GamePanel.setHomeCallback(Runnable),1,1,1,2
+ui.GamePanel.setInputFilter(InputFilter),0,1,1,1
+ui.GamePanel.setOverlayRenderer(Consumer<Graphics2D>),0,1,1,1
+ui.GamePanel.setPauseRestartCallback(Runnable),0,1,1,1
+ui.GamePanel.setPaused(boolean),3,2,2,3
+ui.GamePanel.stop(),0,1,1,1
+ui.GamePanel.tickHeldKeys(int),23,4,9,9
+"ui.GamePanel.tint(BufferedImage, Color)",6,1,3,4
+ui.GamePanel.updateGameOverButtonStyle(),7,1,2,5
+ui.GamePanel.updateInitialInputs(),9,1,3,7
+ui.GamePanel.updateOverlayButtons(),2,1,1,3
+ui.HomePanel.HomePanel(ScreenManager),3,1,2,3
+"ui.HomePanel.buttonAt(int, int)",3,3,2,3
+ui.HomePanel.loadImage(String),2,2,1,3
+ui.HomePanel.paintComponent(Graphics),1,1,2,2
+"ui.HomePanel.updateHover(int, int)",1,1,2,2
+"ui.LabelUI.LabelUI(Game, Font, Font, Font, Font, Font, Image, ...)",0,1,1,1
+ui.LabelUI.drawGameNamePanel(Graphics2D),0,1,1,1
+ui.LabelUI.drawLineLabel(Graphics2D),1,1,2,2
+ui.LabelUI.drawPpsLabel(Graphics2D),1,1,2,2
+ui.LabelUI.drawScoreLabel(Graphics2D),1,2,1,2
+ui.LabelUI.drawScoreValueLabel(Graphics2D),0,1,1,1
+ui.LabelUI.drawTimeLabel(Graphics2D),2,1,3,3
+ui.MenuFonts.MenuFonts(),0,1,1,1
+ui.MenuFonts.loadBlack(),1,1,1,2
+ui.MenuFonts.loadBold(),1,1,1,2
+ui.MenuFonts.loadKRBlack(),1,1,1,2
+ui.MenuFonts.loadMedium(),1,1,1,2
+ui.MenuFonts.loadOrbitBlack(),1,1,1,2
+ui.MenuFonts.loadOrbitBold(),1,1,1,2
+ui.MenuFonts.loadPressStart2P(),1,1,1,2
+"ui.MenuNavigation.MenuNavigation(JPanel, List<TetrisBlockButton>, Runnable)",0,1,1,1
+"ui.MenuNavigation.MenuNavigation(JPanel, List<TetrisBlockButton>, Runnable, Runnable)",8,2,4,7
+"ui.MenuNavigation.bind(String, Runnable)",2,1,2,2
+ui.MenuNavigation.firstEnabled(),0,1,1,1
+ui.MenuNavigation.height(TetrisBlockButton),0,1,1,1
+ui.MenuNavigation.highlightedButton(TetrisBlockButton),1,1,1,2
+"ui.MenuNavigation.move(int, int)",15,5,10,15
+ui.MenuNavigation.refresh(),0,1,1,1
+ui.MenuNavigation.useMouse(TetrisBlockButton),2,1,1,3
+ui.MenuNavigation.width(TetrisBlockButton),1,1,2,2
+ui.ModeSelectPanel.ModeSelectPanel(ScreenManager),3,1,2,4
+"ui.ModeSelectPanel.buttonAt(int, int)",3,3,2,3
+ui.ModeSelectPanel.buttonWidth(TetrisBlockButton),1,1,2,2
+"ui.ModeSelectPanel.layoutModes(String[][], Color[])",11,2,5,6
+ui.ModeSelectPanel.paintComponent(Graphics),7,1,6,6
+ui.ModeSelectPanel.updateDescription(),6,4,4,4
+"ui.ModeSelectPanel.updateHover(int, int)",0,1,1,1
+ui.RecordsPanel.RecordsPanel(ScreenManager),3,1,3,3
+"ui.RecordsPanel.bind(String, Runnable)",2,1,2,2
+"ui.RecordsPanel.cell(Graphics2D, int, int, String)",0,1,1,1
+"ui.RecordsPanel.center(Graphics2D, Font, String, int, int)",0,1,1,1
+ui.RecordsPanel.hover(MouseEvent),1,1,2,2
+ui.RecordsPanel.paintComponent(Graphics),19,1,8,12
+ui.RecordsPanel.score(int),1,1,2,2
+ui.RecordsPanel.scrollBy(int),0,1,1,1
+"ui.RecordsPanel.shorten(Graphics2D, String, int)",3,2,3,4
+ui.SettingsPanel.SettingsPanel(ScreenManager),0,1,1,1
+"ui.SettingsPanel.beginKeyWait(Action, JButton)",0,1,1,1
+ui.SettingsPanel.build(),2,1,2,2
+ui.SettingsPanel.button(String),0,1,1,1
+ui.SettingsPanel.cancelKeyWait(),1,1,2,2
+ui.SettingsPanel.card(String),0,1,1,1
+"ui.SettingsPanel.check(String, boolean, Consumer<Boolean>)",0,1,1,1
+ui.SettingsPanel.displaySection(),2,1,2,2
+ui.SettingsPanel.gameplaySection(),0,1,1,1
+ui.SettingsPanel.keySection(),20,5,9,11
+ui.SettingsPanel.label(String),0,1,1,1
+ui.SettingsPanel.loadFont(),1,1,1,2
+ui.SettingsPanel.rebuild(),0,1,1,1
+ui.SettingsPanel.refreshKeyButtons(),1,1,2,2
+ui.SettingsPanel.refreshProfiles(),1,1,2,2
+"ui.SettingsPanel.row(String, JComponent)",0,1,1,1
+"ui.SettingsPanel.slider(String, IntSupplier, IntConsumer)",0,1,1,1
+"ui.SettingsPanel.slider(String, IntSupplier, IntConsumer, int, int)",0,1,1,1
+ui.SettingsPanel.soundSection(),0,1,1,1
+ui.ShopPanel.ShopPanel(ScreenManager),3,2,3,3
+ui.ShopPanel.Tab.Tab(String),0,1,1,1
+"ui.ShopPanel.bind(String, Runnable)",2,1,2,2
+ui.ShopPanel.buyRect(int),0,1,1,1
+ui.ShopPanel.cardRect(int),0,1,1,1
+"ui.ShopPanel.centerText(Graphics2D, Font, String, int, int)",0,1,1,1
+ui.ShopPanel.drawItems(Graphics2D),14,1,6,8
+ui.ShopPanel.drawMissions(Graphics2D),11,1,4,7
+ui.ShopPanel.goBack(),0,1,1,1
+ui.ShopPanel.handleClick(Point),13,9,6,9
+ui.ShopPanel.itemsOfTab(),4,1,3,4
+"ui.ShopPanel.notice(String, Color)",0,1,1,1
+ui.ShopPanel.paintComponent(Graphics),12,1,4,8
+ui.ShopPanel.switchTab(int),0,1,1,1
+ui.ShopPanel.tabRect(int),0,1,1,1
+ui.ShopPanel.updateHover(Point),11,1,5,9
+"ui.TetrisBlockButton.TetrisBlockButton(String, String[], Color, int, int, int, Runnable, ...)",0,1,1,1
+"ui.TetrisBlockButton.contains(int, int)",0,1,1,1
+"ui.TetrisBlockButton.draw(Graphics2D, boolean, boolean, Font, int)",33,4,12,19
+"ui.TetrisBlockButton.hasCell(int, int)",1,1,5,5
+"ui.TetrisBlockButton.mix(Color, Color, float)",0,1,1,1
+ui.TetrisBlockButton.occupiedCells(int),3,1,2,3
+"ui.TetrisBlockButton.scale(Color, float)",0,1,1,1
+ui.TetrisBlockButton.widestRow(),3,1,2,3
+windowGainedFocus(WindowEvent),0,n/a,n/a,n/a
+windowLostFocus(WindowEvent),0,n/a,n/a,n/a
+
+Class,OCavg,OCmax,WMC
+app.Main,1.00,1,3
+app.ScreenManager,1.42,3,17
+audio.AudioManager,1.97,6,63
+battle.BattleGame,1.73,6,57
+battle.BattleGame.State,n/a,n/a,0
+battle.BattleGame.WinReason,n/a,n/a,0
+battle.BattleGame.Winner,n/a,n/a,0
+battle.BattlePanel,2.43,9,168
+battle.BotBrain,3.17,9,19
+battle.BotBrain.Difficulty,1.00,1,3
+battle.BotBrain.Plan,1.00,1,1
+battle.BotController,2.67,11,16
+battle.GarbageQueue,1.00,1,7
+game.Board,3.40,7,51
+game.FixedPieceGenerator,1.00,1,2
+game.Game,2.87,17,135
+game.ScoreManager,3.62,11,29
+game.ScoreManager.Spin,n/a,n/a,0
+game.Tetromino,1.00,1,2
+mode.ClassicMode,1.25,2,5
+mode.ComingSoonMode,1.00,1,5
+mode.GameModes,1.00,1,2
+mode.SprintMode,1.25,2,5
+mode.TopOutRunMode,1.25,1,5
+mode.TopOutRunMode.RiseListener,1.50,2,6
+mode.UltraMode,1.25,2,5
+mode.VsCpuMode,1.00,1,4
+settings.Records,1.76,6,30
+settings.Settings,1.40,7,87
+settings.Settings.Action,1.00,1,1
+settings.Settings.ColorMode,1.00,1,1
+settings.Settings.Difficulty,1.00,1,1
+shop.Mission,1.00,1,1
+shop.Mission.Metric,1.00,1,1
+shop.MissionTracker,1.12,2,9
+shop.PlayerData,2.10,9,44
+shop.ShopItem,1.50,2,6
+shop.ShopItem.Type,n/a,n/a,0
+shop.ThemeManager,4.50,19,36
+shop.ToastOverlay,1.50,3,6
+shop.ToastOverlay.Entry,1.00,1,1
+shop.WeeklyMissions,2.25,6,9
+tutorial.TutorialController,1.80,3,18
+tutorial.TutorialOverlayRenderer,2.20,6,11
+tutorial.TutorialStep,1.88,4,15
+tutorial.TutorialStep.Goal,n/a,n/a,0
+ui.CpuSelectPanel,1.80,3,18
+ui.GamePanel,2.30,9,152
+ui.HomePanel,1.60,3,16
+ui.LabelUI,1.57,2,11
+ui.MenuFonts,1.00,1,8
+ui.MenuNavigation,2.27,7,25
+ui.ModeSelectPanel,2.33,6,28
+ui.RecordsPanel,2.00,11,32
+ui.SettingsPanel,1.59,5,35
+ui.ShopPanel,2.81,9,59
+ui.ShopPanel.Tab,1.00,1,1
+ui.TetrisBlockButton,3.38,16,27
+
+Package,v(G)avg,v(G)tot
+app,1.38,18
+audio,2.47,79
+battle,3.18,302
+game,3.35,298
+mode,1.23,38
+settings,1.68,138
+shop,2.29,119
+tutorial,2.43,56
+ui,3.14,436
+
+Module,v(G)avg,v(G)tot
+tetris2026,2.67,"1,484"
+
+Project,v(G)avg,v(G)tot
+project,2.67,"1,484"
+

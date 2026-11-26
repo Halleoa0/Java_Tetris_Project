@@ -1,0 +1,654 @@
+Lines of code metrics,목, 26 11월 2026 00:01:13 KST
+Method,CLOC,JLOC,LOC,NCLOC,RLOC
+app.Main.main(String[]),8,0,22,19,88.00%
+app.ScreenManager.ScreenManager(),1,1,9,8,6.43%
+app.ScreenManager.refreshDisplay(),1,1,5,4,3.57%
+app.ScreenManager.removeActiveGame(),1,1,15,14,10.71%
+app.ScreenManager.showCpuSelect(),1,1,7,6,5.00%
+app.ScreenManager.showHome(),1,1,6,5,4.29%
+app.ScreenManager.showModeSelect(),1,1,7,6,5.00%
+app.ScreenManager.showRecords(),1,1,11,10,7.86%
+app.ScreenManager.showSettings(),1,1,10,9,7.14%
+app.ScreenManager.showShop(),1,1,11,10,7.86%
+app.ScreenManager.startBattle(Difficulty),10,1,12,11,8.57%
+"app.ScreenManager.startGame(Game, String)",12,3,14,11,10.00%
+app.ScreenManager.startTutorial(),3,1,16,15,11.43%
+audio.AudioManager.AudioManager(),2,0,11,9,4.30%
+"audio.AudioManager.applyVolumeToClip(Clip, float)",1,1,7,6,2.73%
+audio.AudioManager.calculateBgmGain(),1,1,5,4,1.95%
+audio.AudioManager.canOutputMusic(),0,0,4,4,1.56%
+audio.AudioManager.canOutputSounds(),0,0,4,4,1.56%
+audio.AudioManager.chooseRandomGameBgm(),1,1,14,13,5.47%
+audio.AudioManager.get(),0,0,1,1,0.39%
+audio.AudioManager.loadBgm(String),2,1,16,14,6.25%
+"audio.AudioManager.loadClip(String, String)",3,1,17,15,6.64%
+audio.AudioManager.onBgmFinished(),1,1,10,9,3.91%
+audio.AudioManager.pauseBgm(),1,1,7,6,2.73%
+"audio.AudioManager.playBgmInternal(String, boolean)",2,1,18,16,7.03%
+audio.AudioManager.playGameOver(),1,1,5,4,1.95%
+audio.AudioManager.playHardDrop(),1,1,2,1,0.78%
+audio.AudioManager.playHold(),1,1,2,1,0.78%
+audio.AudioManager.playLevelUpDelayed(),1,1,7,6,2.73%
+audio.AudioManager.playLineClear(int),1,1,5,4,1.95%
+audio.AudioManager.playLock(),1,1,2,1,0.78%
+audio.AudioManager.playMenuBgm(),1,1,5,4,1.95%
+audio.AudioManager.playMenuSelect(),1,1,2,1,0.78%
+audio.AudioManager.playMove(),1,1,2,1,0.78%
+audio.AudioManager.playRotate(),1,1,2,1,0.78%
+audio.AudioManager.playSoftDrop(),1,1,2,1,0.78%
+audio.AudioManager.playSound(String),1,1,10,9,3.91%
+"audio.AudioManager.playSoundWithInterval(String, int)",1,1,8,7,3.12%
+audio.AudioManager.playTutorialBgm(),1,1,5,4,1.95%
+audio.AudioManager.playTutorialClear(),1,1,2,1,0.78%
+audio.AudioManager.refreshVolume(),1,1,14,13,5.47%
+audio.AudioManager.resumeBgm(),1,1,7,6,2.73%
+audio.AudioManager.setWindowActive(boolean),1,1,5,4,1.95%
+audio.AudioManager.startGameBgm(),1,1,5,4,1.95%
+audio.AudioManager.stopBgm(),1,1,8,7,3.12%
+battle.BattleGame.BattleGame(Difficulty),1,0,7,7,2.69%
+battle.BattleGame.finishRound(),1,1,14,13,5.38%
+battle.BattleGame.getBotTotalAttack(),0,0,1,1,0.38%
+battle.BattleGame.getBotWins(),0,0,1,1,0.38%
+battle.BattleGame.getCurrentRound(),0,0,1,1,0.38%
+battle.BattleGame.getMatchWinner(),0,0,1,1,0.38%
+battle.BattleGame.getPlayerTotalAttack(),0,0,1,1,0.38%
+battle.BattleGame.getPlayerWins(),0,0,1,1,0.38%
+battle.BattleGame.getRoundTimer(),0,0,1,1,0.38%
+battle.BattleGame.getRoundWinner(),0,0,1,1,0.38%
+battle.BattleGame.getState(),1,0,2,1,0.77%
+battle.BattleGame.getWinReason(),0,0,1,1,0.38%
+battle.BattleGame.isHurryUp(),1,1,4,3,1.54%
+battle.BattleGame.nextRound(),1,1,7,6,2.69%
+battle.BattleGame.onBotKnockedOut(),1,1,7,6,2.69%
+battle.BattleGame.onPlayerKnockedOut(),1,1,7,6,2.69%
+battle.BattleGame.onTargetScoreReached(Winner),1,1,12,11,4.62%
+battle.BattleGame.onTimeOut(),2,1,27,25,10.38%
+battle.BattleGame.pause(),1,1,4,3,1.54%
+battle.BattleGame.resume(),1,1,6,5,2.31%
+battle.BattleGame.setupGameListeners(),18,1,71,56,27.31%
+battle.BattleGame.startMatch(),1,1,8,7,3.08%
+battle.BattleGame.startRound(),3,1,18,17,6.92%
+battle.BattleGame.stop(),1,1,4,3,1.54%
+battle.BattleGame.tick(int),3,1,17,15,6.54%
+battle.BattlePanel.BattlePanel(Difficulty),11,0,68,61,8.92%
+battle.BattlePanel.activateHeldKey(String),1,0,7,7,0.92%
+battle.BattlePanel.applyBufferedSpawnInputs(),2,1,23,21,3.02%
+"battle.BattlePanel.bind(Action, Runnable)",2,0,21,21,2.76%
+"battle.BattlePanel.bindHeld(Action, Runnable)",1,1,21,20,2.76%
+"battle.BattlePanel.bindInitial(Action, Runnable)",2,1,25,24,3.28%
+battle.BattlePanel.bindKeys(),7,1,35,28,4.59%
+battle.BattlePanel.bindMouse(),5,1,25,23,3.28%
+"battle.BattlePanel.bindPauseNavigation(String, int)",0,0,18,18,2.36%
+"battle.BattlePanel.bindUnfiltered(String, String, Runnable)",0,0,9,9,1.18%
+battle.BattlePanel.bufferSpawnInput(Action),1,1,13,12,1.71%
+battle.BattlePanel.clearBufferedSpawnInputs(),1,1,8,7,1.05%
+battle.BattlePanel.clearHeldKeys(),1,1,10,9,1.31%
+battle.BattlePanel.confirmPauseSelection(),6,1,22,21,2.89%
+battle.BattlePanel.confirmResult(),2,1,7,6,0.92%
+"battle.BattlePanel.drawAttackLabel(Graphics2D, int)",1,1,8,7,1.05%
+"battle.BattlePanel.drawBoard(Graphics2D, Game)",6,2,23,19,3.02%
+battle.BattlePanel.drawCenterInfo(Graphics2D),2,1,14,12,1.84%
+"battle.BattlePanel.drawCenterLabel(Graphics2D, String, String, int, Color)",1,1,9,8,1.18%
+"battle.BattlePanel.drawCentered(Graphics2D, String, int)",1,1,4,3,0.52%
+"battle.BattlePanel.drawClickableText(Graphics2D, String, int, int)",2,1,9,8,1.18%
+"battle.BattlePanel.drawGarbageBar(Graphics2D, int, int, int)",1,1,11,10,1.44%
+battle.BattlePanel.drawMatchOver(Graphics2D),1,1,6,5,0.79%
+"battle.BattlePanel.drawMatrixPreviews(Graphics2D, Game)",1,0,10,9,1.31%
+battle.BattlePanel.drawPauseOverlay(Graphics2D),2,1,26,24,3.41%
+"battle.BattlePanel.drawPiece(Graphics2D, Tetromino, int, int, int, boolean)",1,0,9,8,1.18%
+"battle.BattlePanel.drawPreviewPiece(Graphics2D, Tetromino, int, int, int, int, int)",1,0,16,15,2.10%
+"battle.BattlePanel.drawResultBox(Graphics2D, String, String, String)",3,2,19,16,2.49%
+battle.BattlePanel.drawRoundOver(Graphics2D),1,1,11,10,1.44%
+"battle.BattlePanel.drawSide(Graphics2D, int, LabelUI, Game, GarbageQueue, int)",8,2,18,15,2.36%
+"battle.BattlePanel.drawTile(Graphics2D, int, int, int)",1,0,4,3,0.52%
+battle.BattlePanel.goHome(),1,1,6,5,0.79%
+battle.BattlePanel.loadImage(String),1,1,8,7,1.05%
+battle.BattlePanel.loadMinoTiles(String),3,1,24,22,3.15%
+battle.BattlePanel.minoTileIndex(Tetromino),0,0,11,11,1.44%
+battle.BattlePanel.oppositeMoveHeld(Action),0,0,4,4,0.52%
+battle.BattlePanel.paintComponent(Graphics),5,0,22,19,2.89%
+battle.BattlePanel.pauseOptionAt(Point),1,1,7,6,0.92%
+battle.BattlePanel.quickRestart(),1,1,6,5,0.79%
+battle.BattlePanel.releaseHeldKey(String),1,0,11,10,1.44%
+battle.BattlePanel.setHomeCallback(Runnable),0,0,3,3,0.39%
+battle.BattlePanel.setPaused(boolean),2,1,16,15,2.10%
+battle.BattlePanel.start(),1,1,8,7,1.05%
+battle.BattlePanel.stop(),1,1,6,5,0.79%
+battle.BattlePanel.tickHeldKeys(int),2,1,30,28,3.94%
+"battle.BattlePanel.tint(BufferedImage, Color)",1,1,18,17,2.36%
+battle.BattlePanel.updateInitialInputs(),1,1,7,6,0.92%
+battle.BotBrain.BotBrain(Difficulty),0,0,1,1,0.93%
+"battle.BotBrain.Difficulty.Difficulty(String, float, double)",0,0,5,5,26.32%
+battle.BotBrain.Difficulty.msPerPiece(),1,1,2,1,10.53%
+battle.BotBrain.Difficulty.stepDelayMs(),1,1,2,1,10.53%
+"battle.BotBrain.Plan.Plan(boolean, int, int, double)",0,0,6,6,46.15%
+"battle.BotBrain.bestPlanFor(Board, Tetromino, int, boolean)",9,2,26,20,24.30%
+"battle.BotBrain.evaluate(Board, Tetromino, int, int, int)",12,1,20,16,18.69%
+battle.BotBrain.findBestPlan(Game),3,1,12,9,11.21%
+battle.BotBrain.getDifficulty(),0,0,1,1,0.93%
+battle.BotBrain.maxHeight(Board),1,1,6,5,5.61%
+"battle.BotController.BotController(Game, BotBrain)",0,0,5,5,7.81%
+battle.BotController.drop(),3,1,6,5,9.38%
+battle.BotController.onTick(),10,1,30,25,46.88%
+battle.BotController.reset(),1,1,5,4,7.81%
+battle.BotController.start(),2,1,5,4,7.81%
+battle.BotController.stop(),1,1,2,1,3.12%
+battle.GarbageQueue.addGarbage(int),1,1,5,4,15.15%
+battle.GarbageQueue.cancel(int),3,2,7,5,21.21%
+battle.GarbageQueue.clear(),1,1,2,1,6.06%
+battle.GarbageQueue.getHoleCol(),0,0,1,1,3.03%
+battle.GarbageQueue.getPendingCount(),0,0,1,1,3.03%
+battle.GarbageQueue.hasPending(),0,0,1,1,3.03%
+battle.GarbageQueue.popGarbage(int),1,1,6,5,18.18%
+"game.Board.canPlace(Tetromino, int, int, int)",7,2,11,8,7.43%
+game.Board.clear(),1,1,5,4,3.38%
+game.Board.clearLines(),11,1,17,16,11.49%
+game.Board.columnHeight(int),3,1,7,6,4.73%
+game.Board.columnTransitions(),4,2,15,13,10.14%
+game.Board.copy(),2,2,7,5,4.73%
+"game.Board.get(int, int)",1,0,2,1,1.35%
+game.Board.holeCount(),3,1,12,11,8.11%
+game.Board.isEmpty(),1,1,5,4,3.38%
+"game.Board.isGarbageCell(int, int)",1,0,2,1,1.35%
+"game.Board.lock(Tetromino, int, int, int)",2,2,11,9,7.43%
+"game.Board.occupied(int, int)",1,0,2,1,1.35%
+game.Board.pushGarbageRow(int),8,1,16,14,10.81%
+game.Board.rowTransitions(),3,1,14,13,9.46%
+game.Board.totalHeight(),1,1,6,5,4.05%
+game.FixedPieceGenerator.FixedPieceGenerator(Tetromino),0,0,1,1,14.29%
+game.FixedPieceGenerator.next(),0,0,1,1,14.29%
+game.Game.Game(),1,1,2,1,0.48%
+game.Game.Game(PieceGenerator),1,1,4,3,0.96%
+"game.Game.Game(PieceGenerator, int, int, int)",1,1,8,7,1.93%
+game.Game.Game(int),1,1,2,1,0.48%
+"game.Game.Game(int, int)",1,1,2,1,0.48%
+game.Game.addGarbageRow(int),1,1,4,3,0.96%
+game.Game.addListener(GameListener),0,0,1,1,0.24%
+game.Game.afterPlayerMove(),1,1,5,4,1.20%
+game.Game.calPPS(),0,0,4,4,0.96%
+"game.Game.calculateAttackLines(int, Spin, boolean, boolean, int)",2,1,26,24,6.27%
+game.Game.countdownSeconds(),1,1,2,1,0.48%
+game.Game.displayTimeSeconds(),1,1,5,4,1.20%
+game.Game.drawPiece(),2,1,10,8,2.41%
+game.Game.elapsedTimeMs(),1,1,2,1,0.48%
+game.Game.enterPiece(),1,0,7,6,1.69%
+game.Game.goalReached(),1,1,2,1,0.48%
+game.Game.hardDrop(),1,1,8,7,1.93%
+game.Game.hold(),1,1,8,7,1.93%
+"game.Game.isCornerOccupied(int, int)",0,0,4,4,0.96%
+game.Game.isCountingDown(),1,1,2,1,0.48%
+game.Game.isMiniTSpin(),0,0,12,12,2.89%
+game.Game.isSpawnDelayed(),0,0,1,1,0.24%
+game.Game.isTSpin(),0,0,6,6,1.45%
+"game.Game.kickTests(Tetromino, int, int)",2,0,24,22,5.78%
+game.Game.kicks(int...),1,0,6,5,1.45%
+game.Game.lockPiece(),7,0,41,37,9.88%
+"game.Game.move(int, int)",1,1,7,6,1.69%
+game.Game.nextPiece(),1,1,2,1,0.48%
+game.Game.notifyRotate(int),0,0,3,3,0.72%
+game.Game.preview(),1,1,2,1,0.48%
+game.Game.removeListener(GameListener),0,0,1,1,0.24%
+game.Game.restart(),1,1,14,13,3.37%
+game.Game.rotate(int),2,1,23,21,5.54%
+game.Game.setGameOver(),0,0,5,5,1.20%
+game.Game.setGoalReached(),1,1,7,6,1.69%
+game.Game.setGravityEnabled(boolean),1,1,6,5,1.45%
+"game.Game.setInitialInputs(boolean, int)",3,1,8,5,1.93%
+game.Game.setPieceGenerator(PieceGenerator),1,1,2,1,0.48%
+game.Game.setSoftDropHeld(boolean),0,0,4,4,0.96%
+game.Game.softDrop(),4,4,8,4,1.93%
+game.Game.spawnNext(),4,1,15,11,3.61%
+game.Game.spawnNextAfterLock(),0,0,5,5,1.20%
+game.Game.sprint(int),1,1,2,1,0.48%
+game.Game.swapHeldPiece(),0,0,5,5,1.20%
+game.Game.takeNextPiece(),0,0,5,5,1.20%
+game.Game.targetLines(),1,1,2,1,0.48%
+game.Game.tick(int),5,1,50,46,12.05%
+game.GameListener.onAttackSent(int),1,1,2,1,6.06%
+game.GameListener.onBeforeSpawn(),1,1,2,1,6.06%
+game.GameListener.onGameOver(),1,1,2,1,6.06%
+game.GameListener.onGoalReached(),1,1,2,1,6.06%
+game.GameListener.onHardDrop(),1,1,2,1,6.06%
+game.GameListener.onHold(),1,1,2,1,6.06%
+game.GameListener.onLevelUp(int),1,1,2,1,6.06%
+game.GameListener.onLinesCleared(int),1,1,2,1,6.06%
+game.GameListener.onLock(Tetromino),1,1,2,1,6.06%
+"game.GameListener.onMove(int, int)",1,1,2,1,6.06%
+game.GameListener.onRestart(),1,1,2,1,6.06%
+game.GameListener.onRotate(int),1,1,2,1,6.06%
+game.GameListener.onSoftDrop(),1,1,2,1,6.06%
+game.GameListener.onSpawn(),1,1,2,1,6.06%
+game.GameListener.onTick(long),1,1,2,1,6.06%
+game.PieceGenerator.next(),0,n/a,n/a,1,16.67%
+game.ScoreManager.clearLineTracking(),1,1,6,5,4.76%
+"game.ScoreManager.label(int, Spin, boolean, boolean)",0,0,24,24,19.05%
+game.ScoreManager.labelAlpha(),1,1,5,4,3.97%
+game.ScoreManager.onHardDrop(int),1,1,2,1,1.59%
+"game.ScoreManager.onLock(int, Spin, boolean)",10,7,43,31,34.13%
+game.ScoreManager.onSoftDrop(int),1,1,2,1,1.59%
+game.ScoreManager.reset(),0,0,5,5,3.97%
+game.ScoreManager.tick(int),1,1,13,12,10.32%
+game.Tetromino.Tetromino(int[][][]),0,0,1,1,2.86%
+game.Tetromino.cells(int),0,0,1,1,2.86%
+mode.ClassicMode.getDescription(),0,0,5,5,41.67%
+mode.ClassicMode.getName(),0,0,1,1,8.33%
+mode.ClassicMode.isAvailable(),0,0,1,1,8.33%
+mode.ClassicMode.start(ScreenManager),0,0,3,3,25.00%
+"mode.ComingSoonMode.ComingSoonMode(String, String)",0,0,4,4,30.77%
+mode.ComingSoonMode.getDescription(),0,0,1,1,7.69%
+mode.ComingSoonMode.getName(),0,0,1,1,7.69%
+mode.ComingSoonMode.isAvailable(),0,0,1,1,7.69%
+mode.ComingSoonMode.start(ScreenManager),0,0,1,1,7.69%
+mode.GameMode.getDescription(),0,n/a,n/a,1,14.29%
+mode.GameMode.getName(),0,n/a,n/a,1,14.29%
+mode.GameMode.isAvailable(),0,n/a,n/a,1,14.29%
+mode.GameMode.start(ScreenManager),0,n/a,n/a,1,14.29%
+mode.GameModes.GameModes(),0,0,1,1,5.88%
+mode.GameModes.all(),5,0,14,9,82.35%
+mode.SprintMode.getDescription(),0,0,5,5,33.33%
+mode.SprintMode.getName(),1,0,2,1,13.33%
+mode.SprintMode.isAvailable(),0,0,1,1,6.67%
+mode.SprintMode.start(ScreenManager),0,0,3,3,20.00%
+mode.TopOutRunMode.RiseListener.RiseListener(Game),0,0,3,3,11.11%
+mode.TopOutRunMode.RiseListener.onBeforeSpawn(),0,0,6,6,22.22%
+mode.TopOutRunMode.RiseListener.onRestart(),0,0,4,4,14.81%
+mode.TopOutRunMode.RiseListener.onTick(long),0,0,7,7,25.93%
+mode.TopOutRunMode.getDescription(),0,0,5,5,12.20%
+mode.TopOutRunMode.getName(),0,0,1,1,2.44%
+mode.TopOutRunMode.isAvailable(),0,0,1,1,2.44%
+mode.TopOutRunMode.start(ScreenManager),0,0,5,5,12.20%
+mode.UltraMode.getDescription(),0,0,5,5,35.71%
+mode.UltraMode.getName(),0,0,1,1,7.14%
+mode.UltraMode.isAvailable(),0,0,1,1,7.14%
+mode.UltraMode.start(ScreenManager),0,0,3,3,21.43%
+mode.VsCpuMode.getDescription(),0,0,1,1,11.11%
+mode.VsCpuMode.getName(),0,0,1,1,11.11%
+mode.VsCpuMode.isAvailable(),0,0,1,1,11.11%
+mode.VsCpuMode.start(ScreenManager),0,0,3,3,33.33%
+settings.Records.Records(),0,0,1,1,0.99%
+settings.Records.addCpuWin(String),0,0,5,5,4.95%
+settings.Records.bestScore(String),1,1,2,1,1.98%
+"settings.Records.bestScore(String, String)",1,1,7,6,6.93%
+settings.Records.bestTimeMs(String),2,1,9,8,8.91%
+"settings.Records.bestTimeMs(String, String)",1,1,7,6,6.93%
+"settings.Records.cpuWins(String, String)",0,0,4,4,3.96%
+settings.Records.formatTime(int),1,1,5,4,4.95%
+settings.Records.get(),0,0,1,1,0.99%
+settings.Records.key(String),0,0,1,1,0.99%
+settings.Records.load(),0,0,5,5,4.95%
+settings.Records.save(),0,0,8,8,7.92%
+"settings.Records.scoreKey(String, String)",0,0,1,1,0.99%
+settings.Records.scoreKeyForGameName(String),1,1,10,9,9.90%
+settings.Records.sprintKey(int),1,1,2,1,1.98%
+"settings.Records.submitScore(String, int)",1,1,8,7,7.92%
+"settings.Records.submitTime(String, int)",4,4,12,8,11.88%
+"settings.Settings.Action.Action(String, int)",0,0,1,1,7.14%
+"settings.Settings.ColorMode.ColorMode(String, int[])",0,0,1,1,9.09%
+"settings.Settings.Difficulty.Difficulty(String, double, int)",0,0,3,3,25.00%
+settings.Settings.Settings(),0,0,4,4,1.40%
+settings.Settings.addListener(Runnable),1,1,2,1,0.70%
+settings.Settings.arrMs(),0,0,1,1,0.35%
+settings.Settings.bgmGain(),1,0,2,1,0.70%
+settings.Settings.bgmVolume(),0,0,1,1,0.35%
+settings.Settings.changed(),0,0,5,5,1.75%
+"settings.Settings.clamp(int, int, int)",0,0,1,1,0.35%
+settings.Settings.colorMode(),0,0,1,1,0.35%
+settings.Settings.createProfile(String),1,0,9,8,3.16%
+settings.Settings.currentProfile(),0,0,1,1,0.35%
+settings.Settings.dasMs(),0,0,1,1,0.35%
+settings.Settings.defaultKeys(),0,0,5,5,1.75%
+settings.Settings.deleteProfile(String),1,0,8,7,2.81%
+settings.Settings.difficulty(),0,0,1,1,0.35%
+settings.Settings.get(),0,0,1,1,0.35%
+settings.Settings.ghostPiece(),0,0,1,1,0.35%
+settings.Settings.gravityMs(int),2,0,6,4,2.11%
+settings.Settings.ihs(),0,0,1,1,0.35%
+settings.Settings.irs(),0,0,1,1,0.35%
+settings.Settings.isReserved(int),1,0,5,4,1.75%
+settings.Settings.keyOf(Action),1,0,2,1,0.70%
+settings.Settings.keyText(Action),0,0,1,1,0.35%
+settings.Settings.load(),0,0,38,38,13.33%
+settings.Settings.lockDelayMs(int),1,1,6,5,2.11%
+settings.Settings.masterVolume(),0,0,1,1,0.35%
+settings.Settings.minoColor(Tetromino),1,1,2,1,0.70%
+settings.Settings.muteWhenUnfocused(),0,0,1,1,0.35%
+settings.Settings.muted(),0,0,1,1,0.35%
+"settings.Settings.parseEnum(Class<E>, String, E)",0,0,3,3,1.05%
+"settings.Settings.parseInt(String, int)",0,0,3,3,1.05%
+settings.Settings.pressed(Action),1,0,2,1,0.70%
+settings.Settings.profileNames(),0,0,1,1,0.35%
+settings.Settings.released(Action),0,0,1,1,0.35%
+settings.Settings.removeListener(Runnable),0,0,1,1,0.35%
+settings.Settings.resetAllExceptKeys(),1,0,7,6,2.46%
+settings.Settings.resetKeys(),0,0,1,1,0.35%
+settings.Settings.save(),0,0,29,29,10.18%
+settings.Settings.sdf(),0,0,3,3,1.05%
+settings.Settings.setArrMs(int),0,0,1,1,0.35%
+settings.Settings.setBgmVolume(int),0,0,1,1,0.35%
+settings.Settings.setColorMode(ColorMode),0,0,1,1,0.35%
+settings.Settings.setDasMs(int),0,0,1,1,0.35%
+settings.Settings.setDifficulty(Difficulty),0,0,1,1,0.35%
+settings.Settings.setGhostPiece(boolean),0,0,1,1,0.35%
+settings.Settings.setIhs(boolean),0,0,1,1,0.35%
+settings.Settings.setIrs(boolean),0,0,1,1,0.35%
+"settings.Settings.setKey(Action, int)",3,4,15,11,5.26%
+settings.Settings.setMasterVolume(int),0,0,1,1,0.35%
+settings.Settings.setMuteWhenUnfocused(boolean),0,0,1,1,0.35%
+settings.Settings.setMuted(boolean),0,0,1,1,0.35%
+settings.Settings.setSdf(int),0,0,1,1,0.35%
+settings.Settings.setSfxVolume(int),0,0,1,1,0.35%
+settings.Settings.setShowGrid(boolean),0,0,1,1,0.35%
+settings.Settings.setSpawnDelayMs(int),0,0,1,1,0.35%
+settings.Settings.sfxGain(),0,0,1,1,0.35%
+settings.Settings.sfxVolume(),0,0,1,1,0.35%
+settings.Settings.showGrid(),0,0,1,1,0.35%
+settings.Settings.softDropGravityMs(int),1,1,4,3,1.40%
+settings.Settings.spawnDelayMs(),0,0,1,1,0.35%
+settings.Settings.startLevel(),0,0,1,1,0.35%
+settings.Settings.switchProfile(String),0,0,6,6,2.11%
+settings.Settings.toDecibel(float),1,1,2,1,0.70%
+shop.Mission.Metric.Metric(boolean),0,0,1,1,12.50%
+"shop.Mission.Mission(String, Metric, int)",0,0,3,3,9.68%
+shop.MissionTracker.MissionTracker(Game),0,0,1,1,3.70%
+shop.MissionTracker.checkPeaks(),1,0,4,4,14.81%
+shop.MissionTracker.onBeforeSpawn(),1,1,2,1,7.41%
+shop.MissionTracker.onGameOver(),0,0,4,4,14.81%
+shop.MissionTracker.onGoalReached(),0,0,5,5,18.52%
+shop.MissionTracker.onHardDrop(),0,0,1,1,3.70%
+shop.MissionTracker.onLinesCleared(int),0,0,4,4,14.81%
+shop.MissionTracker.onLock(Tetromino),0,0,1,1,3.70%
+shop.PlayerData.PlayerData(),0,0,1,1,0.80%
+shop.PlayerData.Toast.show(String),0,n/a,n/a,1,50.00%
+shop.PlayerData.addCoins(int),0,0,4,4,3.20%
+shop.PlayerData.addToastListener(Toast),0,0,1,1,0.80%
+shop.PlayerData.buy(ShopItem),1,1,9,8,7.20%
+shop.PlayerData.coins(),0,0,1,1,0.80%
+shop.PlayerData.ensureWeek(),1,1,11,10,8.80%
+shop.PlayerData.equip(ShopItem),1,1,7,6,5.60%
+shop.PlayerData.equipped(Type),0,0,5,5,4.00%
+shop.PlayerData.get(),0,0,1,1,0.80%
+"shop.PlayerData.getInt(String, int)",0,0,4,4,3.20%
+shop.PlayerData.isDone(Mission),0,0,4,4,3.20%
+shop.PlayerData.k(String),0,0,1,1,0.80%
+shop.PlayerData.load(),0,0,5,5,4.00%
+shop.PlayerData.owns(ShopItem),0,0,5,5,4.00%
+shop.PlayerData.p(),0,0,1,1,0.80%
+shop.PlayerData.progress(Mission),0,0,4,4,3.20%
+"shop.PlayerData.record(Metric, int)",4,4,27,23,21.60%
+shop.PlayerData.removeToastListener(Toast),0,0,1,1,0.80%
+shop.PlayerData.save(),0,0,8,8,6.40%
+shop.PlayerData.toast(String),0,0,1,1,0.80%
+shop.PlayerData.weeklyStatus(),1,1,7,6,5.60%
+"shop.ShopItem.ShopItem(String, Type, int, Color[])",0,0,3,3,6.38%
+"shop.ShopItem.byName(String, Type)",0,0,7,7,14.89%
+shop.ShopItem.defaultOf(Type),0,0,1,1,2.13%
+shop.ShopItem.isFree(),1,1,2,1,4.26%
+shop.ThemeManager.ThemeManager(),0,0,1,1,0.69%
+"shop.ThemeManager.applyMinoSkin(BufferedImage[], ToIntFunction<Tetromino>)",2,1,13,11,8.97%
+shop.ThemeManager.background(ShopItem),0,0,3,3,2.07%
+"shop.ThemeManager.paintBackground(Graphics2D, int, int)",2,1,6,5,4.14%
+"shop.ThemeManager.paintPreview(Graphics2D, ShopItem, int, int, int, int)",1,1,9,8,6.21%
+shop.ThemeManager.previewTiles(ShopItem),1,1,14,13,9.66%
+shop.ThemeManager.render(ShopItem),0,0,76,76,52.41%
+"shop.ThemeManager.tint(BufferedImage, Color)",1,1,18,17,12.41%
+"shop.ToastOverlay.Entry.Entry(String, long)",0,0,1,1,25.00%
+shop.ToastOverlay.attach(),1,1,2,1,5.26%
+shop.ToastOverlay.detach(),1,1,2,1,5.26%
+"shop.ToastOverlay.draw(Graphics2D, int, Font)",0,0,21,21,55.26%
+shop.ToastOverlay.show(String),0,0,3,3,7.89%
+shop.WeeklyMissions.WeeklyMissions(),0,0,1,1,4.17%
+shop.WeeklyMissions.current(),0,0,1,1,4.17%
+shop.WeeklyMissions.currentWeekId(),1,1,5,4,20.83%
+shop.WeeklyMissions.forWeek(int),1,1,13,12,54.17%
+"tutorial.TutorialController.TutorialController(Game, GamePanel)",0,0,7,7,8.54%
+tutorial.TutorialController.applyCurrentStep(),1,0,10,9,12.20%
+tutorial.TutorialController.checkStepCompletion(),0,0,9,9,10.98%
+tutorial.TutorialController.finish(),1,0,9,9,10.98%
+tutorial.TutorialController.onGameOver(),0,0,3,3,3.66%
+tutorial.TutorialController.onLinesCleared(int),0,0,6,6,7.32%
+"tutorial.TutorialController.onMove(int, int)",0,0,6,6,7.32%
+tutorial.TutorialController.onRotate(int),0,0,6,6,7.32%
+tutorial.TutorialController.setCompletionCallback(Runnable),1,1,4,3,4.88%
+tutorial.TutorialController.start(),1,1,10,9,12.20%
+tutorial.TutorialOverlayRenderer.TutorialOverlayRenderer(Font),0,0,3,3,5.45%
+tutorial.TutorialOverlayRenderer.accept(Graphics2D),1,0,17,16,30.91%
+"tutorial.TutorialOverlayRenderer.drawWrappedMessage(Graphics2D, String, int, int, int)",0,0,15,15,27.27%
+tutorial.TutorialOverlayRenderer.showComplete(),0,0,4,4,7.27%
+"tutorial.TutorialOverlayRenderer.showStep(int, int, String)",0,0,6,6,10.91%
+"tutorial.TutorialStep.TutorialStep(String, Set<String>, boolean, boolean, PieceGenerator, Goal)",0,0,9,9,15.52%
+tutorial.TutorialStep.clearLine(),0,0,6,6,10.34%
+tutorial.TutorialStep.isComplete(),0,0,7,7,12.07%
+tutorial.TutorialStep.move(),0,0,6,6,10.34%
+tutorial.TutorialStep.onLinesCleared(int),0,0,3,3,5.17%
+"tutorial.TutorialStep.onMove(int, int)",0,0,5,5,8.62%
+tutorial.TutorialStep.onRotate(int),0,0,5,5,8.62%
+tutorial.TutorialStep.rotate(),0,0,6,6,10.34%
+ui.CpuSelectPanel.CpuSelectPanel(ScreenManager),3,0,41,39,42.71%
+"ui.CpuSelectPanel.buttonAt(int, int)",0,0,4,4,4.17%
+ui.CpuSelectPanel.drawDifficultyNotes(Graphics2D),0,0,10,10,10.42%
+ui.CpuSelectPanel.paintComponent(Graphics),3,0,18,15,18.75%
+"ui.CpuSelectPanel.updateHover(int, int)",0,0,8,8,8.33%
+ui.GamePanel.GamePanel(),2,0,3,1,0.43%
+ui.GamePanel.GamePanel(Game),0,0,3,3,0.43%
+"ui.GamePanel.GamePanel(Game, String)",4,0,116,112,16.57%
+ui.GamePanel.InputFilter.allow(String),0,n/a,n/a,1,50.00%
+ui.GamePanel.activateHeldKey(String),0,0,7,7,1.00%
+"ui.GamePanel.bind(Action, String, Runnable)",2,1,18,16,2.57%
+"ui.GamePanel.bindGameOverNavigation(String, int)",0,0,13,13,1.86%
+"ui.GamePanel.bindHeld(Action, Runnable)",1,0,23,23,3.29%
+"ui.GamePanel.bindInitial(Action, String, Runnable)",1,1,25,24,3.57%
+"ui.GamePanel.bindPauseNavigation(String, int)",2,1,19,18,2.71%
+"ui.GamePanel.bindUnfiltered(String, String, Runnable)",0,0,9,9,1.29%
+ui.GamePanel.clearHeldKeys(),0,0,9,9,1.29%
+ui.GamePanel.configureOverlayButtons(),1,0,31,31,4.43%
+ui.GamePanel.confirmGameOverSelection(),0,0,4,4,0.57%
+ui.GamePanel.confirmPauseSelection(),5,1,16,15,2.29%
+ui.GamePanel.drawBoard(Graphics2D),4,2,24,20,3.43%
+"ui.GamePanel.drawCell(Graphics2D, int, int, Tetromino, boolean)",1,0,5,4,0.71%
+"ui.GamePanel.drawCentered(Graphics2D, String, int, int)",0,0,3,3,0.43%
+ui.GamePanel.drawCountdown(Graphics2D),1,1,15,14,2.14%
+ui.GamePanel.drawGameOver(Graphics2D),1,0,38,37,5.43%
+"ui.GamePanel.drawGarbageCell(Graphics2D, int, int)",0,0,6,6,0.86%
+ui.GamePanel.drawMatrixPreviews(Graphics2D),1,0,10,9,1.43%
+"ui.GamePanel.drawMiniCell(Graphics2D, int, int, int, Tetromino)",1,0,4,3,0.57%
+ui.GamePanel.drawPauseOverlay(Graphics2D),1,1,23,22,3.29%
+"ui.GamePanel.drawPiece(Graphics2D, Tetromino, int, int, int, boolean)",1,0,9,8,1.29%
+"ui.GamePanel.drawPreviewPiece(Graphics2D, Tetromino, int, int, int, int, int)",1,0,16,15,2.29%
+ui.GamePanel.handlePauseInput(Action),0,0,6,6,0.86%
+"ui.GamePanel.initialKeyAllowed(Action, String)",0,0,3,3,0.43%
+ui.GamePanel.loadImage(String),1,1,8,7,1.14%
+ui.GamePanel.loadMinoTiles(String),4,1,25,22,3.57%
+ui.GamePanel.minoTileIndex(Tetromino),0,0,11,11,1.57%
+ui.GamePanel.oppositeMoveHeld(Action),0,0,4,4,0.57%
+ui.GamePanel.paintComponent(Graphics),2,1,23,22,3.29%
+ui.GamePanel.releaseHeldKey(String),1,0,11,10,1.57%
+ui.GamePanel.selectGameOverOption(int),0,0,6,6,0.86%
+ui.GamePanel.setHomeCallback(Runnable),0,0,3,3,0.43%
+ui.GamePanel.setInputFilter(InputFilter),0,0,4,4,0.57%
+ui.GamePanel.setOverlayRenderer(Consumer<Graphics2D>),0,0,1,1,0.14%
+ui.GamePanel.setPauseRestartCallback(Runnable),1,1,2,1,0.29%
+ui.GamePanel.setPaused(boolean),2,0,17,17,2.43%
+ui.GamePanel.stop(),1,1,6,5,0.86%
+ui.GamePanel.tickHeldKeys(int),1,1,29,28,4.14%
+"ui.GamePanel.tint(BufferedImage, Color)",1,1,18,17,2.57%
+ui.GamePanel.updateGameOverButtonStyle(),0,0,9,9,1.29%
+ui.GamePanel.updateInitialInputs(),0,0,6,6,0.86%
+ui.GamePanel.updateOverlayButtons(),0,0,4,4,0.57%
+ui.HomePanel.HomePanel(ScreenManager),1,0,37,37,42.53%
+"ui.HomePanel.buttonAt(int, int)",0,0,4,4,4.60%
+ui.HomePanel.loadImage(String),0,0,9,9,10.34%
+ui.HomePanel.paintComponent(Graphics),0,0,12,12,13.79%
+"ui.HomePanel.updateHover(int, int)",0,0,8,8,9.20%
+"ui.LabelUI.LabelUI(Game, Font, Font, Font, Font, Font, Image, ...)",0,0,11,11,10.38%
+ui.LabelUI.drawGameNamePanel(Graphics2D),0,0,13,13,12.26%
+ui.LabelUI.drawLineLabel(Graphics2D),1,0,13,12,12.26%
+ui.LabelUI.drawPpsLabel(Graphics2D),0,0,10,10,9.43%
+ui.LabelUI.drawScoreLabel(Graphics2D),0,0,26,26,24.53%
+ui.LabelUI.drawScoreValueLabel(Graphics2D),0,0,7,7,6.60%
+ui.LabelUI.drawTimeLabel(Graphics2D),1,0,12,11,11.32%
+ui.MenuFonts.MenuFonts(),0,0,1,1,1.41%
+ui.MenuFonts.loadBlack(),1,1,10,9,14.08%
+ui.MenuFonts.loadBold(),0,0,9,9,12.68%
+ui.MenuFonts.loadKRBlack(),1,1,10,9,14.08%
+ui.MenuFonts.loadMedium(),1,1,10,9,14.08%
+ui.MenuFonts.loadOrbitBlack(),0,0,9,9,12.68%
+ui.MenuFonts.loadOrbitBold(),0,0,9,9,12.68%
+ui.MenuFonts.loadPressStart2P(),0,0,10,10,14.08%
+"ui.MenuNavigation.MenuNavigation(JPanel, List<TetrisBlockButton>, Runnable)",0,0,3,3,2.80%
+"ui.MenuNavigation.MenuNavigation(JPanel, List<TetrisBlockButton>, Runnable, Runnable)",0,0,36,36,33.64%
+"ui.MenuNavigation.bind(String, Runnable)",0,0,9,9,8.41%
+ui.MenuNavigation.firstEnabled(),0,0,3,3,2.80%
+ui.MenuNavigation.height(TetrisBlockButton),0,0,3,3,2.80%
+ui.MenuNavigation.highlightedButton(TetrisBlockButton),0,0,3,3,2.80%
+"ui.MenuNavigation.move(int, int)",1,0,26,25,24.30%
+ui.MenuNavigation.refresh(),0,0,4,4,3.74%
+ui.MenuNavigation.useMouse(TetrisBlockButton),0,0,6,6,5.61%
+ui.MenuNavigation.width(TetrisBlockButton),0,0,5,5,4.67%
+ui.ModeSelectPanel.ModeSelectPanel(ScreenManager),0,0,18,18,13.24%
+"ui.ModeSelectPanel.buttonAt(int, int)",0,0,1,1,0.74%
+ui.ModeSelectPanel.buttonWidth(TetrisBlockButton),0,0,1,1,0.74%
+"ui.ModeSelectPanel.layoutModes(String[][], Color[])",0,0,28,28,20.59%
+ui.ModeSelectPanel.paintComponent(Graphics),6,0,66,60,48.53%
+ui.ModeSelectPanel.updateDescription(),0,0,10,10,7.35%
+"ui.ModeSelectPanel.updateHover(int, int)",0,0,1,1,0.74%
+ui.RecordsPanel.RecordsPanel(ScreenManager),0,0,26,26,21.31%
+"ui.RecordsPanel.bind(String, Runnable)",0,0,7,7,5.74%
+"ui.RecordsPanel.cell(Graphics2D, int, int, String)",0,0,4,4,3.28%
+"ui.RecordsPanel.center(Graphics2D, Font, String, int, int)",0,0,4,4,3.28%
+ui.RecordsPanel.hover(MouseEvent),0,0,4,4,3.28%
+ui.RecordsPanel.paintComponent(Graphics),1,0,46,45,37.70%
+ui.RecordsPanel.score(int),0,0,1,1,0.82%
+ui.RecordsPanel.scrollBy(int),0,0,5,5,4.10%
+"ui.RecordsPanel.shorten(Graphics2D, String, int)",0,0,6,6,4.92%
+ui.SettingsPanel.SettingsPanel(ScreenManager),0,0,13,13,4.51%
+"ui.SettingsPanel.beginKeyWait(Action, JButton)",0,0,6,6,2.08%
+ui.SettingsPanel.build(),0,0,48,48,16.67%
+ui.SettingsPanel.button(String),0,0,7,7,2.43%
+ui.SettingsPanel.cancelKeyWait(),0,0,3,3,1.04%
+ui.SettingsPanel.card(String),0,0,13,13,4.51%
+"ui.SettingsPanel.check(String, boolean, Consumer<Boolean>)",0,0,9,9,3.12%
+ui.SettingsPanel.displaySection(),0,0,27,27,9.38%
+ui.SettingsPanel.gameplaySection(),0,0,15,15,5.21%
+ui.SettingsPanel.keySection(),1,0,68,67,23.61%
+ui.SettingsPanel.label(String),0,0,6,6,2.08%
+ui.SettingsPanel.loadFont(),0,0,4,4,1.39%
+ui.SettingsPanel.rebuild(),1,0,7,6,2.43%
+ui.SettingsPanel.refreshKeyButtons(),0,0,3,3,1.04%
+ui.SettingsPanel.refreshProfiles(),0,0,7,7,2.43%
+"ui.SettingsPanel.row(String, JComponent)",0,0,11,11,3.82%
+"ui.SettingsPanel.slider(String, IntSupplier, IntConsumer)",0,0,1,1,0.35%
+"ui.SettingsPanel.slider(String, IntSupplier, IntConsumer, int, int)",0,0,13,13,4.51%
+ui.SettingsPanel.soundSection(),0,0,9,9,3.12%
+ui.ShopPanel.ShopPanel(ScreenManager),0,0,29,29,11.74%
+ui.ShopPanel.Tab.Tab(String),0,0,1,1,20.00%
+"ui.ShopPanel.bind(String, Runnable)",0,0,7,7,2.83%
+ui.ShopPanel.buyRect(int),0,0,4,4,1.62%
+ui.ShopPanel.cardRect(int),0,0,3,3,1.21%
+"ui.ShopPanel.centerText(Graphics2D, Font, String, int, int)",0,0,5,5,2.02%
+ui.ShopPanel.drawItems(Graphics2D),2,0,36,34,14.57%
+ui.ShopPanel.drawMissions(Graphics2D),2,0,34,32,13.77%
+ui.ShopPanel.goBack(),0,0,1,1,0.40%
+ui.ShopPanel.handleClick(Point),2,0,32,32,12.96%
+ui.ShopPanel.itemsOfTab(),0,0,6,6,2.43%
+"ui.ShopPanel.notice(String, Color)",0,0,5,5,2.02%
+ui.ShopPanel.paintComponent(Graphics),2,0,35,33,14.17%
+ui.ShopPanel.switchTab(int),0,0,6,6,2.43%
+ui.ShopPanel.tabRect(int),0,0,1,1,0.40%
+ui.ShopPanel.updateHover(Point),0,0,13,13,5.26%
+"ui.TetrisBlockButton.TetrisBlockButton(String, String[], Color, int, int, int, Runnable, ...)",0,0,5,5,8.93%
+"ui.TetrisBlockButton.contains(int, int)",0,0,3,3,5.36%
+"ui.TetrisBlockButton.draw(Graphics2D, boolean, boolean, Font, int)",0,0,22,22,39.29%
+"ui.TetrisBlockButton.hasCell(int, int)",0,0,4,4,7.14%
+"ui.TetrisBlockButton.mix(Color, Color, float)",0,0,1,1,1.79%
+ui.TetrisBlockButton.occupiedCells(int),0,0,5,5,8.93%
+"ui.TetrisBlockButton.scale(Color, float)",0,0,1,1,1.79%
+ui.TetrisBlockButton.widestRow(),0,0,6,6,10.71%
+
+Class,CLOC,JLOC,LOC
+app.Main,9,1,25
+app.ScreenManager,43,15,140
+audio.AudioManager,62,32,256
+battle.BattleGame,64,18,254
+battle.BattleGame.State,1,0,2
+battle.BattleGame.WinReason,1,0,2
+battle.BattleGame.Winner,1,0,2
+battle.BattlePanel,131,44,762
+battle.BotBrain,30,10,75
+battle.BotBrain.Difficulty,3,3,19
+battle.BotBrain.Plan,3,1,13
+battle.BotController,26,9,64
+battle.GarbageQueue,13,10,33
+game.Board,59,20,148
+game.FixedPieceGenerator,2,2,7
+game.Game,84,33,415
+game.ScoreManager,28,17,124
+game.ScoreManager.Spin,1,1,2
+game.Tetromino,2,0,35
+mode.ClassicMode,0,0,12
+mode.ComingSoonMode,1,1,13
+mode.GameModes,5,0,17
+mode.SprintMode,2,1,15
+mode.TopOutRunMode,0,0,14
+mode.TopOutRunMode.RiseListener,0,0,27
+mode.UltraMode,1,1,14
+mode.VsCpuMode,1,1,9
+settings.Records,21,18,101
+settings.Settings,41,13,248
+settings.Settings.Action,1,0,14
+settings.Settings.ColorMode,2,0,11
+settings.Settings.Difficulty,1,0,12
+shop.Mission,1,1,23
+shop.Mission.Metric,2,2,8
+shop.MissionTracker,3,2,27
+shop.PlayerData,17,13,123
+shop.ShopItem,6,3,46
+shop.ShopItem.Type,0,0,1
+shop.ThemeManager,8,6,145
+shop.ToastOverlay,3,3,34
+shop.ToastOverlay.Entry,0,0,4
+shop.WeeklyMissions,3,3,24
+tutorial.TutorialController,5,3,82
+tutorial.TutorialOverlayRenderer,2,1,55
+tutorial.TutorialStep,1,1,57
+tutorial.TutorialStep.Goal,0,0,1
+ui.CpuSelectPanel,8,1,96
+ui.GamePanel,56,17,698
+ui.HomePanel,2,1,87
+ui.LabelUI,3,1,106
+ui.MenuFonts,4,4,71
+ui.MenuNavigation,2,1,107
+ui.ModeSelectPanel,6,0,136
+ui.RecordsPanel,4,1,122
+ui.SettingsPanel,7,0,288
+ui.ShopPanel,12,1,242
+ui.ShopPanel.Tab,0,0,5
+ui.TetrisBlockButton,1,1,56
+
+Interface,CLOC,JLOC,LOC,NCLOC
+game.GameListener,16,16,33,17
+game.PieceGenerator,2,2,6,4
+mode.GameMode,1,1,7,6
+shop.PlayerData.Toast,1,1,2,1
+ui.GamePanel.InputFilter,0,0,2,2
+
+Package,CLOC,CLOC(rec),JLOC,JLOC(rec),LOC,LOC(rec),LOCp,LOCp(rec),LOCt,LOCt(rec),NCLOC,NCLOCp,NCLOCp(rec),NCLOCt
+,n/a,484,n/a,339,n/a,"6,014",n/a,"6,014",n/a,0,n/a,n/a,"5,764",n/a
+app,0,42,18,18,193,193,193,193,0,0,182,182,182,0
+audio,0,30,32,32,269,269,269,269,0,0,256,256,256,0
+battle,0,178,95,95,"1,281","1,281","1,281","1,281",0,0,"1,206","1,206","1,206",0
+game,0,103,91,91,786,786,786,786,0,0,741,741,741,0
+mode,0,6,5,5,155,155,155,155,0,0,149,149,149,0
+settings,0,35,31,31,409,409,409,409,0,0,378,378,378,0
+shop,0,10,34,34,484,484,484,484,0,0,476,476,476,0
+tutorial,0,3,5,5,212,212,212,212,0,0,210,210,210,0
+ui,0,77,28,28,"2,225","2,225","2,225","2,225",0,0,"2,166","2,166","2,166",0
+
+Module,JLOC,L(CSS),L(Groovy),L(HTML),L(J),L(JS),L(KT),L(XML),LOC,LOCp,LOCt,NCLOC,NCLOCp,NCLOCt
+tetris2026,339,0,0,0,"6,014",0,0,0,"6,014","6,014",0,"5,425","5,425",0
+
+FileType,LOC,NCLOC
+Java,"6,014","5,425"
+
+Project,CLOC,JLOC,L(CSS),L(Groovy),L(HTML),L(J),L(JS),L(KT),L(XML),LOC,LOCp,LOCt,NCLOC,NCLOCp,NCLOCt
+project,823,339,0,0,0,"6,014",0,0,0,"6,014","6,014",0,"5,425","5,425",0
+
