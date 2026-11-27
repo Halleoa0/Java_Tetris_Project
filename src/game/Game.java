@@ -70,7 +70,7 @@ public final class Game {
     /** 목표 줄 수를 가장 빨리 채우는 스프린트용 게임. 시작할 때 3초 카운트다운 */
     public static Game sprint(int targetLines) { return new Game(null, 0, Math.max(1, targetLines), COUNTDOWN_MS); }
 
-    /// 매개변수가 NULL 이면 7-beg 시스템 사용 (튜토리얼에서는 생성 시스템이 달라 null이 아님)
+    /// 매개변수가 NULL 이면 7-bag 시스템 사용 (튜토리얼에서는 생성 시스템이 달라 null이 아님)
     public Game(PieceGenerator generator) {
         this(generator, 0, 0, 0);
     }
@@ -154,7 +154,7 @@ public final class Game {
         if (countdownMs == 0) spawnNext();
     }
 
-    /// 테트리스의 7-beg 시스템을 위한 함수로, 7개의 미노가 균등하게 나오게 하기 위함이다.
+    /// 테트리스의 7-bag 시스템을 위한 함수로, 7개의 미노가 균등하게 나오게 하기 위함이다.
     private Tetromino drawPiece() {
         if (bag.isEmpty()) {
             // 한 묶음에 각 블록을 하나씩 넣고 섞어, 블록 종류를 고르게 공급한다.
@@ -165,7 +165,7 @@ public final class Game {
         return bag.removeFirst();
     }
 
-    /// pieceGenerator이 null 이라면 Tutorial이 아니기 때문에 7beg 시스템을 사용. 아니라면 T미노만 나오는 Tutorial 시스템
+    /// pieceGenerator이 null 이라면 Tutorial이 아니기 때문에 7bag 시스템을 사용. 아니라면 T미노만 나오는 Tutorial 시스템
     private Tetromino nextPiece() { return pieceGenerator == null ? drawPiece() : pieceGenerator.next(); }
 
     /** 화면에 보여줄 다음 블록 목록을 반환한다. */

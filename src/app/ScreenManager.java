@@ -111,7 +111,7 @@ public final class ScreenManager extends JPanel {
     /// 설정창을 띄운다.
     public void showSettings() {
         removeActiveGame();
-        if (settingsPanel != null) remove(settingsPanel);
+        if (settingsPanel != null) remove(settingsPanel); // 새 설정화면을 띄우기 위해 기존 것이 남아있다면 지움
         settingsPanel = new SettingsPanel(this);
         add(settingsPanel, SETTINGS);
         cards.show(this, SETTINGS);
@@ -122,7 +122,7 @@ public final class ScreenManager extends JPanel {
     /// 상점을 띄운다.
     public void showShop() {
         removeActiveGame();
-        if (shopPanel != null) remove(shopPanel);
+        if (shopPanel != null) remove(shopPanel); // 새 상점화면을 띄우기 위해 기존 것이 남아있다면 지움
         shopPanel = new ShopPanel(this);
         add(shopPanel, SHOP);
         cards.show(this, SHOP);
@@ -134,7 +134,7 @@ public final class ScreenManager extends JPanel {
     /// 플레이어별 최고 기록 화면을 띄운다.
     public void showRecords() {
         removeActiveGame();
-        if (recordsPanel != null) remove(recordsPanel);
+        if (recordsPanel != null) remove(recordsPanel); // 새 기록화면을 띄우기 위해 기존 것이 남아있다면 지움
         recordsPanel = new RecordsPanel(this);
         add(recordsPanel, RECORDS);
         cards.show(this, RECORDS);

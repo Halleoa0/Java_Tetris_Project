@@ -36,7 +36,7 @@ import javax.swing.KeyStroke;
 import javax.swing.Timer;
 import settings.Settings;
 import ui.LabelUI;
-import ui.MenuFonts;
+import ui.Fonts;
 
 /**
  * 1:1 테트리스 배틀(유저 vs CPU 봇) 화면 패널 클래스이다.
@@ -62,11 +62,12 @@ public final class BattlePanel extends JPanel {
     private long lastTick;
 
     // 기존 게임 폰트 불러오기 //
-    public final Font interBlack = MenuFonts.loadBlack();
-    public final Font interMedium = MenuFonts.loadMedium();
-    public final Font sansKRBlack = MenuFonts.loadKRBlack();
-    public final Font orbitBlack = MenuFonts.loadOrbitBlack();
-    public final Font orbitBold = MenuFonts.loadOrbitBold();
+    private final Fonts fonts = Fonts.load();
+    public final Font interBlack = fonts.interBlack();
+    public final Font interMedium = fonts.interMedium();
+    public final Font sansKRBlack = fonts.sansKRBlack();
+    public final Font orbitBlack = fonts.orbitBlack();
+    public final Font orbitBold = fonts.orbitBold();
 
     // 기존 게임 이미지 에셋 불러오기 //
     private final Image matrixImage;
@@ -127,8 +128,8 @@ public final class BattlePanel extends JPanel {
 
         // GameNamePanel.png 안에 들어갈 이름. CPU는 난이도도 같이 보여줌.
         String botName = "CPU (" + difficulty.label + ")";
-        this.playerLabelUI = new LabelUI(battle.playerGame, interBlack, interMedium, sansKRBlack, orbitBlack, orbitBold, gameNamePanelImage, "PLAYER 1");
-        this.botLabelUI = new LabelUI(battle.botGame, interBlack, interMedium, sansKRBlack, orbitBlack, orbitBold, gameNamePanelImage, botName);
+        this.playerLabelUI = new LabelUI(battle.playerGame, fonts, gameNamePanelImage, "PLAYER 1");
+        this.botLabelUI = new LabelUI(battle.botGame, fonts, gameNamePanelImage, botName);
 
         bindKeys();
         bindMouse();

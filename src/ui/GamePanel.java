@@ -70,12 +70,12 @@ public final class GamePanel extends JPanel {
     private final BufferedImage[] minoTiles;
 
     /// 폰트 불러오기
-    public final Font interBlack = MenuFonts.loadBlack();
-    public final Font interBold = MenuFonts.loadBold();
-    public final Font interMedium = MenuFonts.loadMedium();
-    public final Font sansKRBlack = MenuFonts.loadKRBlack();
-    public final Font orbitBlack = MenuFonts.loadOrbitBlack();
-    public final Font orbitBold = MenuFonts.loadOrbitBold();
+    private final Fonts fonts = Fonts.load();
+    public final Font interBlack = fonts.interBlack();
+    public final Font interMedium = fonts.interMedium();
+    public final Font sansKRBlack = fonts.sansKRBlack();
+    public final Font orbitBlack = fonts.orbitBlack();
+    public final Font orbitBold = fonts.orbitBold();
 
     private final Set<String> heldKeys = new HashSet<>();
     private final Set<String> pressedMoveKeys = new HashSet<>();
@@ -123,7 +123,7 @@ public final class GamePanel extends JPanel {
         guideImage = loadImage("Images/Board/Guide.png");
         pauseGuideImage = loadImage("Images/PauseGuide.png");
         gameNamePanelImage = loadImage("Images/Board/GameNamePanel.png");
-        labelUI = new LabelUI(game, interBlack, interMedium, sansKRBlack, orbitBlack, orbitBold, gameNamePanelImage, gameName);
+        labelUI = new LabelUI(game, fonts, gameNamePanelImage, gameName);
         minoTiles = loadMinoTiles("Images/Mino.png");
         bindHeld(Settings.Action.MOVE_LEFT,  () -> game.move(-1, 0));
         bindHeld(Settings.Action.MOVE_RIGHT, () -> game.move(1, 0));
@@ -823,5 +823,4 @@ public final class GamePanel extends JPanel {
             }
         });
     }
-
 }

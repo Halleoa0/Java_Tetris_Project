@@ -2,7 +2,7 @@ package game;
 
 import java.util.Arrays;
 
-// 미노(블록)들의 구조체. 색상, 회전 모양을 하나로 정의
+// 미노(블록)들의 구조체. 회전 모양을 정의
 public enum Tetromino {
     // 0도, 90도, 180도, 270도 순서.
 
@@ -39,5 +39,6 @@ public enum Tetromino {
 
     Tetromino(int[][][] cells) { this.cells = cells; }
 
+    // 미노의 특정 방향에서의 좌표값을 복사한다. 복사본을 수정해도 원본 배열은 수정되지 않음.
     public int[][] cells(int rotation) { return Arrays.stream(cells[rotation & 3]).map(int[]::clone).toArray(int[][]::new); }
 }

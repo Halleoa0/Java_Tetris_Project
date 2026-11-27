@@ -1,7 +1,10 @@
 package game;
 
 
-/** 점수·레벨·줄 수·콤보·백투백 */
+/** 점수·레벨·삭제한 줄 수·콤보·백투백 상태 관리*/
+/** 현재 게임 진행 상태: score, lines, level,
+ * 연속 삭제 상태: combo, backToBack
+ * 마지막 점수/화면 표시 상태: lastGain, cleardLineString, skillString, comboString, perfectString, labelLeft*/
 public final class ScoreManager {
 
     /** 회전으로 놓은 T미노의 판정 종류 */

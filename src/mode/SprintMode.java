@@ -9,7 +9,7 @@ public final class SprintMode implements GameMode {
     public static final int TARGET_LINES = 20;
 
     // 모드 선택 화면이 이 이름으로 설명 문구를 찾으므로 GameModes의 이름과 바꾸지 않는다.
-    @Override public String getName() { return "20L SPRINT"; }
+    @Override public String getName() { return TARGET_LINES + "L SPRINT"; }
 
     @Override public String getDescription() {
         int best = Records.get().bestTimeMs(Records.sprintKey(TARGET_LINES));

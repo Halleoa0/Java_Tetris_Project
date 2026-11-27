@@ -29,14 +29,13 @@ public final class LabelUI {
     private final Image gameNamePanelImage;
     private final String gameName;
 
-    public LabelUI(Game game, Font interBlack, Font interMedium, Font sansKRBlack, Font orbitBlack, Font orbitBold,
-            Image gameNamePanelImage, String gameName) {
+    public LabelUI(Game game, Fonts fonts, Image gameNamePanelImage, String gameName) {
         this.game = game;
-        this.interBlack = interBlack;
-        this.interMedium = interMedium;
-        this.sansKRBlack = sansKRBlack;
-        this.orbitBlack = orbitBlack;
-        this.orbitBold = orbitBold;
+        this.interBlack = fonts.interBlack();
+        this.interMedium = fonts.interMedium();
+        this.sansKRBlack = fonts.sansKRBlack();
+        this.orbitBlack = fonts.orbitBlack();
+        this.orbitBold = fonts.orbitBold();
         this.gameNamePanelImage = gameNamePanelImage;
         this.gameName = gameName;
     }
