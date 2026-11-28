@@ -1,5 +1,9 @@
 package ui;
 
+import static ui.BoardLayout.BOARD_X;
+import static ui.BoardLayout.BOARD_Y;
+import static ui.BoardLayout.CELL;
+
 import game.Board;
 import game.Game;
 import java.awt.Color;
@@ -16,9 +20,8 @@ import settings.Records;
 
 /// GamePanel에 존재하면 Label을 따로 별개의 클래스로 뺌
 public final class LabelUI {
-    private static final int CELL = 25;
-    private static final int BOARD_X = 517;
-    private static final int BOARD_Y = 111;
+    // 보드 오른쪽 글씨(SCORE, TIME, ATTACK)의 위치
+    private static final int RIGHT_LABEL_X = 783, UPPER_LABEL_Y = 466, LOWER_LABEL_Y = 539;
 
     private final Game game;
     private final Font interBlack;
@@ -118,24 +121,30 @@ public final class LabelUI {
 
     /** 현재 점수를 보드 오른쪽에 그린다. */
     public void drawScoreValueLabel(Graphics2D g) {
-        g.setColor(Color.WHITE);
-        g.setFont(interMedium.deriveFont(16f));
-        g.drawString("SCORE", 783, 466);
-        g.setFont(interBlack.deriveFont(24f));
-        g.drawString(String.format(Locale.US, "%,d", game.scoring.score), 783, 466 + 28);
+        drawRightLabel(g, "SCORE", String.format(Locale.US, "%,d", game.scoring.score), UPPER_LABEL_Y);
     }
 
     /** 진행 시간을 보드 오른쪽에 그린다. */
     public void drawTimeLabel(Graphics2D g) {
-        g.setColor(Color.WHITE);
-        g.setFont(interMedium.deriveFont(16f));
-        g.drawString("TIME", 783, 539);
         int totalSeconds = game.displayTimeSeconds();
         // 기록을 겨루는 스프린트는 1/100초까지 보여줌
         String timeText = game.targetLines() > 0 || "TOP OUT RUN".equals(gameName)
                 ? Records.formatTime(game.elapsedTimeMs())
                 : String.format(Locale.ROOT, "%02d:%02d", totalSeconds / 60, totalSeconds % 60);
+        drawRightLabel(g, "TIME", timeText, LOWER_LABEL_Y);
+    }
+
+    /** 대전 모드: TIME 자리에 지금까지 보낸 공격 줄 수를 그린다. */
+    public void drawAttackLabel(Graphics2D g, int attack) {
+        drawRightLabel(g, "ATTACK", String.valueOf(attack), LOWER_LABEL_Y);
+    }
+
+    /** 보드 오른쪽에 작은 제목(16)과 그 아래 큰 값(24)을 그린다. */
+    private void drawRightLabel(Graphics2D g, String title, String value, int y) {
+        g.setColor(Color.WHITE);
+        g.setFont(interMedium.deriveFont(16f));
+        g.drawString(title, RIGHT_LABEL_X, y);
         g.setFont(interBlack.deriveFont(24f));
-        g.drawString(timeText, 783, 539 + 28);
+        g.drawString(value, RIGHT_LABEL_X, y + 28);
     }
 }

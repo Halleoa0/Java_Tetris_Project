@@ -47,8 +47,8 @@ public final class ModeSelectPanel extends JPanel {
             @Override public void mouseExited(MouseEvent e){hovered=null;updateDescription();repaint();}
             @Override public void mousePressed(MouseEvent e){pressed=buttonAt(e.getX(),e.getY());hovered=pressed;navigation.useMouse(pressed);repaint();}
             @Override public void mouseReleased(MouseEvent e){TetrisBlockButton b=buttonAt(e.getX(),e.getY());
-                                                                if(pressed!=null&&pressed==b&&b.enabled){AudioManager.get().playMenuSelect();b.action.run();}
-                                                                pressed=null;updateHover(e.getX(),e.getY());}
+                if(pressed!=null&&pressed==b&&b.enabled){AudioManager.get().playMenuSelect();b.action.run();}
+                pressed=null;updateHover(e.getX(),e.getY());}
         };
         addMouseListener(mouse);addMouseMotionListener(mouse);
     }

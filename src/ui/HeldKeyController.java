@@ -6,13 +6,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import javax.swing.JPanel;
+import javax.swing.JComponent;
 import settings.Settings;
 
 /** 누르고 있는 게임 키를 추적하고 DAS/ARR(첫 반복 지연/반복 간격) 반복 입력을 적용하는 클래스. */
 final class HeldKeyController {
     private final Game game;
-    private final JPanel panel;
+    private final JComponent panel;
     private final Set<String> heldKeys = new HashSet<>();
     private final Set<String> pressedMoveKeys = new HashSet<>();
     private final Set<String> repeatingKeys = new HashSet<>();
@@ -20,7 +20,7 @@ final class HeldKeyController {
     private final Map<String, Runnable> heldKeyActions = new HashMap<>();
 
     /** 조작할 게임과 다시 그릴 패널을 받아 생성한다. */
-    HeldKeyController(Game game, JPanel panel) {
+    HeldKeyController(Game game, JComponent panel) {
         this.game = game;
         this.panel = panel;
     }
@@ -80,6 +80,12 @@ final class HeldKeyController {
             heldKeyElapsed.put(key, elapsed);
         }
     }
+
+    /** 해당 이동 키를 누르고 있는 상태인지 확인한다. */
+    boolean isHeld(Settings.Action action) { return heldKeys.contains(action.name()); }
+
+    /** 누르고 있는 이동 키가 하나라도 있는지 확인한다. */
+    boolean hasHeldKeys() { return !heldKeys.isEmpty(); }
 
     /** 누르고 있는 키 상태를 모두 지우고 소프트 드롭을 해제한다. */
     void clear() {

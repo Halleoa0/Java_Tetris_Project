@@ -32,11 +32,33 @@ public final class BotBrain {
         }
 
         /// 블록 하나에 쓰는 시간(ms). 예) 0.5 PPS => 2000ms
-        int msPerPiece() { return Math.round(1000f / pps); }
+        int msPerPiece() { return Math.round(MS_PER_SECOND / pps); }
 
-        /// 회전/이동을 한 번 할 때마다 기다리는 시간(ms). 블록 하나 시간을 10번의 동작으로 나눔.
-        int stepDelayMs() { return Math.max(10, msPerPiece() / 10); }
+        /// 회전/이동을 한 번 할 때마다 기다리는 시간(ms). 블록 하나 시간을 STEPS_PER_PIECE번의 동작으로 나눔.
+        int stepDelayMs() { return Math.max(MIN_STEP_DELAY_MS, msPerPiece() / STEPS_PER_PIECE); }
     }
+
+    // ---------- 봇의 동작 속도 ----------
+    private static final float MS_PER_SECOND = 1000f;
+    private static final int STEPS_PER_PIECE = 10;    // 블록 하나 시간을 몇 번의 동작으로 나눌지
+    private static final int MIN_STEP_DELAY_MS = 10;  // 동작 사이의 최소 대기 시간(ms)
+
+    // ---------- 자리 탐색 범위 ----------
+    private static final int ROTATION_COUNT = 4;      // 회전 상태의 수 (0, 90, 180, 270도)
+    private static final int MIN_SEARCH_X = -2;       // 모양 왼쪽의 빈 칸 때문에 x는 음수일 수 있음
+    private static final int FALLBACK_X = 3;          // 놓을 곳이 없을 때 쓰는 x (블록이 처음 생기는 위치)
+    private static final double NO_PLACE_SCORE = -99_999; // 놓을 곳이 없는 자리의 점수 (어떤 자리보다도 나쁨)
+
+    // ---------- 보드 평가 가중치 (값이 클수록 점수에 크게 반영됨) ----------
+    private static final double LANDING_HEIGHT_PENALTY = 3.5;  // 놓는 높이 1칸당 감점
+    private static final double HOLE_PENALTY = 35;             // 구멍 1개당 감점. 가장 나쁨
+    private static final double ROW_TRANSITION_PENALTY = 3;    // 가로 바뀜 1번당 감점
+    private static final double COLUMN_TRANSITION_PENALTY = 9; // 세로 바뀜 1번당 감점
+    private static final double TETRIS_WELL_BONUS = 18;        // 테트리스용 우물(오른쪽 끝 열)을 비워두면 가점
+
+    // ---------- 테트리스 우물 조건 ----------
+    private static final int SAFE_HEIGHT_LIMIT = 12;  // 가장 높은 열이 이 높이 미만이어야 안전하다고 봄
+    private static final int MIN_WELL_DEPTH = 2;      // 우물 옆 열이 이 높이 이상이어야 우물로 인정
 
     /// 봇이 고른 자리. "홀드를 할지, 몇 번 회전할지, 가로 어디에 놓을지"와 그 자리의 점수.
     static final class Plan {
@@ -79,9 +101,9 @@ public final class BotBrain {
     private Plan bestPlanFor(Board board, Tetromino piece, int startY, boolean hold) {
         List<Plan> plans = new ArrayList<>(); // 놓을 수 있는 자리 목록
 
-        for (int rotation = 0; rotation < 4; rotation++) {
-            // 미노 모양에 따라 왼쪽에 빈 칸이 있어서 x가 음수일 수도 있음. 그래서 -2부터 검사.
-            for (int x = -2; x < Board.WIDTH; x++) {
+        for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+            // 미노 모양에 따라 왼쪽에 빈 칸이 있어서 x가 음수일 수도 있음. 그래서 MIN_SEARCH_X부터 검사.
+            for (int x = MIN_SEARCH_X; x < Board.WIDTH; x++) {
                 if (!board.canPlace(piece, x, startY, rotation)) continue; // 벽 밖이거나 막혀 있으면 패스
 
                 // 하드 드롭처럼 더 못 내려갈 때까지 내림
@@ -92,7 +114,7 @@ public final class BotBrain {
             }
         }
 
-        if (plans.isEmpty()) return new Plan(hold, 0, 3, -99999); // 놓을 곳이 없음 (곧 게임 오버)
+        if (plans.isEmpty()) return new Plan(hold, 0, FALLBACK_X, NO_PLACE_SCORE); // 놓을 곳이 없음 (곧 게임 오버)
 
         // 난이도에 따라 가끔 일부러 아무 자리나 고름 (사람 같은 실수)
         if (random.nextDouble() < difficulty.mistakeChance) {
@@ -113,20 +135,20 @@ public final class BotBrain {
         after.lock(piece, x, y, rotation);
         after.clearLines();              // 꽉 찬 줄은 지워진 상태로 평가
 
-        // 나쁜 것은 뺌(-). 앞의 숫자가 클수록 더 싫어한다는 뜻.
+        // 나쁜 것은 뺌(-). 가중치가 클수록 더 싫어한다는 뜻.
         double score = 0;
         int holes = after.holeCount();
-        score -= 3.5 * (Board.HEIGHT - y);      // 놓는 높이: 높은 곳에 놓을수록 나쁨 (y가 클수록 아래쪽)
-        score -= 35 * holes;                    // 구멍: 가장 나쁨. 위가 막혀서 채우기 어려움
-        score -= 3 * after.rowTransitions();    // 가로 바뀜: 줄 사이사이에 빈칸이 많으면 나쁨
-        score -= 9 * after.columnTransitions(); // 세로 바뀜: 블록 밑에 빈칸이 끼면 나쁨
+        score -= LANDING_HEIGHT_PENALTY * (Board.HEIGHT - y); // 놓는 높이: 높은 곳에 놓을수록 나쁨 (y가 클수록 아래쪽)
+        score -= HOLE_PENALTY * holes;                        // 구멍: 위가 막혀서 채우기 어려움
+        score -= ROW_TRANSITION_PENALTY * after.rowTransitions();       // 가로 바뀜: 줄 사이사이에 빈칸이 많으면 나쁨
+        score -= COLUMN_TRANSITION_PENALTY * after.columnTransitions(); // 세로 바뀜: 블록 밑에 빈칸이 끼면 나쁨
 
         // 좋은 것은 더함(+). 오른쪽 끝 열을 비워두면 나중에 I 블록으로 테트리스(4줄)를 할 수 있음.
-        // 단, 구멍이 없고 아직 안전한 높이(12칸 미만)일 때만.
-        boolean safe = holes == 0 && maxHeight(after) < 12;
+        // 단, 구멍이 없고 아직 안전한 높이일 때만.
+        boolean safe = holes == 0 && maxHeight(after) < SAFE_HEIGHT_LIMIT;
         int rightHeight = after.columnHeight(Board.WIDTH - 1);      // 오른쪽 끝 열 높이
         int besideHeight = after.columnHeight(Board.WIDTH - 2);     // 그 바로 옆 열 높이
-        if (safe && rightHeight == 0 && besideHeight >= 2) score += 18;
+        if (safe && rightHeight == 0 && besideHeight >= MIN_WELL_DEPTH) score += TETRIS_WELL_BONUS;
 
         return score;
     }

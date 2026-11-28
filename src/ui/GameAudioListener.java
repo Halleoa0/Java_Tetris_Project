@@ -4,8 +4,8 @@ import audio.AudioManager;
 import game.GameListener;
 import game.Tetromino;
 
-/** 게임 이벤트에 맞춰 효과음을 재생하는 리스너. */
-final class GameAudioListener implements GameListener {
+/** 게임 이벤트에 맞춰 효과음을 재생하는 리스너. 1인용 화면과 대전 화면이 함께 쓴다. */
+public final class GameAudioListener implements GameListener {
     private boolean justHardDropped;
 
     /** 블록이 이동하면 이동 효과음을 재생한다. */

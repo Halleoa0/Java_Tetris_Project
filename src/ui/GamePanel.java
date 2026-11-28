@@ -1,15 +1,23 @@
 package ui;
 
+import static ui.BoardLayout.BOARD_X;
+import static ui.BoardLayout.BOARD_Y;
+import static ui.BoardLayout.CELL;
+import static ui.BoardLayout.MATRIX_H;
+import static ui.BoardLayout.MATRIX_W;
+import static ui.BoardLayout.MATRIX_X;
+import static ui.BoardLayout.MATRIX_Y;
+
 import audio.AudioManager;
 import game.Board;
 import game.Game;
+import graphics.ScreenStyle;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
+import java.awt.Font;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.font.TextAttribute;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -34,11 +42,6 @@ public final class GamePanel extends JPanel {
         boolean allow(String action);
     }
 
-    // 조각의 크기는 25 (25x25), 보드의 위치는 x 517, x 111
-    private static final int CELL = 25, BOARD_X = 517, BOARD_Y = 111;
-    private static final int MATRIX_X = 378, MATRIX_Y = 111, MATRIX_W = 528, MATRIX_H = 505;
-    private static final Color BACKGROUND = new Color(41, 41, 41);
-
     private final Game game;
     private Consumer<Graphics2D> overlayRenderer;
     private long lastTick = System.nanoTime();
@@ -52,13 +55,8 @@ public final class GamePanel extends JPanel {
 
     /// 폰트 불러오기
     private final Fonts fonts = Fonts.load();
-    public final Font interBlack = fonts.interBlack();
-    public final Font interMedium = fonts.interMedium();
-    public final Font sansKRBlack = fonts.sansKRBlack();
-    public final Font orbitBlack = fonts.orbitBlack();
-    public final Font orbitBold = fonts.orbitBold();
+    public final Font sansKRBlack = fonts.sansKRBlack(); // 튜토리얼 안내(TutorialController)에서도 사용
 
-    private final HeldKeyController heldKeyController;
     private final GameInputController inputController;
 
     private final Timer timer;
@@ -71,7 +69,6 @@ public final class GamePanel extends JPanel {
     // 현재 진행 중 모드
     private String gameName = "튜토리얼";
 
-    // 스프린트 결과 (목표 달성 순간에 정해지고, 결과 화면에서 그림)
     // 키를 게임 동작에 연결하고 16ms 간격으로 게임 상태를 갱신한다.
     public GamePanel() { this(new Game()); }
 
@@ -88,48 +85,18 @@ public final class GamePanel extends JPanel {
         this.game = game;
         this.gameName = gameName;
         setLayout(null);
-        setPreferredSize(new Dimension(1280, 720));
-        setBackground(BACKGROUND);
+        setPreferredSize(new Dimension(ScreenStyle.WIDTH, ScreenStyle.HEIGHT));
+        setBackground(ScreenStyle.BACKGROUND);
         setFocusable(true);
 
         assets = new MinoTile();
         labelUI = new LabelUI(game, fonts, assets.gameNamePanelImage(), gameName);
-        boardRenderer = new BoardRenderer(game, assets.minoTiles(), this);
+        boardRenderer = new BoardRenderer(assets.minoTiles(), this, BoardRenderer.GarbageStyle.GRAY_BOX);
         gameOverUI = new GameOverUI(game, gameName, fonts, this,
                 () -> game.gameOver && !paused, this::restartFromGameOver, () -> homeCallback.run());
-        pauseUI = new PauseUI(this, assets.pauseGuideImage(), fonts);
-        heldKeyController = new HeldKeyController(game, this);
-        inputController = new GameInputController(this, game, heldKeyController,
-                () -> paused, () -> game.gameOver, this::handlePauseInput, gameOverUI::confirmSelection);
-        inputController.bindHeld(Settings.Action.MOVE_LEFT, () -> game.move(-1, 0));
-        inputController.bindHeld(Settings.Action.MOVE_RIGHT, () -> game.move(1, 0));
-        inputController.bindHeld(Settings.Action.SOFT_DROP, () -> {
-            game.setSoftDropHeld(true);
-            game.softDrop();
-        });
-        inputController.bindInitial(Settings.Action.ROTATE_CW, "rotateCW", () -> game.rotate(1));
-        inputController.bindInitial(Settings.Action.ROTATE_CCW, "rotateCCW", () -> game.rotate(-1));
-        inputController.bind(Settings.Action.HARD_DROP, "hardDrop", game::hardDrop);
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().released(Settings.Action.HARD_DROP), "pauseSpaceReleased");
-        getActionMap().put("pauseSpaceReleased", new javax.swing.AbstractAction() {
-            @Override public void actionPerformed(ActionEvent e) { inputController.spaceReleased(); }
-        });
-        inputController.bindInitial(Settings.Action.HOLD, "hold", game::hold);
-        inputController.bind(Settings.Action.RESTART, "restart", () -> {
-            game.restart();
-            AudioManager.get().startGameBgm();
-        });
-        inputController.bindPauseNavigation("UP", -1, () -> pauseUI.moveSelection(-1));
-        inputController.bindPauseNavigation("DOWN", 1, () -> pauseUI.moveSelection(1));
-        inputController.bindGameOverNavigation("LEFT", -1, () -> gameOverUI.selectOption(-1));
-        inputController.bindGameOverNavigation("RIGHT", 1, () -> gameOverUI.selectOption(1));
-
-        inputController.bindUnfiltered("ESCAPE", "pauseToggle", () -> {
-            if (paused) setPaused(false);
-            else if (game.gameOver) homeCallback.run();
-            else setPaused(true);
-        });
-        inputController.bindUnfiltered("M", "menu", () -> { if (paused || game.gameOver) homeCallback.run(); });
+        pauseUI = new PauseUI(this, assets.pauseGuideImage(), fonts, "RESUME", "RESTART", "QUIT");
+        inputController = new GameInputController(this, game, createInputHost());
+        bindKeys();
 
         // 위클리 미션 진행도 기록(튜토리얼 제외) + 달성 알림
         if (!"튜토리얼".equals(gameName)) game.addListener(new shop.MissionTracker(game));
@@ -140,8 +107,7 @@ public final class GamePanel extends JPanel {
 
         addFocusListener(new FocusAdapter() {
             @Override public void focusLost(FocusEvent e) {
-                clearHeldKeys();
-                inputController.spaceReleased();
+                inputController.clear();
                 AudioManager.get().setWindowActive(false);
             }
             @Override public void focusGained(FocusEvent e) {
@@ -155,12 +121,41 @@ public final class GamePanel extends JPanel {
             int elapsed = Math.min(100, clockElapsed);
             lastTick = now;
             game.tick(clockElapsed);
-            heldKeyController.tickHeldKeys(Math.min(1_000, clockElapsed));
+            inputController.tickHeldKeys(Math.min(1_000, clockElapsed));
             game.scoring.tick(elapsed);
             gameOverUI.updateVisibility();
             repaint();
         });
         timer.start();
+    }
+
+    /** 게임 조작 키와 메뉴 키를 등록한다. */
+    private void bindKeys() {
+        inputController.bindGameplayKeys(() -> {
+            game.restart();
+            AudioManager.get().startGameBgm();
+        });
+        inputController.bindPauseNavigation("UP", () -> pauseUI.moveSelection(-1));
+        inputController.bindPauseNavigation("DOWN", () -> pauseUI.moveSelection(1));
+        inputController.bindGameOverNavigation("LEFT", () -> gameOverUI.selectOption(-1));
+        inputController.bindGameOverNavigation("RIGHT", () -> gameOverUI.selectOption(1));
+
+        inputController.bindUnfiltered("ESCAPE", "pauseToggle", () -> {
+            if (paused) setPaused(false);
+            else if (game.gameOver) homeCallback.run();
+            else setPaused(true);
+        });
+        inputController.bindUnfiltered("M", "menu", () -> { if (paused || game.gameOver) homeCallback.run(); });
+    }
+
+    /** 입력 컨트롤러에 이 화면의 상태와 규칙을 알려준다. */
+    private GameInputController.Host createInputHost() {
+        return new GameInputController.Host() {
+            @Override public boolean isPaused() { return paused; }
+            @Override public boolean isFinished() { return game.gameOver; }
+            @Override public void onPauseInput(Settings.Action action) { handlePauseInput(action); }
+            @Override public void onConfirmResult() { gameOverUI.confirmSelection(); }
+        };
     }
 
     /** 허용할 입력을 고르는 필터를 지정한다. null이면 모든 입력을 허용한다. */
@@ -183,7 +178,7 @@ public final class GamePanel extends JPanel {
     private void setPaused(boolean paused) {
         if (this.paused == paused) return;
         this.paused = paused;
-        clearHeldKeys();
+        inputController.clear();
         if (paused) {
             pauseUI.resetSelection();
             timer.stop();
@@ -211,12 +206,6 @@ public final class GamePanel extends JPanel {
     public void stop() {
         toast.detach();
         timer.stop();
-        clearHeldKeys();
-    }
-
-    /** 누르고 있던 키와 IRS/IHS 입력 상태를 모두 초기화한다. */
-    private void clearHeldKeys() {
-        heldKeyController.clear();
         inputController.clear();
     }
 
@@ -228,7 +217,7 @@ public final class GamePanel extends JPanel {
         graphics.drawImage(assets.guideImage(), 40, 545, this);
         Graphics2D g = (Graphics2D) graphics.create();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        boardRenderer.draw(g);
+        boardRenderer.draw(g, game);
         if (game.isCountingDown()) drawCountdown(g);
         labelUI.drawGameNamePanel(g);
         labelUI.drawPpsLabel(g);
@@ -243,9 +232,6 @@ public final class GamePanel extends JPanel {
         g.dispose();
     }
 
-    /// 이 아래의 코드는 디자인 변화 시 수정될 수 있는 코드입니다.
-    /// 보드 및 미노(블록)을 png 파일로 대체하여 아래보다 코드가 간단해질 수 있습니다.
-
     /** 스프린트 시작 전 3, 2, 1 카운트다운. 보드를 살짝 어둡게하고 가운데에 숫자를 보여준다. */
     private void drawCountdown(Graphics2D g) {
         int boardW = Board.WIDTH * CELL, boardH = (Board.HEIGHT - Board.HIDDEN_ROWS) * CELL;
@@ -253,11 +239,11 @@ public final class GamePanel extends JPanel {
         g.fillRect(BOARD_X, BOARD_Y, boardW, boardH);
         int centerX = BOARD_X + boardW / 2, centerY = BOARD_Y + boardH / 2;
         g.setColor(new Color(255, 255, 255, 190));
-        g.setFont(orbitBold.deriveFont(Map.of(TextAttribute.SIZE, 20f, TextAttribute.TRACKING, 0.3f)));
+        g.setFont(fonts.orbitBold().deriveFont(Map.of(TextAttribute.SIZE, 20f, TextAttribute.TRACKING, 0.3f)));
         String ready = "READY";
         g.drawString(ready, centerX - g.getFontMetrics().stringWidth(ready) / 2, centerY - 60);
         g.setColor(Color.WHITE);
-        g.setFont(orbitBlack.deriveFont(96f));
+        g.setFont(fonts.orbitBlack().deriveFont(96f));
         String number = String.valueOf(game.countdownSeconds());
         g.drawString(number, centerX - g.getFontMetrics().stringWidth(number) / 2, centerY + 30);
     }

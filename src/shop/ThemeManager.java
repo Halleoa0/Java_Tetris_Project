@@ -1,21 +1,22 @@
 package shop;
 
-import game.Tetromino;
+import graphics.MinoSprites;
+import graphics.ScreenStyle;
 import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.function.BiConsumer;
-import java.util.function.ToIntFunction;
 import settings.Settings;
 
 /** 장착한 테마(미노 스킨, 배경화면)를 게임 화면에 적용한다. */
 public final class ThemeManager {
-    private static final int W = 1280, H = 720;
+    private static final int W = ScreenStyle.WIDTH, H = ScreenStyle.HEIGHT;
     private static final Map<ShopItem, BufferedImage> BG_CACHE = new EnumMap<>(ShopItem.class);
     /** 배경별로 그리는 메서드를 모아 둔 표. 표에 없는 배경은 paintDefault로 그린다. */
     private static final Map<ShopItem, BiConsumer<Graphics2D, Random>> PAINTERS = new EnumMap<>(ShopItem.class);
@@ -30,32 +31,22 @@ public final class ThemeManager {
     private ThemeManager() { }
 
     /** 장착한 미노 스킨을 타일(0~6번)에 입힌다. 색각 보정 모드가 켜져 있으면 그쪽이 우선이라 건드리지 않는다. */
-    public static void applyMinoSkin(BufferedImage[] tiles, ToIntFunction<Tetromino> tileIndex) {
+    public static void applyMinoSkin(BufferedImage[] tiles) {
         if (Settings.get().colorMode() != Settings.ColorMode.OFF) return;
-        ShopItem skin = PlayerData.get().equipped(ShopItem.Type.MINO);
-        if (skin.palette == null) return;
-        // 팔레트 순서: Z, L, O, S, I, J, T
-        Tetromino[] order = {Tetromino.Zmino, Tetromino.Lmino, Tetromino.Omino, Tetromino.Smino,
-                Tetromino.Imino, Tetromino.Jmino, Tetromino.Tmino};
-        for (int i = 0; i < order.length; i++) {
-            int idx = tileIndex.applyAsInt(order[i]);
-            tiles[idx] = tint(tiles[idx], skin.palette[i]);
-        }
+        applyPalette(tiles, PlayerData.get().equipped(ShopItem.Type.MINO));
     }
 
     /** 상점 미리보기용: 지정한 스킨이 입혀진 타일 7개(Z, L, O, S, I, J, T 순서). */
     public static BufferedImage[] previewTiles(ShopItem skin) {
-        try {
-            BufferedImage sheet = javax.imageio.ImageIO.read(java.nio.file.Path.of("Images/Mino.png").toFile());
-            BufferedImage[] tiles = new BufferedImage[7];
-            for (int i = 0; i < 7; i++) {
-                tiles[i] = sheet.getSubimage(i * 25, 0, 25, 25);
-                if (skin.palette != null) tiles[i] = tint(tiles[i], skin.palette[i]);
-            }
-            return tiles;
-        } catch (java.io.IOException e) {
-            throw new IllegalStateException("Images/Mino.png를 불러올 수 없습니다.", e);
-        }
+        BufferedImage[] tiles = Arrays.copyOf(MinoSprites.loadTiles(), MinoSprites.GHOST_TILE); // 고스트 타일은 제외
+        applyPalette(tiles, skin);
+        return tiles;
+    }
+
+    /** 스킨 팔레트를 타일에 입힌다. 팔레트 순서(Z, L, O, S, I, J, T)는 타일 번호 순서와 같다. */
+    private static void applyPalette(BufferedImage[] tiles, ShopItem skin) {
+        if (skin.palette == null) return;
+        for (int i = 0; i < skin.palette.length; i++) tiles[i] = MinoSprites.tint(tiles[i], skin.palette[i]);
     }
 
     /** 장착한 배경화면을 화면 전체에 그린다. 패널 크기에 맞춰 늘려 그린다. */
@@ -68,7 +59,7 @@ public final class ThemeManager {
     /** 상점 미리보기용: 지정한 영역에 배경을 그린다. */
     public static void paintPreview(Graphics2D g, ShopItem bg, int x, int y, int w, int h) {
         if (bg == ShopItem.BG_DEFAULT) {
-            g.setColor(new Color(41, 41, 41));
+            g.setColor(ScreenStyle.BACKGROUND);
             g.fillRect(x, y, w, h);
         } else {
             g.drawImage(background(bg), x, y, w, h, null);
@@ -79,7 +70,7 @@ public final class ThemeManager {
         return BG_CACHE.computeIfAbsent(bg, ThemeManager::render);
     }
 
-    /** 배경 하나를 1280x720 이미지로 그린다. 그리는 방법은 PAINTERS 표에서 찾는다. */
+    /** 배경 하나를 화면 크기의 이미지로 그린다. 그리는 방법은 PAINTERS 표에서 찾는다. */
     private static BufferedImage render(ShopItem bg) {
         BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = img.createGraphics();
@@ -129,12 +120,15 @@ public final class ThemeManager {
     /** 사이버 그리드: 어두운 그라데이션 + 40px 청록 격자 + 200px 분홍 격자. */
     private static void paintGrid(Graphics2D g) {
         fillVerticalGradient(g, new Color(8, 6, 24), new Color(35, 8, 60));
-        g.setColor(new Color(0, 230, 255, 70));
-        for (int x = 0; x <= W; x += 40) g.drawLine(x, 0, x, H);
-        for (int y = 0; y <= H; y += 40) g.drawLine(0, y, W, y);
-        g.setColor(new Color(255, 40, 200, 60));
-        for (int x = 0; x <= W; x += 200) g.drawLine(x, 0, x, H);
-        for (int y = 0; y <= H; y += 200) g.drawLine(0, y, W, y);
+        drawGridLines(g, 40, new Color(0, 230, 255, 70));
+        drawGridLines(g, 200, new Color(255, 40, 200, 60));
+    }
+
+    /** spacing 간격의 가로/세로 격자선을 그린다. */
+    private static void drawGridLines(Graphics2D g, int spacing, Color color) {
+        g.setColor(color);
+        for (int x = 0; x <= W; x += spacing) g.drawLine(x, 0, x, H);
+        for (int y = 0; y <= H; y += spacing) g.drawLine(0, y, W, y);
     }
 
     /** 깊은 바다: 파란 그라데이션 + 물방울 70개 + 빛줄기 6개. */
@@ -164,26 +158,7 @@ public final class ThemeManager {
 
     /** 그 밖의 배경: 단색 회색. */
     private static void paintDefault(Graphics2D g) {
-        g.setColor(new Color(41, 41, 41));
+        g.setColor(ScreenStyle.BACKGROUND);
         g.fillRect(0, 0, W, H);
-    }
-
-    /** 원본 타일의 밝기(음영)는 유지하고 색만 target으로 바꾼다. */
-    public static BufferedImage tint(BufferedImage src, Color target) {
-        BufferedImage out = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        float base = (target.getRed() * 0.299f + target.getGreen() * 0.587f + target.getBlue() * 0.114f) / 255f;
-        for (int y = 0; y < src.getHeight(); y++) {
-            for (int x = 0; x < src.getWidth(); x++) {
-                int p = src.getRGB(x, y);
-                int a = p >>> 24;
-                float lum = (((p >> 16) & 255) * 0.299f + ((p >> 8) & 255) * 0.587f + (p & 255) * 0.114f) / 255f;
-                float k = base == 0 ? 1f : lum / base;
-                int r = Math.min(255, Math.round(target.getRed() * k));
-                int gr = Math.min(255, Math.round(target.getGreen() * k));
-                int b = Math.min(255, Math.round(target.getBlue() * k));
-                out.setRGB(x, y, (a << 24) | (r << 16) | (gr << 8) | b);
-            }
-        }
-        return out;
     }
 }
