@@ -20,11 +20,16 @@ final class BattleGame {
     static final float ROUND_TIME_LIMIT = 240.0f; // 한 라운드 제한 시간(초). 4분 동안 진행된다.
     static final float HURRY_UP_TIME = 45.0f;      // 서든데스 시작 시간(초). 마지막 45초에는 공격력이 1.5배가 된다.
     static final int TARGET_SCORE = 50_000;        // 목표 점수. 이 점수에 먼저 도달하면 라운드를 즉시 승리한다.
+    static final double HURRY_UP_ATTACK_MULTIPLIER = 1.5; // 서든데스 구간의 공격력 배율
+    static final int MAX_GARBAGE_PER_LOCK = 4;     // 블록 하나를 놓을 때 한 번에 솟아오르는 최대 방해 줄 수
 
     final Game playerGame = new Game();            // 플레이어 1의 테트리스 게임 인스턴스
     final Game botGame = new Game();               // CPU 봇의 테트리스 게임 인스턴스
     final GarbageQueue playerGarbage = new GarbageQueue(); // 플레이어에게 날아오는 방해 줄 대기열
     final GarbageQueue botGarbage = new GarbageQueue();    // CPU 봇에게 날아오는 방해 줄 대기열
+
+    private final Side player = new Side(playerGame, playerGarbage); // 플레이어의 게임과 방해 줄 대기열
+    private final Side bot = new Side(botGame, botGarbage);          // CPU 봇의 게임과 방해 줄 대기열
 
     final BotBrain botBrain;                       // CPU 봇의 두뇌 (놓을 자리를 정함)
     final BotController botController;             // CPU 봇의 손 (블록을 실제로 움직임)
@@ -39,13 +44,6 @@ final class BattleGame {
     private int currentRound = 1;                  // 현재 진행 중인 라운드 번호 (1~3)
     private float roundTimer = ROUND_TIME_LIMIT;   // 이번 라운드에 남은 시간(초)
 
-    private int playerTotalAttack = 0;             // 플레이어가 상대에게 보낸 총 공격 줄 수
-    private int botTotalAttack = 0;                // CPU 봇이 상대에게 보낸 총 공격 줄 수
-    // 이번에 놓은 블록으로 줄을 지웠는지 여부. onLinesCleared에서 true로 바꾸고, onLock에서 확인한 뒤 false로 되돌린다.
-    // (Game은 onLinesCleared를 onLock보다 먼저 알려준다)
-    private boolean lastPlayerClear = false;
-    private boolean lastBotClear = false;
-
     private final BotBrain.Difficulty difficulty;  // 승리 기록(난이도별)에 사용
 
     BattleGame(BotBrain.Difficulty difficulty) {
@@ -58,83 +56,8 @@ final class BattleGame {
 
     /// 두 플레이어(유저와 CPU)의 게임 이벤트를 감지하여 공격 전송과 방해 줄 상쇄를 처리한다.
     private void setupGameListeners() {
-        // 플레이어 1 게임 이벤트 리스너 //
-        playerGame.addListener(new GameListener() {
-            @Override public void onLinesCleared(int lines) {
-                lastPlayerClear = true; // 이번 턴에 줄을 지웠음을 기록한다.
-            }
-
-            @Override public void onAttackSent(int attackLines) {
-                // 서든데스(마지막 45초) 구간에서는 공격력이 1.5배로 강화된다.
-                if (isHurryUp()) {
-                    attackLines = (int) Math.round(attackLines * 1.5);
-                }
-                playerTotalAttack += attackLines;
-
-                // 1단계: 플레이어에게 밀려오고 있던 상대방의 방해 줄을 내 공격으로 먼저 상쇄(Cancel)한다.
-                int leftover = playerGarbage.cancel(attackLines);
-                // 2단계: 상쇄하고 남은 잉여 공격 줄이 있다면 CPU 봇에게 전송한다.
-                if (leftover > 0) {
-                    botGarbage.addGarbage(leftover);
-                }
-            }
-
-            @Override public void onLock(Tetromino type) {
-                // 블록을 놓았을 때 줄을 지우지 못했다면, 대기 중이던 방해 줄이 바닥에서 솟아오른다.
-                // (방해 줄 때문에 다음 블록이 나올 자리가 막히면 다음 블록이 나올 때 게임 오버가 된다)
-                if (!lastPlayerClear && playerGarbage.hasPending()) {
-                    int toInject = playerGarbage.popGarbage(4); // 한 번에 최대 4줄씩 안전하게 솟아오른다.
-                    // 한 줄씩 올린다. 맨 윗줄까지 차서 더 못 올리면 Game이 게임 오버(KO) 처리한다.
-                    for (int i = 0; i < toInject && !playerGame.gameOver; i++) {
-                        playerGame.addGarbageRow(playerGarbage.getHoleCol());
-                    }
-                }
-                lastPlayerClear = false;
-            }
-
-            @Override public void onGameOver() {
-                // 플레이어의 블록이 천장에 닿아 탑아웃되면 패배 처리된다.
-                if (state == State.PLAYING) onPlayerKnockedOut();
-            }
-        });
-
-        // CPU 봇 게임 이벤트 리스너 //
-        botGame.addListener(new GameListener() {
-            @Override public void onLinesCleared(int lines) {
-                lastBotClear = true; // 이번 턴에 CPU 봇이 줄을 지웠음을 기록한다.
-            }
-
-            @Override public void onAttackSent(int attackLines) {
-                if (isHurryUp()) {
-                    attackLines = (int) Math.round(attackLines * 1.5);
-                }
-                botTotalAttack += attackLines;
-
-                // 1단계: 봇에게 밀려오던 방해 줄을 상쇄한다.
-                int leftover = botGarbage.cancel(attackLines);
-                // 2단계: 남은 공격 줄을 플레이어에게 전송한다.
-                if (leftover > 0) {
-                    playerGarbage.addGarbage(leftover);
-                }
-            }
-
-            @Override public void onLock(Tetromino type) {
-                // 줄을 지우지 못하고 블록이 고정되면 대기 중이던 방해 줄을 봇 보드에 주입한다.
-                if (!lastBotClear && botGarbage.hasPending()) {
-                    int toInject = botGarbage.popGarbage(4);
-                    // 한 줄씩 올린다. 맨 윗줄까지 차서 더 못 올리면 Game이 게임 오버(KO) 처리한다.
-                    for (int i = 0; i < toInject && !botGame.gameOver; i++) {
-                        botGame.addGarbageRow(botGarbage.getHoleCol());
-                    }
-                }
-                lastBotClear = false;
-            }
-
-            @Override public void onGameOver() {
-                // CPU 봇의 보드가 꽉 차서 탑아웃되면 플레이어 승리로 처리된다.
-                if (state == State.PLAYING) onBotKnockedOut();
-            }
-        });
+        playerGame.addListener(new SideListener(player, bot, Winner.BOT));   // 플레이어가 탑아웃되면 봇 승리
+        botGame.addListener(new SideListener(bot, player, Winner.PLAYER));   // 봇이 탑아웃되면 플레이어 승리
     }
 
     /// 새로운 배틀 매치를 1라운드부터 시작한다.
@@ -151,12 +74,8 @@ final class BattleGame {
         roundTimer = ROUND_TIME_LIMIT;
         roundWinner = Winner.NONE;
         winReason = WinReason.NONE;
-        playerGarbage.clear();
-        botGarbage.clear();
-        lastPlayerClear = false;
-        lastBotClear = false;
-        playerTotalAttack = 0; // 타임아웃 판정이 이번 라운드 공격량만 비교하도록 초기화한다.
-        botTotalAttack = 0;
+        player.resetRound(); // 타임아웃 판정이 이번 라운드 공격량만 비교하도록 초기화한다.
+        bot.resetRound();
 
         playerGame.restart();
         botGame.restart();
@@ -173,75 +92,41 @@ final class BattleGame {
 
         // 목표 점수(TARGET_SCORE) 도달 즉시 승리 판정 //
         if (playerGame.scoring.score >= TARGET_SCORE) {
-            onTargetScoreReached(Winner.PLAYER);
+            awardRound(Winner.PLAYER, WinReason.TARGET_SCORE);
             return;
         } else if (botGame.scoring.score >= TARGET_SCORE) {
-            onTargetScoreReached(Winner.BOT);
+            awardRound(Winner.BOT, WinReason.TARGET_SCORE);
             return;
         }
 
         roundTimer -= elapsedMs / 1000f; // ms를 초로 바꿔서 뺌
         if (roundTimer <= 0) {
             roundTimer = 0;
-            onTimeOut();
+            awardRound(decideTimeOutWinner(), WinReason.TIME_OUT);
         }
     }
 
-    /// 한쪽이 목표 점수(50,000점)에 도달하여 라운드를 즉시 승리한다.
-    private void onTargetScoreReached(Winner winner) {
-        if (winner == Winner.PLAYER) {
-            playerWins++;
-            roundWinner = Winner.PLAYER;
-        } else {
-            botWins++;
-            roundWinner = Winner.BOT;
-        }
-        winReason = WinReason.TARGET_SCORE;
-        finishRound();
-    }
-
-    /// 플레이어가 탑아웃(천장 도달)되어 CPU 봇이 라운드를 승리한다.
-    private void onPlayerKnockedOut() {
-        botWins++;
-        roundWinner = Winner.BOT;
-        winReason = WinReason.KO;
-        finishRound();
-    }
-
-    /// CPU 봇이 탑아웃(천장 도달)되어 플레이어가 라운드를 승리한다.
-    private void onBotKnockedOut() {
-        playerWins++;
-        roundWinner = Winner.PLAYER;
-        winReason = WinReason.KO;
+    /// 승리한 쪽의 승수를 올리고 승리 사유를 기록한 뒤 라운드를 마감한다.
+    private void awardRound(Winner winner, WinReason reason) {
+        if (winner == Winner.PLAYER) playerWins++;
+        else botWins++;
+        roundWinner = winner;
+        winReason = reason;
         finishRound();
     }
 
     /// 제한 시간(4분)이 지나 누적 공격량 > 점수 > 보드 높이 순으로 판정승을 결정한다.
-    private void onTimeOut() {
-        winReason = WinReason.TIME_OUT;
-        if (playerTotalAttack > botTotalAttack) {
-            playerWins++;
-            roundWinner = Winner.PLAYER;
-        } else if (botTotalAttack > playerTotalAttack) {
-            botWins++;
-            roundWinner = Winner.BOT;
-        } else if (playerGame.scoring.score > botGame.scoring.score) {
-            playerWins++;
-            roundWinner = Winner.PLAYER;
-        } else if (botGame.scoring.score > playerGame.scoring.score) {
-            botWins++;
-            roundWinner = Winner.BOT;
-        } else {
-            // 보드 높이가 더 낮은 쪽(더 여유로운 쪽)이 승리한다.
-            if (playerGame.board.totalHeight() <= botGame.board.totalHeight()) {
-                playerWins++;
-                roundWinner = Winner.PLAYER;
-            } else {
-                botWins++;
-                roundWinner = Winner.BOT;
-            }
+    private Winner decideTimeOutWinner() {
+        if (player.totalAttack != bot.totalAttack) {
+            return player.totalAttack > bot.totalAttack ? Winner.PLAYER : Winner.BOT;
         }
-        finishRound();
+        int playerScore = playerGame.scoring.score;
+        int botScore = botGame.scoring.score;
+        if (playerScore != botScore) {
+            return playerScore > botScore ? Winner.PLAYER : Winner.BOT;
+        }
+        // 보드 높이가 더 낮은 쪽(더 여유로운 쪽)이 승리한다.
+        return playerGame.board.totalHeight() <= botGame.board.totalHeight() ? Winner.PLAYER : Winner.BOT;
     }
 
     /// 라운드를 마감하고 어느 한 쪽이 2선승에 도달했는지 확인한다.
@@ -298,6 +183,78 @@ final class BattleGame {
     int getBotWins() { return botWins; }
     int getCurrentRound() { return currentRound; }
     float getRoundTimer() { return roundTimer; }
-    int getPlayerTotalAttack() { return playerTotalAttack; }
-    int getBotTotalAttack() { return botTotalAttack; }
+    int getPlayerTotalAttack() { return player.totalAttack; }
+    int getBotTotalAttack() { return bot.totalAttack; }
+
+    // 한쪽 선수(플레이어 또는 CPU 봇)의 게임, 방해 줄 대기열, 이번 라운드 상태
+    private static final class Side {
+        final Game game;
+        final GarbageQueue garbage;
+        int totalAttack = 0; // 상대에게 보낸 총 공격 줄 수
+        // 이번에 놓은 블록으로 줄을 지웠는지 여부. onLinesCleared에서 true로 바꾸고, onLock에서 확인한 뒤 false로 되돌린다.
+        // (Game은 onLinesCleared를 onLock보다 먼저 알려준다)
+        boolean clearedOnLastLock = false;
+
+        Side(Game game, GarbageQueue garbage) {
+            this.game = game;
+            this.garbage = garbage;
+        }
+
+        /// 새 라운드를 위해 방해 줄 대기열, 줄 삭제 여부, 누적 공격량을 초기화한다.
+        void resetRound() {
+            garbage.clear();
+            clearedOnLastLock = false;
+            totalAttack = 0;
+        }
+    }
+
+    // 한쪽 선수(self)의 게임 이벤트 리스너. 공격 전송, 방해 줄 상쇄와 주입, 탑아웃 패배를 처리한다.
+    private final class SideListener implements GameListener {
+        private final Side self;
+        private final Side opponent;
+        private final Winner winnerIfKnockedOut; // self가 탑아웃되면 이기는 쪽
+
+        SideListener(Side self, Side opponent, Winner winnerIfKnockedOut) {
+            this.self = self;
+            this.opponent = opponent;
+            this.winnerIfKnockedOut = winnerIfKnockedOut;
+        }
+
+        @Override public void onLinesCleared(int lines) {
+            self.clearedOnLastLock = true; // 이번 턴에 줄을 지웠음을 기록한다.
+        }
+
+        @Override public void onAttackSent(int attackLines) {
+            // 서든데스(마지막 45초) 구간에서는 공격력이 1.5배로 강화된다.
+            if (isHurryUp()) {
+                attackLines = (int) Math.round(attackLines * HURRY_UP_ATTACK_MULTIPLIER);
+            }
+            self.totalAttack += attackLines;
+
+            // 1단계: 나에게 밀려오고 있던 상대방의 방해 줄을 내 공격으로 먼저 상쇄(Cancel)한다.
+            int leftover = self.garbage.cancel(attackLines);
+            // 2단계: 상쇄하고 남은 잉여 공격 줄이 있다면 상대에게 전송한다.
+            if (leftover > 0) {
+                opponent.garbage.addGarbage(leftover);
+            }
+        }
+
+        @Override public void onLock(Tetromino type) {
+            // 블록을 놓았을 때 줄을 지우지 못했다면, 대기 중이던 방해 줄이 바닥에서 솟아오른다.
+            // (방해 줄 때문에 다음 블록이 나올 자리가 막히면 다음 블록이 나올 때 게임 오버가 된다)
+            if (!self.clearedOnLastLock && self.garbage.hasPending()) {
+                int toInject = self.garbage.popGarbage(MAX_GARBAGE_PER_LOCK);
+                // 한 줄씩 올린다. 맨 윗줄까지 차서 더 못 올리면 Game이 게임 오버(KO) 처리한다.
+                for (int i = 0; i < toInject && !self.game.gameOver; i++) {
+                    self.game.addGarbageRow(self.garbage.getHoleCol());
+                }
+            }
+            self.clearedOnLastLock = false;
+        }
+
+        @Override public void onGameOver() {
+            // 블록이 천장에 닿아 탑아웃되면 상대의 승리로 처리된다.
+            if (state == State.PLAYING) awardRound(winnerIfKnockedOut, WinReason.KO);
+        }
+    }
 }

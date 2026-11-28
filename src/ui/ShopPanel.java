@@ -75,7 +75,7 @@ public final class ShopPanel extends JPanel {
         setOpaque(true);
         setFocusable(true);
         messageTimer.setRepeats(false);
-        backButton = new TetrisBlockButton("BACK", new String[]{"####"}, new Color(110, 190, 120), 35, 35, 28, this::goBack, true);
+        backButton = TetrisBlockButton.back(this::goBack);
 
         bind("ESCAPE", this::goBack);
         bind("LEFT", () -> switchTab(-1));

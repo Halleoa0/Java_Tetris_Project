@@ -9,6 +9,7 @@ import java.awt.image.BufferedImage;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.BiConsumer;
 import java.util.function.ToIntFunction;
 import settings.Settings;
 
@@ -16,6 +17,15 @@ import settings.Settings;
 public final class ThemeManager {
     private static final int W = 1280, H = 720;
     private static final Map<ShopItem, BufferedImage> BG_CACHE = new EnumMap<>(ShopItem.class);
+    /** 배경별로 그리는 메서드를 모아 둔 표. 표에 없는 배경은 paintDefault로 그린다. */
+    private static final Map<ShopItem, BiConsumer<Graphics2D, Random>> PAINTERS = new EnumMap<>(ShopItem.class);
+    static {
+        PAINTERS.put(ShopItem.BG_NIGHT, ThemeManager::paintNight);
+        PAINTERS.put(ShopItem.BG_SUNSET, ThemeManager::paintSunset);
+        PAINTERS.put(ShopItem.BG_GRID, (g, rnd) -> paintGrid(g));      // 난수를 쓰지 않는 배경
+        PAINTERS.put(ShopItem.BG_OCEAN, ThemeManager::paintOcean);
+        PAINTERS.put(ShopItem.BG_CHECKER, (g, rnd) -> paintChecker(g)); // 난수를 쓰지 않는 배경
+    }
 
     private ThemeManager() { }
 
@@ -69,81 +79,93 @@ public final class ThemeManager {
         return BG_CACHE.computeIfAbsent(bg, ThemeManager::render);
     }
 
+    /** 배경 하나를 1280x720 이미지로 그린다. 그리는 방법은 PAINTERS 표에서 찾는다. */
     private static BufferedImage render(ShopItem bg) {
         BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = img.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        // 배경마다 시드가 고정된 난수를 쓰므로 매번 같은 그림이 나온다.
         Random rnd = new Random(bg.ordinal() * 31L + 7);
-        switch (bg) {
-            case BG_NIGHT: {
-                g.setPaint(new GradientPaint(0, 0, new Color(8, 10, 32), 0, H, new Color(32, 24, 70)));
-                g.fillRect(0, 0, W, H);
-                for (int i = 0; i < 160; i++) {
-                    int a = 90 + rnd.nextInt(165), s = rnd.nextInt(10) == 0 ? 3 : 2;
-                    g.setColor(new Color(255, 255, 255, a));
-                    g.fillOval(rnd.nextInt(W), rnd.nextInt(H), s, s);
-                }
-                g.setColor(new Color(245, 240, 210));
-                g.fillOval(1060, 70, 70, 70);
-                g.setColor(new Color(24, 20, 60));
-                g.fillOval(1082, 60, 66, 66);
-                break;
-            }
-            case BG_SUNSET: {
-                g.setPaint(new GradientPaint(0, 0, new Color(40, 20, 80), 0, H, new Color(255, 120, 60)));
-                g.fillRect(0, 0, W, H);
-                g.setColor(new Color(255, 210, 120, 230));
-                g.fillOval(W / 2 - 110, H - 230, 220, 220);
-                g.setColor(new Color(60, 25, 55));
-                g.fillRect(0, H - 90, W, 90);
-                for (int i = 0; i < 24; i++) {
-                    int bw = 30 + rnd.nextInt(50), bh = 30 + rnd.nextInt(110), bx = i * 56 + rnd.nextInt(14);
-                    g.setColor(new Color(45, 18, 45));
-                    g.fillRect(bx, H - 90 - bh, bw, bh);
-                }
-                break;
-            }
-            case BG_GRID: {
-                g.setPaint(new GradientPaint(0, 0, new Color(8, 6, 24), 0, H, new Color(35, 8, 60)));
-                g.fillRect(0, 0, W, H);
-                g.setColor(new Color(0, 230, 255, 70));
-                for (int x = 0; x <= W; x += 40) g.drawLine(x, 0, x, H);
-                for (int y = 0; y <= H; y += 40) g.drawLine(0, y, W, y);
-                g.setColor(new Color(255, 40, 200, 60));
-                for (int x = 0; x <= W; x += 200) g.drawLine(x, 0, x, H);
-                for (int y = 0; y <= H; y += 200) g.drawLine(0, y, W, y);
-                break;
-            }
-            case BG_OCEAN: {
-                g.setPaint(new GradientPaint(0, 0, new Color(10, 70, 120), 0, H, new Color(2, 12, 40)));
-                g.fillRect(0, 0, W, H);
-                for (int i = 0; i < 70; i++) {
-                    int s = 4 + rnd.nextInt(18), x = rnd.nextInt(W), y = rnd.nextInt(H);
-                    g.setColor(new Color(180, 230, 255, 25 + rnd.nextInt(45)));
-                    g.drawOval(x, y, s, s);
-                }
-                for (int i = 0; i < 6; i++) {
-                    g.setColor(new Color(120, 200, 255, 14));
-                    int x = rnd.nextInt(W);
-                    g.fillPolygon(new int[]{x, x + 70, x + 260, x + 120}, new int[]{0, 0, H, H}, 4);
-                }
-                break;
-            }
-            case BG_CHECKER: {
-                for (int y = 0; y < H; y += 40)
-                    for (int x = 0; x < W; x += 40) {
-                        boolean dark = ((x / 40) + (y / 40)) % 2 == 0;
-                        g.setColor(dark ? new Color(34, 34, 44) : new Color(48, 48, 62));
-                        g.fillRect(x, y, 40, 40);
-                    }
-                break;
-            }
-            default:
-                g.setColor(new Color(41, 41, 41));
-                g.fillRect(0, 0, W, H);
-        }
+        BiConsumer<Graphics2D, Random> painter = PAINTERS.getOrDefault(bg, (canvas, unused) -> paintDefault(canvas));
+        painter.accept(g, rnd);
         g.dispose();
         return img;
+    }
+
+    /** 화면 전체를 위(top)에서 아래(bottom)로 바뀌는 세로 그라데이션으로 채운다. */
+    private static void fillVerticalGradient(Graphics2D g, Color top, Color bottom) {
+        g.setPaint(new GradientPaint(0, 0, top, 0, H, bottom));
+        g.fillRect(0, 0, W, H);
+    }
+
+    /** 별이 빛나는 밤: 남색 그라데이션 + 별 160개 + 초승달. */
+    private static void paintNight(Graphics2D g, Random rnd) {
+        fillVerticalGradient(g, new Color(8, 10, 32), new Color(32, 24, 70));
+        for (int i = 0; i < 160; i++) {
+            int a = 90 + rnd.nextInt(165), s = rnd.nextInt(10) == 0 ? 3 : 2;
+            g.setColor(new Color(255, 255, 255, a));
+            g.fillOval(rnd.nextInt(W), rnd.nextInt(H), s, s);
+        }
+        g.setColor(new Color(245, 240, 210));
+        g.fillOval(1060, 70, 70, 70);
+        g.setColor(new Color(24, 20, 60));
+        g.fillOval(1082, 60, 66, 66);
+    }
+
+    /** 노을: 보라-주황 그라데이션 + 해 + 건물 실루엣 24개. */
+    private static void paintSunset(Graphics2D g, Random rnd) {
+        fillVerticalGradient(g, new Color(40, 20, 80), new Color(255, 120, 60));
+        g.setColor(new Color(255, 210, 120, 230));
+        g.fillOval(W / 2 - 110, H - 230, 220, 220);
+        g.setColor(new Color(60, 25, 55));
+        g.fillRect(0, H - 90, W, 90);
+        for (int i = 0; i < 24; i++) {
+            int bw = 30 + rnd.nextInt(50), bh = 30 + rnd.nextInt(110), bx = i * 56 + rnd.nextInt(14);
+            g.setColor(new Color(45, 18, 45));
+            g.fillRect(bx, H - 90 - bh, bw, bh);
+        }
+    }
+
+    /** 사이버 그리드: 어두운 그라데이션 + 40px 청록 격자 + 200px 분홍 격자. */
+    private static void paintGrid(Graphics2D g) {
+        fillVerticalGradient(g, new Color(8, 6, 24), new Color(35, 8, 60));
+        g.setColor(new Color(0, 230, 255, 70));
+        for (int x = 0; x <= W; x += 40) g.drawLine(x, 0, x, H);
+        for (int y = 0; y <= H; y += 40) g.drawLine(0, y, W, y);
+        g.setColor(new Color(255, 40, 200, 60));
+        for (int x = 0; x <= W; x += 200) g.drawLine(x, 0, x, H);
+        for (int y = 0; y <= H; y += 200) g.drawLine(0, y, W, y);
+    }
+
+    /** 깊은 바다: 파란 그라데이션 + 물방울 70개 + 빛줄기 6개. */
+    private static void paintOcean(Graphics2D g, Random rnd) {
+        fillVerticalGradient(g, new Color(10, 70, 120), new Color(2, 12, 40));
+        for (int i = 0; i < 70; i++) {
+            int s = 4 + rnd.nextInt(18), x = rnd.nextInt(W), y = rnd.nextInt(H);
+            g.setColor(new Color(180, 230, 255, 25 + rnd.nextInt(45)));
+            g.drawOval(x, y, s, s);
+        }
+        for (int i = 0; i < 6; i++) {
+            g.setColor(new Color(120, 200, 255, 14));
+            int x = rnd.nextInt(W);
+            g.fillPolygon(new int[]{x, x + 70, x + 260, x + 120}, new int[]{0, 0, H, H}, 4);
+        }
+    }
+
+    /** 픽셀 체커: 40px 칸을 두 가지 회색으로 번갈아 칠한다. */
+    private static void paintChecker(Graphics2D g) {
+        for (int y = 0; y < H; y += 40)
+            for (int x = 0; x < W; x += 40) {
+                boolean dark = ((x / 40) + (y / 40)) % 2 == 0;
+                g.setColor(dark ? new Color(34, 34, 44) : new Color(48, 48, 62));
+                g.fillRect(x, y, 40, 40);
+            }
+    }
+
+    /** 그 밖의 배경: 단색 회색. */
+    private static void paintDefault(Graphics2D g) {
+        g.setColor(new Color(41, 41, 41));
+        g.fillRect(0, 0, W, H);
     }
 
     /** 원본 타일의 밝기(음영)는 유지하고 색만 target으로 바꾼다. */

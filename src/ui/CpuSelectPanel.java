@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import javax.swing.JPanel;
+import ui.TetrisBlockButton.BlockShape;
+import ui.TetrisBlockButton.Position;
 
 /// 모드 선택에서 vs CPU를 누르면 나오는 CPU 난이도 선택 화면. 난이도 버튼을 누르면 그 난이도로 대전을 시작한다.
 public final class CpuSelectPanel extends JPanel {
@@ -44,12 +46,11 @@ public final class CpuSelectPanel extends JPanel {
         BotBrain.Difficulty[] levels = BotBrain.Difficulty.values();
         for (int i = 0; i < levels.length; i++) {
             BotBrain.Difficulty difficulty = levels[i];
-            buttons.add(new TetrisBlockButton(difficulty.label, new String[]{"####"}, colors[i % colors.length],
-                    (1280 - 4 * CELL_SIZE) / 2, 195 + i * 90, CELL_SIZE, () -> screens.startBattle(difficulty), true));
+            buttons.add(new TetrisBlockButton(difficulty.label, new BlockShape(colors[i % colors.length], "####"),
+                    new Position((1280 - 4 * CELL_SIZE) / 2, 195 + i * 90, CELL_SIZE), () -> screens.startBattle(difficulty), true));
         }
         // 모드 선택 화면과 같은 위치, 같은 모양의 BACK 버튼 (누르면 모드 선택으로 돌아감)
-        buttons.add(new TetrisBlockButton("BACK", new String[]{"####"}, new Color(110, 190, 120), 35, 35, 28,
-                () -> screens.showMenuScreen(BgmMode.MODE), true));
+        buttons.add(TetrisBlockButton.back(() -> screens.showMenuScreen(BgmMode.MODE)));
 
         navigation = new MenuNavigation(this, buttons, () -> {}, () -> screens.showMenuScreen(BgmMode.MODE));
         MouseAdapter mouse = new MouseAdapter() {

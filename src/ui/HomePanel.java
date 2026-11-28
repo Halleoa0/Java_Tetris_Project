@@ -17,6 +17,8 @@ import java.nio.file.Path;
 import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
+import ui.TetrisBlockButton.BlockShape;
+import ui.TetrisBlockButton.Position;
 
 
 
@@ -44,11 +46,11 @@ public final class HomePanel extends JPanel {
         setBackground(BACKGROUND);
         setOpaque(true);
         buttons = List.of(
-                new TetrisBlockButton("Play", new String[]{"##", "##"}, O_COLOR, 300, 270, CELL_SIZE, () -> screens.showMenuScreen(BgmMode.MODE), true),
-                new TetrisBlockButton("Tutorial", new String[]{"####"}, I_COLOR, 500, 285, CELL_SIZE, screens::startTutorial, true),
-                new TetrisBlockButton("Shop", new String[]{"###", ".#."}, T_COLOR, 350, 475, CELL_SIZE, screens::showShop, true),
-                new TetrisBlockButton("Settings", new String[]{"..#", "###"}, L_COLOR, 650, 475, CELL_SIZE, screens::showSettings, true),
-                new TetrisBlockButton("Best", new String[]{".##", "##."}, new Color(85, 210, 110), 820, 280, CELL_SIZE, screens::showRecords, true));
+                new TetrisBlockButton("Play", new BlockShape(O_COLOR, "##", "##"), new Position(300, 270, CELL_SIZE), () -> screens.showMenuScreen(BgmMode.MODE), true),
+                new TetrisBlockButton("Tutorial", new BlockShape(I_COLOR, "####"), new Position(500, 285, CELL_SIZE), screens::startTutorial, true),
+                new TetrisBlockButton("Shop", new BlockShape(T_COLOR, "###", ".#."), new Position(350, 475, CELL_SIZE), screens::showShop, true),
+                new TetrisBlockButton("Settings", new BlockShape(L_COLOR, "..#", "###"), new Position(650, 475, CELL_SIZE), screens::showSettings, true),
+                new TetrisBlockButton("Best", new BlockShape(new Color(85, 210, 110), ".##", "##."), new Position(820, 280, CELL_SIZE), screens::showRecords, true));
 
 
         navigation = new MenuNavigation(this, buttons, () -> {});

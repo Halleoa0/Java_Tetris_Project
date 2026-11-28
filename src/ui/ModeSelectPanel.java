@@ -16,6 +16,8 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JPanel;
+import ui.TetrisBlockButton.BlockShape;
+import ui.TetrisBlockButton.Position;
 
 /** 홈 화면에서 Play를 누르면 나오는 게임 모드 선택 화면. 모드 버튼을 고르면 해당 모드를 시작하고, 아래에 설명을 보여준다. */
 public final class ModeSelectPanel extends JPanel {
@@ -36,7 +38,7 @@ public final class ModeSelectPanel extends JPanel {
         String[][] shapes={{"###",".#."},{"####"},{"###","..#"},{"###","#.."},{"##","##"}};
         Color[] colors={new Color(170,85,205),new Color(75,205,235),new Color(240,145,55),new Color(70, 95, 255),new Color(245,210,55)};
         layoutModes(shapes, colors);
-        buttons.add(new TetrisBlockButton("BACK",new String[]{"####"},new Color(110,190,120),35,35,28,() -> screens.showMenuScreen(BgmMode.HOME),true));
+        buttons.add(TetrisBlockButton.back(() -> screens.showMenuScreen(BgmMode.HOME)));
         navigation = new MenuNavigation(this, buttons, this::updateDescription, () -> screens.showMenuScreen(BgmMode.HOME));
         updateDescription();
         MouseAdapter mouse=new MouseAdapter(){
@@ -74,8 +76,8 @@ public final class ModeSelectPanel extends JPanel {
                 for (String shapeRow : shape) shapeWidth = Math.max(shapeWidth, shapeRow.length());
                 int x = firstX + col * pitch + (cellSize * 4 - shapeWidth * cellSize) / 2;
                 int y = firstY + row * rowPitch;
-                buttons.add(new TetrisBlockButton(mode.getName(), shape, colors[index % colors.length], x, y,
-                        cellSize, () -> { if (mode.isAvailable()) mode.start(screens); }, mode.isAvailable()));
+                buttons.add(new TetrisBlockButton(mode.getName(), new BlockShape(colors[index % colors.length], shape),
+                        new Position(x, y, cellSize), () -> { if (mode.isAvailable()) mode.start(screens); }, mode.isAvailable()));
             }
         }
     }

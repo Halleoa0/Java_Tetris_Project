@@ -48,7 +48,7 @@ public final class RecordsPanel extends JPanel {
         setBackground(BACKGROUND);
         setOpaque(true);
         setFocusable(true);
-        backButton = new TetrisBlockButton("BACK", new String[]{"####"}, new Color(110, 190, 120), 35, 35, 28, () -> screens.showMenuScreen(BgmMode.HOME), true);
+        backButton = TetrisBlockButton.back(() -> screens.showMenuScreen(BgmMode.HOME));
 
         bind("ESCAPE", () -> screens.showMenuScreen(BgmMode.HOME));
         bind("UP", () -> scrollBy(-1));
