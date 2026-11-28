@@ -53,7 +53,6 @@ public final class AudioManager {
     private final Random random = new Random();
 
     private Clip currentBgmClip;
-    private String currentBgmName;
     private String lastPlayedGameBgm; // 직전 BGM (연속 재생 방지)
     private String currentMode = "menu"; // "menu", "tutorial", "game"
     private boolean bgmPaused = false;
@@ -173,7 +172,6 @@ public final class AudioManager {
         }
 
         currentBgmClip = nextClip;
-        currentBgmName = bgmName;
         bgmPaused = false;
         currentBgmClip.setFramePosition(0);
 
@@ -262,7 +260,7 @@ public final class AudioManager {
 
         clip.stop();
         clip.setFramePosition(0);
-        applyVolumeToClip(clip, Settings.get().sfxGain());
+        applyVolumeToClip(clip, calculateSfxGain());
         clip.start();
     }
 
@@ -286,7 +284,7 @@ public final class AudioManager {
 
     private boolean canOutputSounds() {
         boolean allowed = windowActive || !Settings.get().muteWhenUnfocused();
-        return allowed && Settings.get().sfxGain() > 0.0001f;
+        return allowed && calculateSfxGain() > 0.0001f;
     }
 
     private boolean canOutputMusic() {
@@ -297,7 +295,21 @@ public final class AudioManager {
     /// 모드에 맞게 BGM 출력 비율을 계산한다.
     private float calculateBgmGain() {
         float scale = "tutorial".equals(currentMode) ? 0.50f : 0.70f;
-        return Settings.get().bgmGain() * scale;
+        Settings settings = Settings.get();
+        return calculateGain(settings, settings.bgmVolume()) * scale;
+    }
+
+    private float calculateSfxGain() {
+        Settings settings = Settings.get();
+        return calculateGain(settings, settings.sfxVolume());
+    }
+
+    private static float calculateGain(Settings settings, int channelVolume) {
+        return settings.muted() ? 0f : settings.masterVolume() * channelVolume / 10000f;
+    }
+
+    private static float toDecibel(float gain) {
+        return gain <= 0.0001f ? -80f : (float) (20.0 * Math.log10(gain));
     }
 
     /// 변경된 볼륨 설정을 재생 중인 클립에 반영한다.
@@ -312,7 +324,7 @@ public final class AudioManager {
         }
 
         for (Clip clip : sfxClips.values()) {
-            applyVolumeToClip(clip, Settings.get().sfxGain());
+            applyVolumeToClip(clip, calculateSfxGain());
         }
     }
 
@@ -321,7 +333,7 @@ public final class AudioManager {
         if (clip == null || !clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) return;
 
         FloatControl control = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-        float db = Settings.toDecibel(gain);
+        float db = toDecibel(gain);
         control.setValue(Math.max(control.getMinimum(), Math.min(control.getMaximum(), db)));
     }
 }

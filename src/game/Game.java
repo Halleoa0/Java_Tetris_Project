@@ -118,13 +118,11 @@ public final class Game {
         lockElapsed = 0;
     }
 
-    /** 유지 중인 키를 다음 미노의 IHS/IRS에 사용한다. 회전 방향은 -1, 0, 1. */
+    /// 유지 중인 키를 다음 미노의 IHS/IRS에 사용한다. 회전 방향은 -1, 0, 1
     public void setInitialInputs(boolean hold, int rotationDirection) {
         Settings settings = Settings.get();
         initialHold = settings.ihs() && hold;
         initialRotation = settings.irs() ? Integer.signum(rotationDirection) : 0;
-        //initialHold = hold;
-        // initialRotation = Integer.signum(rotationDirection);
     }
 
     public boolean isSpawnDelayed() { return spawnDelayed; }
@@ -195,7 +193,10 @@ public final class Game {
 
     private void swapHeldPiece() {
         Tetromino current = active;
-        active = held == null ? takeNextPiece() : held;
+        if (held == null) {
+            active = takeNextPiece();
+        } else active = held;
+
         held = current;
     }
 
@@ -314,10 +315,11 @@ public final class Game {
         // 중력을 끈 게임(CPU 봇)도 스폰 딜레이와 PPS 계산용 시간은 위에서 흘러가야 한다.
         if (!gravityEnabled) return;
         Settings settings = Settings.get();
-        int gravity = settings.gravityMs(scoring.level);
+        double gravityScale = settings.difficulty().gravityScale;
+        int gravity = gravityMs(scoring.level, gravityScale);
         // SDF는 Down 키를 누르고 있는 동안 중력 간격을 줄여 빠르게 낙하시킴
         // GamePanel의 반복 입력과 중복으로 과도하게 빨라지지 않도록 별도 누적값으로 처리
-        if (softDropHeld) gravity = settings.softDropGravityMs(scoring.level);
+        if (softDropHeld) gravity = softDropGravityMs(gravity, settings.sdf());
         gravityElapsed += elapsedMs;
         while (gravityElapsed >= gravity) {
             gravityElapsed -= gravity;
@@ -326,9 +328,28 @@ public final class Game {
         }
         if (!board.canPlace(active, x, y + 1, rotation)) {
             lockElapsed += elapsedMs;
-            if (lockElapsed >= settings.lockDelayMs(scoring.level)) lockPiece();
+            if (lockElapsed >= lockDelayMs(scoring.level, gravityScale)) lockPiece();
         } else lockElapsed = 0;
     }
+
+    /** 레벨과 난이도에 따른 일반 낙하 간격(ms). */
+    private static int gravityMs(int level, double gravityScale) {
+        int base = 800 - (level - 1) * 60;
+        return Math.max(40, (int) Math.round(base * gravityScale));
+    }
+
+    /** 소프트 드롭 중에는 일반 낙하 간격을 SDF로 줄인다. */
+    private static int softDropGravityMs(int gravityMs, int sdf) {
+        return Math.max(16, gravityMs / Math.max(1, sdf));
+    }
+
+    /** 레벨과 난이도에 따른 블록 고정 지연(ms). */
+    private static int lockDelayMs(int level, double gravityScale) {
+        int base = (int) Math.round(500 * gravityScale);
+        int levelReduction = Math.max(0, level - 1) * 10;
+        return Math.max(100, base - levelReduction);
+    }
+
     private int gravityElapsed;
     private boolean softDropHeld;
 

@@ -1,6 +1,7 @@
 package ui;
 
 import app.ScreenManager;
+import app.ScreenManager.BgmMode;
 import audio.AudioManager;
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -105,7 +106,8 @@ public final class ShopPanel extends JPanel {
         });
     }
 
-    private void goBack() { messageTimer.stop(); screens.showHome(); }
+    private void goBack() { messageTimer.stop(); screens.showMenuScreen(BgmMode.HOME);
+    }
 
     private void switchTab(int delta) {
         Tab[] tabs = Tab.values();

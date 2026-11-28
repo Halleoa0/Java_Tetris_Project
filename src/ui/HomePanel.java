@@ -1,6 +1,7 @@
 package ui;
 
 import app.ScreenManager;
+import app.ScreenManager.BgmMode;
 import audio.AudioManager;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -42,7 +43,7 @@ public final class HomePanel extends JPanel {
         setBackground(BACKGROUND);
         setOpaque(true);
         buttons = List.of(
-                new TetrisBlockButton("Play", new String[]{"##", "##"}, O_COLOR, 300, 270, CELL_SIZE, screens::showModeSelect, true),
+                new TetrisBlockButton("Play", new String[]{"##", "##"}, O_COLOR, 300, 270, CELL_SIZE, () -> screens.showMenuScreen(BgmMode.MODE), true),
                 new TetrisBlockButton("Tutorial", new String[]{"####"}, I_COLOR, 500, 285, CELL_SIZE, screens::startTutorial, true),
                 new TetrisBlockButton("Shop", new String[]{"###", ".#."}, T_COLOR, 350, 475, CELL_SIZE, screens::showShop, true),
                 new TetrisBlockButton("Settings", new String[]{"..#", "###"}, L_COLOR, 650, 475, CELL_SIZE, screens::showSettings, true),

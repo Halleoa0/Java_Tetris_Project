@@ -20,12 +20,9 @@ import ui.CpuSelectPanel;
 public final class ScreenManager extends JPanel {
 
     // 메인에는 5가지 화면 HOME, SETTINGS, SHOP, MODE_SELECT, CPU_SELECT 존재.
-    private static final String HOME = "home";
     private static final String SETTINGS = "settings";
     private static final String SHOP = "shop";
     private static final String RECORDS = "records";
-    private static final String MODE_SELECT = "modeSelect";
-    private static final String CPU_SELECT = "cpuSelect"; // vs CPU 난이도 선택 화면
 
     // Home, Game, Settings 등 패널들을 Card에 넣어서 관리. 여러 패널들 중 하나를 골라 보여주는 식
     private final CardLayout cards = new CardLayout();
@@ -40,32 +37,28 @@ public final class ScreenManager extends JPanel {
     public ScreenManager() {
         setLayout(cards);
         setPreferredSize(new Dimension(1280, 720));
-        add(new HomePanel(this), HOME);
-        add(new ModeSelectPanel(this), MODE_SELECT);
-        add(new CpuSelectPanel(this), CPU_SELECT);
-        showHome();
+        add(new HomePanel(this), BgmMode.HOME.cardName);
+        add(new ModeSelectPanel(this), BgmMode.MODE.cardName);
+        add(new CpuSelectPanel(this), BgmMode.CPU.cardName);
+        showMenuScreen(BgmMode.HOME);
     }
 
+    public enum BgmMode {
+        HOME("home"),
+        MODE("modeSelect"),
+        CPU("cpuSelect");
 
-    /// 홈 화면을 보여준다.
-    public void showHome() {
-        removeActiveGame();
-        cards.show(this, HOME);
-        AudioManager.get().playMenuBgm();
+        private final String cardName;
+
+        BgmMode(String cardName) {
+            this.cardName = cardName;
+        }
     }
 
-    /// 모드 설정 화면을 보여준다.
-    public void showModeSelect() {
+    /// 중복 코드 삭제
+    public void showMenuScreen(BgmMode mode) {
         removeActiveGame();
-        cards.show(this, MODE_SELECT);
-        AudioManager.get().playMenuBgm();
-        refreshDisplay();
-    }
-
-    /// vs CPU 난이도 선택 화면을 보여준다. (VsCpuMode에서 호출)
-    public void showCpuSelect() {
-        removeActiveGame();
-        cards.show(this, CPU_SELECT);
+        cards.show(this, mode.cardName);
         AudioManager.get().playMenuBgm();
         refreshDisplay();
     }
@@ -77,7 +70,7 @@ public final class ScreenManager extends JPanel {
     public void startGame(Game game, String gameName) {
         removeActiveGame();                              // 이전에 진행 중이었던 게임 종료
         GamePanel panel = new GamePanel(game, gameName); // 새 게임을 만듦
-        panel.setHomeCallback(this::showHome);           // 게임에서 HOME으로 돌아가기 위해서 연결
+        panel.setHomeCallback(() -> showMenuScreen(BgmMode.HOME));           // 게임에서 HOME으로 돌아가기 위해서 연결
         gamePanel = panel;                               // gamePanel에 현재 게임을 저장 (게임 정지, 제거를 위함)
         add(panel, "game");                     // game으로 패널 등록
         cards.show(this, "game");            // Card에서 game을 꺼내서 보여줌
@@ -93,9 +86,9 @@ public final class ScreenManager extends JPanel {
 
         Game game = new Game();
         GamePanel panel = new GamePanel(game);
-        panel.setHomeCallback(this::showHome);          // 일시정지 및 메인 화면 가기로 나가기 위한 Callback
+        panel.setHomeCallback(() -> showMenuScreen(BgmMode.HOME));          // 일시정지 및 메인 화면 가기로 나가기 위한 Callback
         TutorialController tutorial = new TutorialController(game, panel);
-        tutorial.setCompletionCallback(this::showHome); // 튜토리얼이 완료 됐을 경우 나가기 위한 Callback
+        tutorial.setCompletionCallback(() -> showMenuScreen(BgmMode.HOME)); // 튜토리얼이 완료 됐을 경우 나가기 위한 Callback
         tutorial.start();
 
         gamePanel = panel;
@@ -147,7 +140,7 @@ public final class ScreenManager extends JPanel {
     public void startBattle(BotBrain.Difficulty difficulty) {
         removeActiveGame();                              // 이전에 진행 중이었던 게임 종료
         BattlePanel panel = new BattlePanel(difficulty); // 내 게임 + CPU 게임을 가진 대전 화면을 만듦
-        panel.setHomeCallback(this::showHome);           // 대전에서 HOME으로 돌아가기 위해서 연결
+        panel.setHomeCallback(() -> showMenuScreen(BgmMode.HOME));           // 대전에서 HOME으로 돌아가기 위해서 연결
         battlePanel = panel;                             // battlePanel에 현재 대전을 저장 (게임 정지, 제거를 위함)
         add(panel, "battle");                   // battle로 패널 등록
         cards.show(this, "battle");          // Card에서 battle을 꺼내서 보여줌

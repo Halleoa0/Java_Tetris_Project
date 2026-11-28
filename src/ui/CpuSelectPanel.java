@@ -1,6 +1,7 @@
 package ui;
 
 import app.ScreenManager;
+import app.ScreenManager.BgmMode;
 import audio.AudioManager;
 import battle.BotBrain;
 import java.awt.Color;
@@ -46,9 +47,10 @@ public final class CpuSelectPanel extends JPanel {
                     (1280 - 4 * CELL_SIZE) / 2, 195 + i * 90, CELL_SIZE, () -> screens.startBattle(difficulty), true));
         }
         // 모드 선택 화면과 같은 위치, 같은 모양의 BACK 버튼 (누르면 모드 선택으로 돌아감)
-        buttons.add(new TetrisBlockButton("BACK", new String[]{"####"}, new Color(110, 190, 120), 35, 35, 28, screens::showModeSelect, true));
+        buttons.add(new TetrisBlockButton("BACK", new String[]{"####"}, new Color(110, 190, 120), 35, 35, 28,
+                () -> screens.showMenuScreen(BgmMode.MODE), true));
 
-        navigation = new MenuNavigation(this, buttons, () -> {}, screens::showModeSelect);
+        navigation = new MenuNavigation(this, buttons, () -> {}, () -> screens.showMenuScreen(BgmMode.MODE));
         MouseAdapter mouse = new MouseAdapter() {
             @Override public void mouseMoved(MouseEvent event) { updateHover(event.getX(), event.getY()); }
             @Override public void mouseDragged(MouseEvent event) { updateHover(event.getX(), event.getY()); }

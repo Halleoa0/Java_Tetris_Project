@@ -1,6 +1,7 @@
 package ui;
 
 import app.ScreenManager;
+import app.ScreenManager.BgmMode;
 import audio.AudioManager;
 import game.Tetromino;
 import java.awt.BorderLayout;
@@ -68,7 +69,7 @@ public final class SettingsPanel extends JPanel {
             @Override public void actionPerformed(ActionEvent event) {
                 AudioManager.get().playMenuSelect();
                 cancelKeyWait();
-                screens.showHome();
+                screens.showMenuScreen(BgmMode.HOME);
             }
         });
     }
@@ -117,7 +118,7 @@ public final class SettingsPanel extends JPanel {
         back.addActionListener(e -> {
             AudioManager.get().playMenuSelect();
             cancelKeyWait();
-            screens.showHome();
+            screens.showMenuScreen(BgmMode.HOME);
         });
         bottom.add(resetAll);
         bottom.add(back);

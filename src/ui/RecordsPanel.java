@@ -1,6 +1,7 @@
 package ui;
 
 import app.ScreenManager;
+import app.ScreenManager.BgmMode;
 import audio.AudioManager;
 import battle.BotBrain;
 import java.awt.Color;
@@ -47,9 +48,9 @@ public final class RecordsPanel extends JPanel {
         setBackground(BACKGROUND);
         setOpaque(true);
         setFocusable(true);
-        backButton = new TetrisBlockButton("BACK", new String[]{"####"}, new Color(110, 190, 120), 35, 35, 28, screens::showHome, true);
+        backButton = new TetrisBlockButton("BACK", new String[]{"####"}, new Color(110, 190, 120), 35, 35, 28, () -> screens.showMenuScreen(BgmMode.HOME), true);
 
-        bind("ESCAPE", screens::showHome);
+        bind("ESCAPE", () -> screens.showMenuScreen(BgmMode.HOME));
         bind("UP", () -> scrollBy(-1));
         bind("DOWN", () -> scrollBy(1));
 
@@ -61,7 +62,7 @@ public final class RecordsPanel extends JPanel {
             @Override public void mouseReleased(MouseEvent e) {
                 boolean back = backPressed && backButton.contains(e.getX(), e.getY());
                 backPressed = false;
-                if (back) { AudioManager.get().playMenuSelect(); screens.showHome(); }
+                if (back) { AudioManager.get().playMenuSelect(); screens.showMenuScreen(BgmMode.HOME); }
                 repaint();
             }
             @Override public void mouseWheelMoved(java.awt.event.MouseWheelEvent e) { scrollBy(e.getWheelRotation()); }
