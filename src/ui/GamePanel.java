@@ -3,8 +3,6 @@ package ui;
 import audio.AudioManager;
 import game.Board;
 import game.Game;
-import game.GameListener;
-import game.Tetromino;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -12,28 +10,13 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.font.TextAttribute;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.awt.Image;
 import java.awt.RenderingHints;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.function.Consumer;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JPanel;
-import javax.swing.KeyStroke;
 import javax.swing.Timer;
-import settings.Records;
 import settings.Settings;
 
 
@@ -44,30 +27,28 @@ import settings.Settings;
  * Space 하드드롭, C Hold, R 재시작.
  */
 public final class GamePanel extends JPanel {
+    /** 특정 게임 동작(예: "hardDrop", "hold")의 입력을 허용할지 결정하는 필터. 튜토리얼 등에서 사용한다. */
     @FunctionalInterface
-    public interface InputFilter { boolean allow(String action); }
+    public interface InputFilter {
+        /** 해당 동작의 입력을 허용하면 true를 반환한다. */
+        boolean allow(String action);
+    }
 
     // 조각의 크기는 25 (25x25), 보드의 위치는 x 517, x 111
     private static final int CELL = 25, BOARD_X = 517, BOARD_Y = 111;
     private static final int MATRIX_X = 378, MATRIX_Y = 111, MATRIX_W = 528, MATRIX_H = 505;
     private static final Color BACKGROUND = new Color(41, 41, 41);
-    private static final Color PANEL = new Color(30, 36, 51);
-    private static final String[] PAUSE_OPTIONS = { "RESUME", "RESTART", "QUIT" };
 
     private final Game game;
-    private InputFilter inputFilter;
     private Consumer<Graphics2D> overlayRenderer;
     private long lastTick = System.nanoTime();
 
     /// 이미지 불러오기
-    private final Image matrixImage;
-    private final Image guideImage;
-    private final Image pauseGuideImage;
-    private final Image gameNamePanelImage;
-
-    private int gameOverSelection;
     private final LabelUI labelUI;
-    private final BufferedImage[] minoTiles;
+    private final MinoTile assets;
+    private final BoardRenderer boardRenderer;
+    private final GameOverUI gameOverUI;
+    private final PauseUI pauseUI;
 
     /// 폰트 불러오기
     private final Fonts fonts = Fonts.load();
@@ -77,27 +58,14 @@ public final class GamePanel extends JPanel {
     public final Font orbitBlack = fonts.orbitBlack();
     public final Font orbitBold = fonts.orbitBold();
 
-    private final Set<String> heldKeys = new HashSet<>();
-    private final Set<String> pressedMoveKeys = new HashSet<>();
-    private final Set<String> repeatingKeys = new HashSet<>();
-    private final Map<String, Integer> heldKeyElapsed = new HashMap<>();
-    private final Map<String, Runnable> heldKeyActions = new HashMap<>();
-    private final Set<Settings.Action> initialKeys = new HashSet<>();
-    private int lastInitialRotation = 1;
+    private final HeldKeyController heldKeyController;
+    private final GameInputController inputController;
 
     private final Timer timer;
     private boolean paused;
-    private int pauseSelection;
-    private boolean ignoreSpaceUntilRelease;
     private Runnable homeCallback = () -> { };
     // 일시정지 메뉴의 재시작 콜백. null이면 game.restart()를 수행한다.
     private Runnable pauseRestartCallback;
-
-    // 하드 드롭 직후 락 효과음 중복 재생을 방지한다.
-    private boolean justHardDropped;
-
-    private final JButton gameOverRestartButton = new JButton("다시 시작");
-    private final JButton gameOverMenuButton = new JButton("메인화면");
 
     private final shop.ToastOverlay toast = new shop.ToastOverlay(); // 미션 달성 알림
     // 현재 진행 중 모드
@@ -107,10 +75,15 @@ public final class GamePanel extends JPanel {
     // 키를 게임 동작에 연결하고 16ms 간격으로 게임 상태를 갱신한다.
     public GamePanel() { this(new Game()); }
 
+    /** 주어진 게임을 "튜토리얼" 이름으로 표시하는 게임 화면을 만든다. */
     public GamePanel(Game game) {
         this(game, "튜토리얼");
     }
 
+    /**
+     * 게임 화면을 구성한다. 이미지/폰트/렌더러를 준비하고, 모든 게임 키를 등록하고,
+     * 효과음·기록·미션 리스너를 연결한 뒤 16ms 간격의 게임 루프 타이머를 시작한다.
+     */
     public GamePanel(Game game, String gameName) {
         this.game = game;
         this.gameName = gameName;
@@ -119,100 +92,56 @@ public final class GamePanel extends JPanel {
         setBackground(BACKGROUND);
         setFocusable(true);
 
-        matrixImage = loadImage("Images/Board/Matrix.png");
-        guideImage = loadImage("Images/Board/Guide.png");
-        pauseGuideImage = loadImage("Images/PauseGuide.png");
-        gameNamePanelImage = loadImage("Images/Board/GameNamePanel.png");
-        labelUI = new LabelUI(game, fonts, gameNamePanelImage, gameName);
-        minoTiles = loadMinoTiles("Images/Mino.png");
-        bindHeld(Settings.Action.MOVE_LEFT,  () -> game.move(-1, 0));
-        bindHeld(Settings.Action.MOVE_RIGHT, () -> game.move(1, 0));
-        bindHeld(Settings.Action.SOFT_DROP, () -> {
+        assets = new MinoTile();
+        labelUI = new LabelUI(game, fonts, assets.gameNamePanelImage(), gameName);
+        boardRenderer = new BoardRenderer(game, assets.minoTiles(), this);
+        gameOverUI = new GameOverUI(game, gameName, fonts, this,
+                () -> game.gameOver && !paused, this::restartFromGameOver, () -> homeCallback.run());
+        pauseUI = new PauseUI(this, assets.pauseGuideImage(), fonts);
+        heldKeyController = new HeldKeyController(game, this);
+        inputController = new GameInputController(this, game, heldKeyController,
+                () -> paused, () -> game.gameOver, this::handlePauseInput, gameOverUI::confirmSelection);
+        inputController.bindHeld(Settings.Action.MOVE_LEFT, () -> game.move(-1, 0));
+        inputController.bindHeld(Settings.Action.MOVE_RIGHT, () -> game.move(1, 0));
+        inputController.bindHeld(Settings.Action.SOFT_DROP, () -> {
             game.setSoftDropHeld(true);
             game.softDrop();
         });
-        bindInitial(Settings.Action.ROTATE_CW,  "rotateCW",  () -> game.rotate(1));
-        bindInitial(Settings.Action.ROTATE_CCW, "rotateCCW", () -> game.rotate(-1));
-        bind(Settings.Action.HARD_DROP,  "hardDrop",  game::hardDrop);
+        inputController.bindInitial(Settings.Action.ROTATE_CW, "rotateCW", () -> game.rotate(1));
+        inputController.bindInitial(Settings.Action.ROTATE_CCW, "rotateCCW", () -> game.rotate(-1));
+        inputController.bind(Settings.Action.HARD_DROP, "hardDrop", game::hardDrop);
         getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().released(Settings.Action.HARD_DROP), "pauseSpaceReleased");
-        getActionMap().put("pauseSpaceReleased", new AbstractAction() {
-            @Override public void actionPerformed(ActionEvent e) { ignoreSpaceUntilRelease = false; }
+        getActionMap().put("pauseSpaceReleased", new javax.swing.AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) { inputController.spaceReleased(); }
         });
-        bindInitial(Settings.Action.HOLD, "hold", game::hold);
-        bind(Settings.Action.RESTART, "restart", () -> {
+        inputController.bindInitial(Settings.Action.HOLD, "hold", game::hold);
+        inputController.bind(Settings.Action.RESTART, "restart", () -> {
             game.restart();
             AudioManager.get().startGameBgm();
         });
-        bindPauseNavigation("UP", -1);
-        bindPauseNavigation("DOWN", 1);
-        bindGameOverNavigation("LEFT", -1);
-        bindGameOverNavigation("RIGHT", 1);
+        inputController.bindPauseNavigation("UP", -1, () -> pauseUI.moveSelection(-1));
+        inputController.bindPauseNavigation("DOWN", 1, () -> pauseUI.moveSelection(1));
+        inputController.bindGameOverNavigation("LEFT", -1, () -> gameOverUI.selectOption(-1));
+        inputController.bindGameOverNavigation("RIGHT", 1, () -> gameOverUI.selectOption(1));
 
-        bindUnfiltered("ESCAPE", "pauseToggle", () -> {
+        inputController.bindUnfiltered("ESCAPE", "pauseToggle", () -> {
             if (paused) setPaused(false);
             else if (game.gameOver) homeCallback.run();
             else setPaused(true);
         });
-        bindUnfiltered("M", "menu", () -> { if (paused || game.gameOver) homeCallback.run(); });
-        configureOverlayButtons();
+        inputController.bindUnfiltered("M", "menu", () -> { if (paused || game.gameOver) homeCallback.run(); });
 
         // 위클리 미션 진행도 기록(튜토리얼 제외) + 달성 알림
         if (!"튜토리얼".equals(gameName)) game.addListener(new shop.MissionTracker(game));
         toast.attach();
 
-        // 게임 동작에 맞춰 효과음을 재생한다.
-        game.addListener(new GameListener() {
-            @Override public void onMove(int dx, int dy) {
-                AudioManager.get().playMove();
-            }
-            @Override public void onRotate(int direction) {
-                AudioManager.get().playRotate();
-            }
-            @Override public void onSoftDrop() {
-                AudioManager.get().playSoftDrop();
-            }
-            @Override public void onHardDrop() {
-                justHardDropped = true;
-                AudioManager.get().playHardDrop();
-            }
-            @Override public void onHold() {
-                AudioManager.get().playHold();
-            }
-            @Override public void onLock(Tetromino type) {
-                // 하드 드롭 직후에는 락 효과음을 생략한다.
-                if (justHardDropped) {
-                    justHardDropped = false;
-                } else {
-                    AudioManager.get().playLock();
-                }
-            }
-            @Override public void onLinesCleared(int lines) {
-                AudioManager.get().playLineClear(lines);
-            }
-            @Override public void onLevelUp(int newLevel) {
-                AudioManager.get().playLevelUpDelayed();
-            }
-            @Override public void onGoalReached() {
-                // 걸린 시간을 최고 기록과 비교해 저장. (기록 이름은 목표 줄 수별로 따로)
-                String mode = Records.sprintKey(game.targetLines());
-                Records.get().submitTime(mode, game.elapsedTimeMs());
-                AudioManager.get().playTutorialClear();
-            }
-            @Override public void onGameOver() {
-                if ("TOP OUT RUN".equals(GamePanel.this.gameName)) {
-                    Records.get().submitTime("topout", game.elapsedTimeMs());
-                } else if (game.targetLines() <= 0) {
-                    String scoreKey = Records.scoreKeyForGameName(GamePanel.this.gameName);
-                    if (scoreKey != null) Records.get().submitScore(scoreKey, game.scoring.score);
-                }
-                AudioManager.get().playGameOver();
-            }
-        });
+        game.addListener(new GameAudioListener());
+        game.addListener(new GameRecordListener(game, gameName));
 
         addFocusListener(new FocusAdapter() {
             @Override public void focusLost(FocusEvent e) {
                 clearHeldKeys();
-                ignoreSpaceUntilRelease = false;
+                inputController.spaceReleased();
                 AudioManager.get().setWindowActive(false);
             }
             @Override public void focusGained(FocusEvent e) {
@@ -226,34 +155,37 @@ public final class GamePanel extends JPanel {
             int elapsed = Math.min(100, clockElapsed);
             lastTick = now;
             game.tick(clockElapsed);
-            tickHeldKeys(Math.min(1_000, clockElapsed));
+            heldKeyController.tickHeldKeys(Math.min(1_000, clockElapsed));
             game.scoring.tick(elapsed);
-            updateOverlayButtons();
+            gameOverUI.updateVisibility();
             repaint();
         });
         timer.start();
     }
 
+    /** 허용할 입력을 고르는 필터를 지정한다. null이면 모든 입력을 허용한다. */
     public void setInputFilter(InputFilter inputFilter) {
-        this.inputFilter = inputFilter;
-        updateInitialInputs();
+        inputController.setInputFilter(inputFilter);
     }
 
+    /** 게임 화면 위에 추가로 그릴 내용(예: 튜토리얼 안내)을 지정한다. */
     public void setOverlayRenderer(Consumer<Graphics2D> overlayRenderer) { this.overlayRenderer = overlayRenderer; }
 
     /** 일시정지 메뉴에서 RESTART를 골랐을 때 실행할 동작을 지정한다. null이면 기본 game.restart(). */
     public void setPauseRestartCallback(Runnable callback) { this.pauseRestartCallback = callback; }
 
+    /** 메인 화면으로 돌아갈 때 실행할 동작을 지정한다. null이면 아무 동작도 하지 않는다. */
     public void setHomeCallback(Runnable homeCallback) {
         this.homeCallback = homeCallback == null ? () -> { } : homeCallback;
     }
 
+    /** 일시정지 상태를 바꾼다. 일시정지 시 타이머와 BGM을 멈추고, 해제 시 다시 재개한다. */
     private void setPaused(boolean paused) {
         if (this.paused == paused) return;
         this.paused = paused;
         clearHeldKeys();
         if (paused) {
-            pauseSelection = 0;
+            pauseUI.resetSelection();
             timer.stop();
             AudioManager.get().pauseBgm(); // BGM을 일시정지한다.
         }
@@ -262,70 +194,18 @@ public final class GamePanel extends JPanel {
             timer.restart();
             AudioManager.get().resumeBgm(); // BGM을 재개한다.
         }
-        updateOverlayButtons();
+        gameOverUI.updateVisibility();
         repaint();
     }
 
-    private void configureOverlayButtons() {
-        gameOverRestartButton.setBounds(BOARD_X + 10, BOARD_Y + 361, 108, 34);
-        gameOverMenuButton.setBounds(BOARD_X + 126, BOARD_Y + 361, 108, 34);
-        for (JButton button : new JButton[] { gameOverRestartButton, gameOverMenuButton }) {
-            button.setFont(sansKRBlack.deriveFont(13f));
-            button.setBackground(PANEL);
-            button.setForeground(Color.WHITE);
-            button.setOpaque(true);
-            button.setFocusPainted(false);
-            button.setBorderPainted(true);
-            button.setFocusable(false);
-        }
-        updateGameOverButtonStyle();
-        gameOverRestartButton.addActionListener(event -> {
-            AudioManager.get().playMenuSelect();
-            game.restart();
-            gameOverSelection = 0;
-            updateGameOverButtonStyle();
-            AudioManager.get().startGameBgm(); // 인게임 BGM을 무작위로 재생한다.
-            updateOverlayButtons();
-            repaint();
-            requestFocusInWindow();
-        });
-
-        gameOverMenuButton.addActionListener(event -> {
-            AudioManager.get().playMenuSelect();
-            homeCallback.run();
-        });
-        add(gameOverRestartButton);
-        add(gameOverMenuButton);
-        updateOverlayButtons();
-    }
-
-    private void updateOverlayButtons() {
-        gameOverRestartButton.setVisible(game.gameOver && !paused);
-        gameOverMenuButton.setVisible(game.gameOver && !paused);
-    }
-
-    private void updateGameOverButtonStyle() {
-        JButton[] buttons = { gameOverRestartButton, gameOverMenuButton };
-        for (int i = 0; i < buttons.length; i++) {
-            boolean selected = i == gameOverSelection;
-            buttons[i].setBorder(BorderFactory.createLineBorder(
-                    selected ? new Color(255, 220, 110) : new Color(100, 110, 130), selected ? 2 : 1));
-            buttons[i].setBackground(selected ? new Color(55, 68, 91) : PANEL);
-        }
-    }
-
-    private void selectGameOverOption(int direction) {
-        gameOverSelection = Math.floorMod(gameOverSelection + direction, 2);
-        updateGameOverButtonStyle();
-        AudioManager.get().playMenuSelect();
+    /** 게임 오버 화면의 "다시 시작" 버튼 동작. 게임과 BGM을 다시 시작하고 키보드 포커스를 되찾는다. */
+    private void restartFromGameOver() {
+        game.restart();
+        AudioManager.get().startGameBgm();
+        gameOverUI.updateVisibility();
         repaint();
+        requestFocusInWindow();
     }
-
-    private void confirmGameOverSelection() {
-        if (gameOverSelection == 0) gameOverRestartButton.doClick(0);
-        else gameOverMenuButton.doClick(0);
-    }
-
 
     /** 화면에서 제거될 때 주기적인 게임 업데이트를 멈춘다. */
     public void stop() {
@@ -334,164 +214,21 @@ public final class GamePanel extends JPanel {
         clearHeldKeys();
     }
 
-    /// 설정된 키 입력을 게임 동작에 연결한다.
-    private void bind(Settings.Action action, String name, Runnable run) {
-        // 동작별 키 설정을 액션에 등록한다.
-        String bindingName = name + "_" + action.name();
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().pressed(action), bindingName);
-        getActionMap().put(bindingName, new AbstractAction() {
-            @Override public void actionPerformed(ActionEvent e) {
-                if (action == Settings.Action.HARD_DROP) {
-                    if (ignoreSpaceUntilRelease) return;
-                    ignoreSpaceUntilRelease = true;
-                }
-                if (game.gameOver && action == Settings.Action.HARD_DROP) confirmGameOverSelection();
-                else if (paused) handlePauseInput(action);
-                else if (inputFilter == null || inputFilter.allow(name)) run.run();
-                repaint();
-            }
-        });
-    }
-
-    /** 즉시 조작은 한 번만 실행하고, 키 유지 상태는 다음 스폰에 전달한다. */
-    private void bindInitial(Settings.Action action, String name, Runnable run) {
-        String pressedName = name + "_" + action.name();
-        String releasedName = pressedName + "Released";
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().pressed(action), pressedName);
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().released(action), releasedName);
-        getActionMap().put(pressedName, new AbstractAction() {
-            @Override public void actionPerformed(ActionEvent e) {
-                if (paused) handlePauseInput(action);
-                else if ((inputFilter == null || inputFilter.allow(name)) && initialKeys.add(action)) {
-                    if (action == Settings.Action.ROTATE_CW) lastInitialRotation = 1;
-                    else if (action == Settings.Action.ROTATE_CCW) lastInitialRotation = -1;
-                    updateInitialInputs();
-                    run.run();
-                }
-                repaint();
-            }
-        });
-        getActionMap().put(releasedName, new AbstractAction() {
-            @Override public void actionPerformed(ActionEvent e) {
-                initialKeys.remove(action);
-                updateInitialInputs();
-            }
-        });
-    }
-
-    private void updateInitialInputs() {
-        boolean cw = Settings.get().irs() && initialKeyAllowed(Settings.Action.ROTATE_CW, "rotateCW");
-        boolean ccw = Settings.get().irs() && initialKeyAllowed(Settings.Action.ROTATE_CCW, "rotateCCW");
-        int direction = cw && ccw ? lastInitialRotation : cw ? 1 : ccw ? -1 : 0;
-        game.setInitialInputs(initialKeyAllowed(Settings.Action.HOLD, "hold"), direction);
-    }
-
-    private boolean initialKeyAllowed(Settings.Action action, String name) {
-        return initialKeys.contains(action) && (inputFilter == null || inputFilter.allow(name));
-    }
-
-    private void bindHeld(Settings.Action action, Runnable run) {
-        String key = action.name();                       // heldKeys 등 기존 Set/Map의 키로 그대로 사용
-        String pressedName = key + "HeldPressed";
-        String releasedName = key + "HeldReleased";
-        heldKeyActions.put(key, run);
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().pressed(action), pressedName);
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(Settings.get().released(action), releasedName);
-        getActionMap().put(pressedName, new AbstractAction() {
-            @Override public void actionPerformed(ActionEvent e) {
-                if (paused) {
-                    handlePauseInput(action); repaint();
-                }
-                else {
-                    if (action == Settings.Action.MOVE_LEFT || action == Settings.Action.MOVE_RIGHT)
-                        pressedMoveKeys.add(key);
-                    if (!oppositeMoveHeld(action)) activateHeldKey(key);
-                }
-            }
-        });
-        getActionMap().put(releasedName, new AbstractAction() {
-            @Override public void actionPerformed(ActionEvent e) { releaseHeldKey(key); }
-        });
-    }
-
-
-
-    private void activateHeldKey(String key) {
-        if (!heldKeys.add(key)) return;
-        heldKeyElapsed.put(key, 0);
-        repeatingKeys.remove(key);
-        heldKeyActions.get(key).run();
-        repaint();
-    }
-
-    private boolean oppositeMoveHeld(Settings.Action action) {
-        return (action == Settings.Action.MOVE_LEFT && heldKeys.contains(Settings.Action.MOVE_RIGHT.name()))
-                || (action == Settings.Action.MOVE_RIGHT && heldKeys.contains(Settings.Action.MOVE_LEFT.name()));
-    }
-
-    /// 키 입력 후에 다시 재입력
-    private void tickHeldKeys(int elapsedMs) {
-        for (String key : heldKeys) {
-            int elapsed = heldKeyElapsed.getOrDefault(key, 0) + elapsedMs;
-            boolean softDrop = key.equals(Settings.Action.SOFT_DROP.name());
-
-            if (!repeatingKeys.contains(key)) {
-                int das = Settings.get().dasMs();
-                if (elapsed < das) {
-                    heldKeyElapsed.put(key, elapsed);
-                    continue;
-                }
-                elapsed -= das;
-                repeatingKeys.add(key);
-                if (!softDrop) heldKeyActions.get(key).run();
-            }
-
-            if (!softDrop) {
-                int arr = Settings.get().arrMs();
-                if (arr == 0) {
-                    for (int i = 0; i < Board.WIDTH; i++) heldKeyActions.get(key).run();
-                    elapsed = 0;
-                } else {
-                    int repeats = Math.min(Board.WIDTH, elapsed / arr);
-                    for (int i = 0; i < repeats; i++) heldKeyActions.get(key).run();
-                    elapsed %= arr;
-                }
-            }
-            heldKeyElapsed.put(key, elapsed);
-        }
-    }
-    private void releaseHeldKey(String key) {
-        boolean wasHeld = heldKeys.remove(key);
-        repeatingKeys.remove(key);
-        heldKeyElapsed.remove(key);
-        if (key.equals(Settings.Action.SOFT_DROP.name())) game.setSoftDropHeld(false);
-        pressedMoveKeys.remove(key);
-        // 반대 키가 이미 눌려 있으면 OS 반복 입력을 기다리지 않고 즉시 전환한다.
-        String opposite = key.equals(Settings.Action.MOVE_LEFT.name()) ? Settings.Action.MOVE_RIGHT.name()
-                : key.equals(Settings.Action.MOVE_RIGHT.name()) ? Settings.Action.MOVE_LEFT.name() : null;
-        if (wasHeld && opposite != null && pressedMoveKeys.contains(opposite)) activateHeldKey(opposite);
-    }
-
+    /** 누르고 있던 키와 IRS/IHS 입력 상태를 모두 초기화한다. */
     private void clearHeldKeys() {
-        heldKeys.clear();
-        pressedMoveKeys.clear();
-        repeatingKeys.clear();
-        heldKeyElapsed.clear();
-        game.setSoftDropHeld(false);
-        initialKeys.clear();
-        game.setInitialInputs(false, 0);
+        heldKeyController.clear();
+        inputController.clear();
     }
 
     /// 실제로 그리기
     @Override protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
         shop.ThemeManager.paintBackground((Graphics2D) graphics, getWidth(), getHeight()); // 상점에서 장착한 배경화면
-        graphics.drawImage(matrixImage, MATRIX_X, MATRIX_Y, MATRIX_W, MATRIX_H, this);
-        graphics.drawImage(guideImage, 40, 545, this);
+        graphics.drawImage(assets.matrixImage(), MATRIX_X, MATRIX_Y, MATRIX_W, MATRIX_H, this);
+        graphics.drawImage(assets.guideImage(), 40, 545, this);
         Graphics2D g = (Graphics2D) graphics.create();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        drawMatrixPreviews(g);
-        drawBoard(g);
+        boardRenderer.draw(g);
         if (game.isCountingDown()) drawCountdown(g);
         labelUI.drawGameNamePanel(g);
         labelUI.drawPpsLabel(g);
@@ -499,221 +236,17 @@ public final class GamePanel extends JPanel {
         labelUI.drawScoreValueLabel(g);
         labelUI.drawTimeLabel(g);
         labelUI.drawScoreLabel(g);
-        if (game.gameOver) drawGameOver(g);
+        if (game.gameOver) gameOverUI.draw(g);
         toast.draw(g, getWidth(), sansKRBlack);
         if (overlayRenderer != null) overlayRenderer.accept(g);
-        if (paused) drawPauseOverlay(g);
+        if (paused) pauseUI.draw(g);
         g.dispose();
     }
-
-    /// 이미지를 가져오는 함수
-    private Image loadImage(String path) {
-        try {
-            return javax.imageio.ImageIO.read(Path.of(path).toFile());
-        } catch (IOException e) {
-            throw new IllegalStateException("이미지를 불러올 수 없음. " + path, e);
-        }
-    }
-
-    /// 미노 이미지를 불러옵니다. (25x25 사이즈가 8개가 가로로 존재하는 200x25 크기의 이미지)
-    private BufferedImage[] loadMinoTiles(String path) {
-        try {
-
-            BufferedImage sheet = javax.imageio.ImageIO.read(Path.of(path).toFile());
-            if (sheet.getWidth() != 200 || sheet.getHeight() != 25) {
-                throw new IllegalStateException("이미지 사이즈가 200x25가 아님. " + path);
-            }
-
-            // 이미지를 25 크기마다 자름.
-            BufferedImage[] tiles = new BufferedImage[8];
-            for (int i = 0; i < tiles.length; i++) {
-                tiles[i] = sheet.getSubimage(i * 25, 0, 25, 25);
-            }
-
-            // 색맹 모드: 설정에 따라 미노 타일(0~6번)의 색만 바꾼다. 고스트(7번)는 그대로.
-            if (Settings.get().colorMode() != Settings.ColorMode.OFF) {
-                for (Tetromino t : Tetromino.values()) {
-                    int idx = minoTileIndex(t);
-                    tiles[idx] = tint(tiles[idx], Settings.get().minoColor(t));
-                }
-            }
-
-            shop.ThemeManager.applyMinoSkin(tiles, this::minoTileIndex); // 상점에서 장착한 미노 스킨
-            return tiles;
-
-        } catch (IOException e) {
-            throw new IllegalStateException("미노 이미지에 문제 발생. " + path, e);
-        }
-    }
-
-    /// 원본 타일의 밝기(음영)는 유지하고 색상만 target 색으로 교체
-    private static BufferedImage tint(BufferedImage src, Color target) {
-        BufferedImage out = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        float base = (target.getRed() * 0.299f + target.getGreen() * 0.587f + target.getBlue() * 0.114f) / 255f;
-        for (int y = 0; y < src.getHeight(); y++) {
-            for (int x = 0; x < src.getWidth(); x++) {
-                int p = src.getRGB(x, y);
-                int a = p >>> 24;
-                float lum = (((p >> 16) & 255) * 0.299f + ((p >> 8) & 255) * 0.587f + (p & 255) * 0.114f) / 255f;
-                float k = base == 0 ? 1f : lum / base;
-                int r = Math.min(255, Math.round(target.getRed() * k));
-                int gr = Math.min(255, Math.round(target.getGreen() * k));
-                int b = Math.min(255, Math.round(target.getBlue() * k));
-                out.setRGB(x, y, (a << 24) | (r << 16) | (gr << 8) | b);
-            }
-        }
-        return out;
-    }
-
 
     /// 이 아래의 코드는 디자인 변화 시 수정될 수 있는 코드입니다.
     /// 보드 및 미노(블록)을 png 파일로 대체하여 아래보다 코드가 간단해질 수 있습니다.
 
-
-    // 보드와 쌓은 블록, 현재블록과 고스트를 그림
-    private void drawBoard(Graphics2D g) {
-        for (int row = Board.MIN_ROW; row < Board.HEIGHT; row++) {
-            for (int col = 0; col < Board.WIDTH; col++) {
-                int sx = BOARD_X + col * CELL, sy = BOARD_Y + (row - Board.HIDDEN_ROWS) * CELL;
-                Tetromino locked = game.board.get(col, row);
-                if (locked != null) {
-                    if (game.board.isGarbageCell(col, row)) drawGarbageCell(g, sx, sy);
-                    else drawCell(g, sx, sy, locked, false);
-                }
-            }
-        }
-
-        if (!game.gameOver && game.active != null) {
-            if (Settings.get().ghostPiece()) {
-                // 현재 블록을 아래로 복사 이동해 예상 착지 위치(고스트)를 먼저 그린다.
-                int ghostY = game.y;
-                while (game.board.canPlace(game.active, game.x, ghostY + 1, game.rotation)) ghostY++;
-                drawPiece(g, game.active, game.x, ghostY, game.rotation, true);
-            }
-            drawPiece(g, game.active, game.x, game.y, game.rotation, false);
-        }
-    }
-
-
-    // 미노 만들기
-    private void drawPiece(Graphics2D g, Tetromino type, int x, int y, int rotation, boolean ghost) {
-        for (int[] cell : type.cells(rotation)) {
-            int bx = x + cell[0], by = y + cell[1];
-            if (by < Board.MIN_ROW || by >= Board.HEIGHT) continue;
-            int visibleY = by - Board.HIDDEN_ROWS;
-            drawCell(g, BOARD_X + bx * CELL, BOARD_Y + visibleY * CELL, type, ghost);
-        }
-    }
-
-
-    // 보드 뒤에 격자 만들기
-    private void drawCell(Graphics2D g, int x, int y, Tetromino type, boolean ghost) {
-        int tile = ghost ? 7 : minoTileIndex(type);
-        g.drawImage(minoTiles[tile], x, y, CELL, CELL, this);
-    }
-
-    private void drawGarbageCell(Graphics2D g, int x, int y) {
-        g.setColor(new Color(145, 145, 145));
-        g.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
-        g.setColor(new Color(75, 75, 75));
-        g.drawRect(x, y, CELL - 1, CELL - 1);
-    }
-
-    private int minoTileIndex(Tetromino type) {
-        return switch (type) {
-            case Zmino -> 0;
-            case Lmino -> 1;
-            case Omino -> 2;
-            case Smino -> 3;
-            case Imino -> 4;
-            case Jmino -> 5;
-            case Tmino -> 6;
-        };
-    }
-
-    // 200x15 사이즈 Mino.png를 25x25로 잘라서 미노로 씁니다.
-    private void drawMiniCell(Graphics2D g, int x, int y, int size, Tetromino type) {
-        g.drawImage(minoTiles[minoTileIndex(type)], x, y, size, size, this);
-    }
-
-    // Next와 Hold에 미노를 표시합니다.
-    private void drawMatrixPreviews(Graphics2D g) {
-        if (game.held != null) {
-            drawPreviewPiece(g, game.held, 386, 112, 126, 78, 25);
-        }
-
-        List<Tetromino> next = game.preview();
-        for (int i = 0; i < next.size(); i++) {
-            drawPreviewPiece(g, next.get(i), 774, 120 + i * 68, 126, 50, 25);
-        }
-    }
-
-
-    // 4개까지 NEXT 미노를 보여줌
-    private void drawPreviewPiece(Graphics2D g, Tetromino type, int x, int y, int width, int height, int unit) {
-        int minX = 4, maxX = 0, minY = 4, maxY = 0;
-        int[][] cells = type.cells(0);
-        for (int[] cell : cells) {
-            minX = Math.min(minX, cell[0]); maxX = Math.max(maxX, cell[0]);
-            minY = Math.min(minY, cell[1]); maxY = Math.max(maxY, cell[1]);
-        }
-        int pieceWidth = (maxX - minX + 1) * unit;
-        int pieceHeight = (maxY - minY + 1) * unit;
-        int startX = x + (width - pieceWidth) / 2 - minX * unit;
-        int startY = y + (height - pieceHeight) / 2 - minY * unit;
-        for (int[] cell : cells) {
-            drawMiniCell(g, startX + cell[0] * unit, startY + cell[1] * unit, unit, type);
-        }
-    }
-
-    // 게임 오버 시
-    private void drawGameOver(Graphics2D g) {
-        int boxX = BOARD_X + 5, boxY = BOARD_Y + 136, boxW = 240, boxH = 300;
-        int centerX = boxX + boxW / 2;
-        g.setColor(new Color(12, 16, 25, 238));
-        g.fillRoundRect(boxX, boxY, boxW, boxH, 16, 16);
-        g.setColor(new Color(115, 135, 170));
-        g.drawRoundRect(boxX, boxY, boxW, boxH, 16, 16);
-
-        g.setColor(Color.WHITE);
-        g.setFont(interBlack.deriveFont(24f));
-        drawCentered(g, "GAME OVER", centerX, boxY + 42);
-
-        boolean timedMode = game.targetLines() > 0 || "TOP OUT RUN".equals(gameName);
-        String currentValue;
-        String bestValue;
-        if (timedMode) {
-            String mode = game.targetLines() > 0 ? Records.sprintKey(game.targetLines()) : "topout";
-            currentValue = Records.formatTime(game.elapsedTimeMs());
-            int bestMs = Records.get().bestTimeMs(mode);
-            bestValue = bestMs > 0 ? Records.formatTime(bestMs) : "-";
-        } else {
-            String mode = Records.scoreKeyForGameName(gameName);
-            currentValue = String.format("%,d", game.scoring.score);
-            int bestScore = mode == null ? -1 : Records.get().bestScore(mode);
-            bestValue = bestScore > 0 ? String.format("%,d", bestScore) : "-";
-        }
-
-        g.setColor(new Color(190, 200, 220));
-        g.setFont(sansKRBlack.deriveFont(14f));
-        drawCentered(g, "이번 기록", centerX, boxY + 88);
-        g.setColor(Color.WHITE);
-        g.setFont(interBlack.deriveFont(23f));
-        drawCentered(g, currentValue, centerX, boxY + 120);
-
-        g.setColor(new Color(190, 200, 220));
-        g.setFont(sansKRBlack.deriveFont(14f));
-        drawCentered(g, "BEST 기록", centerX, boxY + 165);
-        g.setColor(new Color(255, 220, 110));
-        g.setFont(interBlack.deriveFont(21f));
-        drawCentered(g, bestValue, centerX, boxY + 198);
-    }
-
-    private void drawCentered(Graphics2D g, String text, int centerX, int baselineY) {
-        g.drawString(text, centerX - g.getFontMetrics().stringWidth(text) / 2, baselineY);
-    }
-
-    /** 스프린트 시작 전 3, 2, 1 카운트다운. 보드를 살짝 어둡게 덮고 가운데에 숫자를 보여준다. */
+    /** 스프린트 시작 전 3, 2, 1 카운트다운. 보드를 살짝 어둡게하고 가운데에 숫자를 보여준다. */
     private void drawCountdown(Graphics2D g) {
         int boardW = Board.WIDTH * CELL, boardH = (Board.HEIGHT - Board.HIDDEN_ROWS) * CELL;
         g.setColor(new Color(0, 0, 0, 150));
@@ -729,70 +262,10 @@ public final class GamePanel extends JPanel {
         g.drawString(number, centerX - g.getFontMetrics().stringWidth(number) / 2, centerY + 30);
     }
 
-    /** 스프린트 목표 달성 결과: 걸린 시간과 최고 기록 (아래 버튼은 게임 오버 때와 같은 자리). */
-    private void drawPauseOverlay(Graphics2D g) {
-        g.setColor(new Color(0, 0, 0, 255));
-        g.fillRect(0, 0, getWidth(), getHeight());
-
-        Map<TextAttribute, Float> fontAttributes = Map.of(TextAttribute.TRACKING, 0.3f);
-        g.setColor(Color.WHITE);
-        g.setFont(orbitBlack.deriveFont(30f).deriveFont(fontAttributes));
-        String title = "PAUSE";
-        g.drawString(title, 40, 70);
-
-        int spacing = 80;
-        int firstCenterY = getHeight() / 2 - (PAUSE_OPTIONS.length - 1) * spacing / 2;
-        for (int i = 0; i < PAUSE_OPTIONS.length; i++) {
-            g.setColor(i == pauseSelection ? Color.WHITE : new Color(70, 70, 70));
-            g.setFont((i == pauseSelection ? interBlack : interMedium).deriveFont(32f).deriveFont(fontAttributes));
-            FontMetrics metrics = g.getFontMetrics();
-            int x = (getWidth() - metrics.stringWidth(PAUSE_OPTIONS[i])) / 2;
-            int y = firstCenterY + i * spacing + (metrics.getAscent() - metrics.getDescent()) / 2;
-            g.drawString(PAUSE_OPTIONS[i], x, y);
-        }
-        int guideX = (getWidth() - pauseGuideImage.getWidth(this)) / 2;
-        int guideY = getHeight() - pauseGuideImage.getHeight(this) - 50;
-        g.drawImage(pauseGuideImage, guideX, guideY, this);
-    }
-
-    /// 일시정지 화면에서 위/아래 키로 옵션을 변경한다.
-    private void bindPauseNavigation(String key, int direction) {
-        KeyStroke stroke = KeyStroke.getKeyStroke("pressed " + key);
-        Object gameplayBinding = getInputMap(WHEN_IN_FOCUSED_WINDOW).get(stroke);
-        Action gameplayAction = gameplayBinding == null ? null : getActionMap().get(gameplayBinding);
-        String bindingName = "pause" + key;
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(stroke, bindingName);
-        getActionMap().put(bindingName, new AbstractAction() {
-            @Override public void actionPerformed(ActionEvent e) {
-                if (paused) {
-                    pauseSelection = Math.floorMod(pauseSelection + direction, PAUSE_OPTIONS.length);
-                    AudioManager.get().playMenuSelect(); // 옵션 이동 효과음
-                    repaint();
-                } else if (gameplayAction != null) {
-                    gameplayAction.actionPerformed(e);
-                }
-            }
-        });
-    }
-
-    private void bindGameOverNavigation(String key, int direction) {
-        KeyStroke stroke = KeyStroke.getKeyStroke("pressed " + key);
-        Object gameplayBinding = getInputMap(WHEN_IN_FOCUSED_WINDOW).get(stroke);
-        Action gameplayAction = gameplayBinding == null ? null : getActionMap().get(gameplayBinding);
-        String bindingName = "gameOver" + key;
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(stroke, bindingName);
-        getActionMap().put(bindingName, new AbstractAction() {
-            @Override public void actionPerformed(ActionEvent e) {
-                if (game.gameOver && !paused) selectGameOverOption(direction);
-                else if (gameplayAction != null) gameplayAction.actionPerformed(e);
-            }
-        });
-    }
-
     /// 일시정지 메뉴에서 선택한 항목을 실행한다.
     private void confirmPauseSelection() {
         AudioManager.get().playMenuSelect(); // 옵션 선택 효과음
-        switch (pauseSelection) {
+        switch (pauseUI.selection()) {
             case 0 -> setPaused(false); // 계속하기
             case 1 -> { // 다시 시작
                 if (pauseRestartCallback != null) pauseRestartCallback.run();
@@ -806,21 +279,11 @@ public final class GamePanel extends JPanel {
         }
     }
 
+    /** 일시정지 중 들어온 게임 키 입력을 처리한다. 하드 드롭 키는 메뉴 선택 확정으로 사용한다. */
     private void handlePauseInput(Settings.Action a) {
         if (a == Settings.Action.HARD_DROP) {
-            ignoreSpaceUntilRelease = true;
             confirmPauseSelection();
         }
     }
 
-
-    private void bindUnfiltered(String key, String name, Runnable action) {
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed " + key), name);
-        getActionMap().put(name, new AbstractAction() {
-            @Override public void actionPerformed(ActionEvent e) {
-                action.run();
-                repaint();
-            }
-        });
-    }
 }

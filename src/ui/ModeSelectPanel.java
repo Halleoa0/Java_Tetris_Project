@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JPanel;
 
+/** 홈 화면에서 Play를 누르면 나오는 게임 모드 선택 화면. 모드 버튼을 고르면 해당 모드를 시작하고, 아래에 설명을 보여준다. */
 public final class ModeSelectPanel extends JPanel {
     private static final Color BACKGROUND = new Color(41, 41, 41);
     private final ScreenManager screens;
@@ -28,6 +29,7 @@ public final class ModeSelectPanel extends JPanel {
     private String description = "";
     private final List<GameMode> modes = GameModes.all();
 
+    /** 모드 버튼과 BACK 버튼을 배치하고, 키보드 내비게이션과 마우스 입력을 등록한다. */
     public ModeSelectPanel(ScreenManager screens) {
         this.screens = screens;
         setPreferredSize(new Dimension(1280,720)); setBackground(BACKGROUND); setOpaque(true);
@@ -48,6 +50,7 @@ public final class ModeSelectPanel extends JPanel {
         };
         addMouseListener(mouse);addMouseMotionListener(mouse);
     }
+    /** 모드 개수에 맞춰 한 줄에 최대 3개씩 버튼을 가운데 정렬로 배치한다. 버튼 크기는 줄 수에 따라 자동으로 조절된다. */
     private void layoutModes(String[][] shapes, Color[] colors) {
         if (modes.isEmpty()) return;
         int columns = Math.min(3, modes.size());
@@ -76,8 +79,11 @@ public final class ModeSelectPanel extends JPanel {
             }
         }
     }
+    /** 주어진 좌표에 있는 버튼을 반환한다. 없으면 null. */
     private TetrisBlockButton buttonAt(int x,int y){for(TetrisBlockButton b:buttons)if(b.contains(x,y))return b;return null;}
+    /** 마우스 위치 아래의 버튼을 hover 상태로 바꾸고 내비게이션에 알린다. */
     private void updateHover(int x,int y){hovered=buttonAt(x,y);navigation.useMouse(hovered);}
+    /** 현재 강조된 버튼에 해당하는 모드의 설명 문구로 갱신한다. */
     private void updateDescription() {
         TetrisBlockButton button = navigation.highlightedButton(hovered);
         description = "";
@@ -88,6 +94,7 @@ public final class ModeSelectPanel extends JPanel {
             }
         }
     }
+    /** 제목, 모드 버튼(사용 불가 모드는 COMING SOON 표시), 모드 설명을 그린다. */
     @Override
     protected void paintComponent(Graphics graphics) {
         //1. 기본 패널 그리기
@@ -167,5 +174,6 @@ public final class ModeSelectPanel extends JPanel {
         //6. Graphics 자원 정리
         g.dispose();
     }
+    /** 버튼 모양의 가로 폭(픽셀)을 계산한다. */
     private int buttonWidth(TetrisBlockButton button){int widest=0;for(String row:button.rows)widest=Math.max(widest,row.length());return widest*button.cellSize;}
 }

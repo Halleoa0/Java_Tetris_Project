@@ -35,7 +35,7 @@ import shop.PlayerData;
 import shop.ShopItem;
 import shop.ThemeManager;
 
-/** 상점 화면: 위클리 미션 / 미노 스킨 / 배경화면 세 탭. 마우스로 탭 이동, 구매, 장착을 한다. (ESC = 뒤로가기) */
+/** 상점 화면: 위클리 미션 / 미노 스킨 / 배경화면 3가지 탭. 마우스로 탭 이동, 구매, 장착을 한다. (ESC = 뒤로가기) */
 public final class ShopPanel extends JPanel {
     private static final Color BACKGROUND = new Color(41, 41, 41);
     private static final Color CARD = new Color(30, 36, 51);
@@ -44,6 +44,7 @@ public final class ShopPanel extends JPanel {
     private static final Color GREEN = new Color(85, 210, 110);
     private static final Color GRAY = new Color(100, 104, 116);
 
+    /** 상점 화면의 탭 종류와 화면에 표시할 이름. */
     private enum Tab {
         MISSION("위클리 미션"), MINO("미노 스킨"), BACKGROUND("배경화면");
         final String label;
@@ -66,6 +67,7 @@ public final class ShopPanel extends JPanel {
     private Color messageColor = Color.WHITE;
     private final Timer messageTimer = new Timer(2500, e -> { message = ""; repaint(); });
 
+    /** BACK 버튼을 만들고 ESC/좌우 방향키, 마우스 입력을 등록한다. */
     public ShopPanel(ScreenManager screens) {
         this.screens = screens;
         setPreferredSize(new Dimension(1280, 720));
@@ -98,6 +100,7 @@ public final class ShopPanel extends JPanel {
         addMouseMotionListener(mouse);
     }
 
+    /** 키 입력을 동작에 연결한다. 패널이 화면에 보일 때만 실행된다. */
     private void bind(String key, Runnable action) {
         String name = "shop." + key;
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(key), name);
@@ -106,9 +109,11 @@ public final class ShopPanel extends JPanel {
         });
     }
 
+    /** 알림 메시지 타이머를 멈추고 홈 화면으로 돌아간다. */
     private void goBack() { messageTimer.stop(); screens.showMenuScreen(BgmMode.HOME);
     }
 
+    /** 탭을 delta만큼 왼쪽/오른쪽으로 이동한다. 끝에 도달하면 반대쪽으로 순환한다. */
     private void switchTab(int delta) {
         Tab[] tabs = Tab.values();
         tab = tabs[(tab.ordinal() + delta + tabs.length) % tabs.length];
@@ -118,15 +123,19 @@ public final class ShopPanel extends JPanel {
 
     // ===== 좌표 =====
 
+    /** i번째 탭 버튼의 영역을 반환한다. */
     private Rectangle tabRect(int i) { return new Rectangle(LEFT + i * 216, 115, 200, 46); }
+    /** i번째 아이템 카드의 영역을 반환한다. (한 줄에 3개씩 배치) */
     private Rectangle cardRect(int i) {
         return new Rectangle(LEFT + (i % 3) * (CARD_W + GAP_X), TOP + (i / 3) * (CARD_H + GAP_Y), CARD_W, CARD_H);
     }
+    /** i번째 카드 아래쪽의 구매/장착 버튼 영역을 반환한다. */
     private Rectangle buyRect(int i) {
         Rectangle c = cardRect(i);
         return new Rectangle(c.x + 15, c.y + c.height - 55, c.width - 30, 40);
     }
 
+    /** 현재 탭(미노 스킨/배경화면)에 해당하는 상점 아이템 목록을 반환한다. */
     private List<ShopItem> itemsOfTab() {
         List<ShopItem> list = new ArrayList<>();
         ShopItem.Type type = tab == Tab.MINO ? ShopItem.Type.MINO : ShopItem.Type.BACKGROUND;
@@ -136,6 +145,7 @@ public final class ShopPanel extends JPanel {
 
     // ===== 입력 =====
 
+    /** 마우스 위치에 따라 BACK 버튼/탭/카드의 hover 상태를 갱신하고, 바뀌었을 때만 다시 그린다. */
     private void updateHover(Point p) {
         boolean newBack = backButton.contains(p.x, p.y);
         int newTab = -1, newCard = -1;
@@ -150,6 +160,7 @@ public final class ShopPanel extends JPanel {
         }
     }
 
+    /** 클릭 처리: 탭을 누르면 탭을 바꾸고, 구매/장착 버튼을 누르면 아이템을 장착하거나 구매 후 장착한다. 코인이 부족하면 알림을 띄운다. */
     private void handleClick(Point p) {
         for (int i = 0; i < Tab.values().length; i++) {
             if (tabRect(i).contains(p)) {
@@ -183,6 +194,7 @@ public final class ShopPanel extends JPanel {
         }
     }
 
+    /** 화면 아래에 알림 메시지를 띄우고, 2.5초 뒤 사라지도록 타이머를 다시 시작한다. */
     private void notice(String text, Color color) {
         message = text;
         messageColor = color;
@@ -191,6 +203,7 @@ public final class ShopPanel extends JPanel {
 
     // ===== 그리기 =====
 
+    /** BACK 버튼, 제목, 보유 코인, 탭, 현재 탭 내용(미션 또는 아이템), 알림 메시지를 그린다. */
     @Override protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
         Graphics2D g = (Graphics2D) graphics.create();
@@ -233,6 +246,7 @@ public final class ShopPanel extends JPanel {
         g.dispose();
     }
 
+    /** 이번 주 미션 목록을 진행 막대, 진행도, 보상과 함께 그리고, 미션 초기화까지 남은 일수를 표시한다. */
     private void drawMissions(Graphics2D g) {
         Map<Mission, int[]> status = data.weeklyStatus();
         int i = 0;
@@ -271,6 +285,7 @@ public final class ShopPanel extends JPanel {
                 + Mission.REWARD_COINS + "코인", 640, 640);
     }
 
+    /** 현재 탭의 아이템 카드(미리보기, 이름, 장착/구매 상태 버튼)를 그린다. */
     private void drawItems(Graphics2D g) {
         List<ShopItem> items = itemsOfTab();
         for (int i = 0; i < items.size(); i++) {
@@ -311,6 +326,7 @@ public final class ShopPanel extends JPanel {
         }
     }
 
+    /** 지정한 폰트로 문자열을 (cx, cy) 중심에 가로·세로 가운데 정렬해서 그린다. */
     private static void centerText(Graphics2D g, Font font, String text, int cx, int cy) {
         g.setFont(font);
         FontMetrics fm = g.getFontMetrics();

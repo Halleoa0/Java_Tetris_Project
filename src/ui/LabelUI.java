@@ -29,6 +29,7 @@ public final class LabelUI {
     private final Image gameNamePanelImage;
     private final String gameName;
 
+    /** 표시할 게임, 폰트, 모드 이름 패널 이미지, 모드 이름을 받아 생성한다. */
     public LabelUI(Game game, Fonts fonts, Image gameNamePanelImage, String gameName) {
         this.game = game;
         this.interBlack = fonts.interBlack();
@@ -40,6 +41,7 @@ public final class LabelUI {
         this.gameName = gameName;
     }
 
+    /** 줄을 지웠을 때 나타나는 기술 이름(T-Spin 등), 지운 줄 이름, 콤보, 퍼펙트 클리어 문구를 서서히 사라지게 그린다. */
     public void drawScoreLabel(Graphics2D g) {
         float a = game.scoring.labelAlpha();
         if (a <= 0f) return;
@@ -71,6 +73,7 @@ public final class LabelUI {
                 647 - metrics4.stringWidth(game.scoring.perfectString) / 2, 197);
     }
 
+    /** PPS(초당 놓은 블록 수)를 보드 왼쪽에 그린다. */
     public void drawPpsLabel(Graphics2D g) {
         g.setColor(Color.WHITE);
         g.setFont(interMedium.deriveFont(16f));
@@ -82,6 +85,7 @@ public final class LabelUI {
         g.drawString(ppsText, 500 - metrics.stringWidth(ppsText), 466 + 28);
     }
 
+    /** 보드 아래에 모드 이름 패널 이미지를 그리고, 그 가운데에 모드 이름을 적는다. */
     public void drawGameNamePanel(Graphics2D g) {
         int boardWidth = Board.WIDTH * CELL;
         int boardBottom = BOARD_Y + (Board.HEIGHT - Board.HIDDEN_ROWS) * CELL;
@@ -97,6 +101,7 @@ public final class LabelUI {
         g.drawString(gameName, textX, textY);
     }
 
+    /** 지운 줄 수를 보드 왼쪽에 그린다. */
     public void drawLineLabel(Graphics2D g) {
         g.setColor(Color.WHITE);
         g.setFont(interMedium.deriveFont(16f));
@@ -111,6 +116,7 @@ public final class LabelUI {
         g.drawString(lineText, 500 - metrics.stringWidth(lineText), 539 + 28);
     }
 
+    /** 현재 점수를 보드 오른쪽에 그린다. */
     public void drawScoreValueLabel(Graphics2D g) {
         g.setColor(Color.WHITE);
         g.setFont(interMedium.deriveFont(16f));
@@ -119,6 +125,7 @@ public final class LabelUI {
         g.drawString(String.format(Locale.US, "%,d", game.scoring.score), 783, 466 + 28);
     }
 
+    /** 진행 시간을 보드 오른쪽에 그린다. */
     public void drawTimeLabel(Graphics2D g) {
         g.setColor(Color.WHITE);
         g.setFont(interMedium.deriveFont(16f));

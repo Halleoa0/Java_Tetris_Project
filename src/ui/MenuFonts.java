@@ -13,10 +13,14 @@ import java.nio.file.Path;
 
 
 
-/** 메뉴와 게임 화면에서 사용하는 커스텀 폰트 로딩 유틸리티. */
+/** 메뉴와 게임 화면에서 사용하는 커스텀 폰트 로딩 유틸리티.
+ * 외부 폰트를 불러오고, 화면에 안전하게 띄우는 역할을 하는 클래스.
+ */
 public final class MenuFonts {
+    /** 유틸리티 클래스이므로 객체 생성을 막는다. */
     private MenuFonts() { }
 
+    /** 메뉴용 픽셀 폰트(PressStart2P)를 불러온다. 실패하면 기본 고정폭 폰트를 반환한다. */
     public static Font loadPressStart2P() {
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT,
@@ -28,7 +32,7 @@ public final class MenuFonts {
         }
     }
 
-    /// 폰트를 가져옵니다. Black(가장 굵은)
+    /// 폰트를 가져옴. Black
     public static Font loadBlack() {
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Inter_18pt-Black.ttf").toFile());
@@ -39,6 +43,7 @@ public final class MenuFonts {
         }
     }
 
+    /** Inter Bold(굵은) 폰트를 불러온다 */
     public static Font loadBold() {
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Inter-Bold.ttf").toFile());
@@ -71,6 +76,7 @@ public final class MenuFonts {
         }
     }
 
+    /** Orbitron Black(가장 굵은) 폰트를 불러온다 */
     public static Font loadOrbitBlack() {
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Orbitron-Black.ttf").toFile());
@@ -81,6 +87,7 @@ public final class MenuFonts {
         }
     }
 
+    /** Orbitron Bold(굵은) 폰트를 불러온다 */
     public static Font loadOrbitBold() {
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT, Path.of("Fonts/Orbitron-Bold.ttf").toFile());

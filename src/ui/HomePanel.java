@@ -20,7 +20,7 @@ import javax.swing.JPanel;
 
 
 
-/** 테트로미노 버튼으로 화면 전환을 제공하는 메인 메뉴. */
+/** 테트로미노 버튼으로 화면 전환을 제공하는 메인 화면(홈 화면). */
 public final class HomePanel extends JPanel {
     private static final int CELL_SIZE = 72;
     private static final Color BACKGROUND = new Color(41, 41, 41);
@@ -38,6 +38,7 @@ public final class HomePanel extends JPanel {
     private TetrisBlockButton hoveredButton;
     private TetrisBlockButton pressedButton;
 
+    /** Play/Tutorial/Shop/Settings/Best 버튼을 배치하고, 키보드 내비게이션과 마우스 입력을 등록한다. */
     public HomePanel(ScreenManager screens) {
         setPreferredSize(new Dimension(1280, 720));
         setBackground(BACKGROUND);
@@ -78,6 +79,7 @@ public final class HomePanel extends JPanel {
         addMouseMotionListener(mouse);
     }
 
+    /** 경로의 이미지 파일을 불러온다*/
     private static BufferedImage loadImage(String path) {
         try {
             BufferedImage image = ImageIO.read(Path.of(path).toFile());
@@ -88,6 +90,7 @@ public final class HomePanel extends JPanel {
         }
     }
 
+    /** 마우스 위치 아래의 버튼을 hover 상태로 바꾸고, 바뀌었을 때만 다시 그린다. */
     private void updateHover(int x, int y) {
         TetrisBlockButton next = buttonAt(x, y);
         navigation.useMouse(next);
@@ -97,11 +100,13 @@ public final class HomePanel extends JPanel {
         }
     }
 
+    /** 주어진 좌표에 있는 버튼을 반환한다. 없으면 null. */
     private TetrisBlockButton buttonAt(int x, int y) {
         for (TetrisBlockButton button : buttons) if (button.contains(x, y)) return button;
         return null;
     }
 
+    /** 로고, 메뉴 버튼, 크레딧 이미지를 그린다. */
     @Override protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
         Graphics2D g = (Graphics2D) graphics.create();

@@ -60,6 +60,7 @@ public final class SettingsPanel extends JPanel {
 
     private final ScreenManager screens;
 
+    /** 설정 화면을 구성하고 ESC 키에 뒤로가기 동작을 등록한다. */
     public SettingsPanel(ScreenManager screens) {
         this.screens = screens;
         setFocusable(true);
@@ -74,6 +75,7 @@ public final class SettingsPanel extends JPanel {
         });
     }
 
+    /** 제목, 스크롤 가능한 설정 섹션들(사운드/화면/게임플레이/키), 하단 초기화·뒤로가기 버튼으로 화면을 구성한다. */
     private void build() {
         keyButtons.clear();
         setLayout(new BorderLayout());
@@ -138,6 +140,7 @@ public final class SettingsPanel extends JPanel {
 
     //섹션//
 
+    /** 음량 슬라이더와 음소거 옵션이 있는 사운드 섹션을 만든다. */
     private JPanel soundSection() {
         JPanel p = card("사운드");
         p.add(slider("전체 음량", s::masterVolume, s::setMasterVolume));
@@ -148,6 +151,7 @@ public final class SettingsPanel extends JPanel {
         return p;
     }
 
+    /** 색맹 모드 선택, 블록 색상 미리보기, 고스트 블록/격자선 옵션이 있는 화면·접근성 섹션을 만든다. */
     private JPanel displaySection() {
         JPanel p = card("화면 / 접근성");
         JComboBox<Settings.ColorMode> box = new JComboBox<>(Settings.ColorMode.values());
@@ -177,6 +181,7 @@ public final class SettingsPanel extends JPanel {
         return p;
     }
 
+    /** 난이도, DAS/ARR/SDF, 스폰 딜레이, IHS/IRS 옵션이 있는 게임플레이 섹션을 만든다. */
     private JPanel gameplaySection() {
         JPanel p = card("게임플레이");
         JComboBox<Settings.Difficulty> diff = new JComboBox<>(Settings.Difficulty.values());
@@ -193,6 +198,7 @@ public final class SettingsPanel extends JPanel {
         return p;
     }
 
+    /** 사용자(프로필) 선택/추가/삭제와 동작별 키 지정 버튼이 있는 키 설정 섹션을 만든다. */
     private JPanel keySection() {
         JPanel p = card("키 설정 (사용자별)");
 
@@ -266,6 +272,7 @@ public final class SettingsPanel extends JPanel {
 
     //키 입력 대기//
 
+    /** 해당 동작의 키 입력 대기 상태로 들어가고, 버튼에 안내 문구를 띄운 뒤 포커스를 옮긴다. */
     private void beginKeyWait(Settings.Action a, JButton b) {
         cancelKeyWait();
         waiting = a;
@@ -273,14 +280,17 @@ public final class SettingsPanel extends JPanel {
         b.requestFocusInWindow();
     }
 
+    /** 키 입력 대기 중이면 취소하고 버튼 글자를 원래대로 되돌린다. */
     private void cancelKeyWait() {
         if (waiting != null) { waiting = null; refreshKeyButtons(); }
     }
 
+    /** 모든 키 지정 버튼의 글자를 현재 설정된 키 이름으로 갱신한다. */
     private void refreshKeyButtons() {
         for (var e : keyButtons.entrySet()) e.getValue().setText(s.keyText(e.getKey()));
     }
 
+    /** 사용자 목록 콤보박스를 다시 채우고 현재 사용자를 선택한다. 갱신 중에는 선택 이벤트를 무시한다. */
     private void refreshProfiles() {
         refreshing = true;
         profileBox.removeAllItems();
@@ -291,6 +301,7 @@ public final class SettingsPanel extends JPanel {
 
     // UI 헬퍼 //
 
+    /** 제목이 달린 섹션 카드 패널을 만든다. */
     private JPanel card(String titleText) {
         JPanel p = new JPanel();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
@@ -305,6 +316,7 @@ public final class SettingsPanel extends JPanel {
         return p;
     }
 
+    /** 기본 글꼴/색상이 적용된 라벨을 만든다. */
     private JLabel label(String text) {
         JLabel l = new JLabel(text);
         l.setForeground(TEXT);
@@ -312,6 +324,7 @@ public final class SettingsPanel extends JPanel {
         return l;
     }
 
+    /** 왼쪽에 항목 이름, 오른쪽에 입력 컴포넌트가 있는 한 줄을 만든다. */
     private JPanel row(String name, JComponent c) {
         JPanel r = new JPanel(new BorderLayout(12, 0));
         r.setOpaque(false);
@@ -324,8 +337,10 @@ public final class SettingsPanel extends JPanel {
         return r;
     }
 
+    /** 범위가 0~100인 슬라이더 줄을 만든다. */
     private JPanel slider(String name, IntSupplier get, IntConsumer set) { return slider(name, get, set, 0, 100); }
 
+    /** 범위가 min~max인 슬라이더 줄을 만든다. 값을 바꾸면 오른쪽 숫자와 설정에 바로 반영한다. */
     private JPanel slider(String name, IntSupplier get, IntConsumer set, int min, int max) {
         JSlider sl = new JSlider(min, max, get.getAsInt());
         sl.setOpaque(false);
@@ -340,6 +355,7 @@ public final class SettingsPanel extends JPanel {
         return r;
     }
 
+    /** 체크하면 설정에 바로 반영되는 체크박스를 만든다. */
     private JCheckBox check(String text, boolean value, Consumer<Boolean> set) {
         JCheckBox c = new JCheckBox(text, value);
         c.setOpaque(false);
@@ -350,6 +366,7 @@ public final class SettingsPanel extends JPanel {
         return c;
     }
 
+    /** 기본 글꼴이 적용된 버튼을 만든다. */
     private JButton button(String text) {
         JButton b = new JButton(text);
         b.setFont(font.deriveFont(13f));
@@ -358,6 +375,7 @@ public final class SettingsPanel extends JPanel {
         return b;
     }
 
+    /** 한글 폰트를 불러온다. 실패하면 기본 SansSerif 폰트를 사용한다. */
     private static Font loadFont() {
         try { return MenuFonts.loadKRBlack(); }
         catch (RuntimeException e) { return new Font("SansSerif", Font.PLAIN, 14); }

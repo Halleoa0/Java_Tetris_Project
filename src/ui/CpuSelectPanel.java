@@ -33,6 +33,7 @@ public final class CpuSelectPanel extends JPanel {
     private TetrisBlockButton hoveredButton;
     private TetrisBlockButton pressedButton;
 
+    /** 난이도 버튼과 BACK 버튼을 배치하고, 키보드 내비게이션과 마우스 입력을 등록한다. */
     public CpuSelectPanel(ScreenManager screens) {
         setPreferredSize(new Dimension(1280, 720));
         setBackground(BACKGROUND);
@@ -78,6 +79,7 @@ public final class CpuSelectPanel extends JPanel {
         addMouseMotionListener(mouse);
     }
 
+    /** 마우스 위치 아래의 버튼을 hover 상태(평소 상태와 마우스 커서가 올라간 상태의 모양이 다름)로 바꾸고, 바뀌었을 때만 다시 그린다. */
     private void updateHover(int x, int y) {
         TetrisBlockButton next = buttonAt(x, y);
         navigation.useMouse(next);
@@ -87,11 +89,13 @@ public final class CpuSelectPanel extends JPanel {
         }
     }
 
+    /** 주어진 좌표에 있는 버튼을 반환한다. 없으면 null. */
     private TetrisBlockButton buttonAt(int x, int y) {
         for (TetrisBlockButton button : buttons) if (button.contains(x, y)) return button;
         return null;
     }
 
+    /** 제목, 버튼, 난이도별 PPS 안내를 그린다. */
     @Override protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
         Graphics2D g = (Graphics2D) graphics.create();
@@ -114,6 +118,7 @@ public final class CpuSelectPanel extends JPanel {
         g.dispose();
     }
 
+    /** 각 난이도 버튼 오른쪽에 해당 CPU의 PPS(초당 블록 수)를 적는다. */
     private void drawDifficultyNotes(Graphics2D g) {
         g.setFont(MENU_FONT.deriveFont(16f));
         g.setColor(new Color(170, 170, 170));
